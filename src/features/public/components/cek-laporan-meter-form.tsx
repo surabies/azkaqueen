@@ -14,8 +14,8 @@
 // produk, lihat riwayat percakapan.
 import * as React from "react"
 import { AlertCircle } from "lucide-react"
-import { Alert, AlertDescription } from "@workspace/ui/components/alert"
-import { Button } from "@workspace/ui/components/button"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Button } from "@/components/ui/button"
 import { cariPelanggan, ApiError, type PelangganPratinjau } from "../lib/api"
 import { formatPeriode } from "../lib/format"
 import { InputNomorLangganan } from "./input-nomor-langganan"

@@ -4,7 +4,7 @@
 // redirect, rakit dari features/akun/.
 import type { Metadata } from "next"
 import { redirect } from "next/navigation"
-import { auth } from "@/lib/auth/auth"
+import { auth } from "@/lib/auth"
 import { DaftarCard } from "@/features/akun/components/daftar-card"
 
 export const metadata: Metadata = {

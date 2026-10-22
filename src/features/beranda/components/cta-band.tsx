@@ -29,7 +29,7 @@ export function CtaBand() {
 
         <Reveal
           delay={0.1}
-          className="flex flex-col items-start justify-center gap-3 border-t border-white/10 bg-white/[0.02] px-5 py-12 backdrop-blur-xl md:px-8 lg:border-t-0 lg:border-l lg:py-16"
+          className="flex flex-col items-start justify-center gap-3 border-t border-white/10 bg-white/2 px-5 py-12 backdrop-blur-xl md:px-8 lg:border-t-0 lg:border-l lg:py-16"
         >
           <p className="text-[11px] font-semibold tracking-[0.2em] text-slate-400 uppercase">
             Sudah pernah melapor?

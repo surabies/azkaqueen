@@ -39,6 +39,8 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+
+  /* Radius — skala sama dengan acuan (--radius 6px, kelipatan dari situ) */
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -46,75 +48,192 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* Garis pemisah DI DALAM panel — satu langkah lebih terang dari --border */
+  --color-border-subtle: var(--border-subtle);
+
+  /* Bayangan Geist: berlapis, opasitas rendah. Dipakai lewat shadow-panel
+     dan shadow-overlay. */
+  --shadow-panel: var(--panel-shadow);
+  --shadow-overlay: var(--overlay-shadow);
+
+  /* Semantik */
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-success-muted: var(--success-muted);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-warning-muted: var(--warning-muted);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-info-muted: var(--info-muted);
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  /* Skala abu-abu GEIST (netral murni, tanpa hue), dari --ds-gray-* di
+     vercel.com/geist. Nama lokal --gray-50..900 sama dengan acuan.
+       gray-50   ds-background-200  kanvas halaman
+       gray-100  ds-gray-100        latar hover
+       gray-200  ds-gray-200        garis, latar item aktif
+       gray-800  ds-gray-900        teks sekunder
+       gray-900  ds-gray-1000       teks utama & tombol primer */
+  --gray-50: #fafafa;
+  --gray-100: #f2f2f2;
+  --gray-200: #ebebeb;
+  --gray-300: #e5e5e5;
+  --gray-400: #c9c9c9;
+  --gray-500: #a8a8a8;
+  --gray-600: #8f8f8f;
+  --gray-700: #7d7d7d;
+  --gray-800: #4d4d4d;
+  --gray-900: #171717;
+
+  /* Skala alpha — garis dan hover yang benar di atas permukaan apa pun */
+  --gray-alpha-100: #0000000d;
+  --gray-alpha-200: #00000014;
+  --gray-alpha-300: #0000001a;
+  --gray-alpha-500: #00000036;
+
+  /* Kanvas satu tingkat lebih redup dari panel (#fafafa vs putih) */
+  --background: var(--gray-50);
+  --foreground: var(--gray-900);
+  --card: #ffffff;
+  --card-foreground: var(--gray-900);
+  --popover: #ffffff;
+  --popover-foreground: var(--gray-900);
+
+  /* Tombol primer Vercel: #171717 dengan teks putih */
+  --primary: var(--gray-900);
+  --primary-foreground: #ffffff;
+  --secondary: var(--gray-100);
+  --secondary-foreground: var(--gray-900);
+  --muted: var(--gray-100);
+  --muted-foreground: var(--gray-800);
+  --accent: var(--gray-100);
+  --accent-foreground: var(--gray-900);
+  --destructive: oklch(0.6256 0.2524 23.03); /* ds-red-700 */
+
+  --border: var(--gray-200);
+  --border-subtle: var(--gray-100);
+  --input: var(--gray-200);
+
+  /* ds-blue-700 — satu-satunya warna interaktif di Geist. Cincin fokus dua
+     lapis: 2px warna latar lalu 4px biru. */
+  --ring: oklch(0.5761 0.2508 258.23);
+  --focus-ring: 0 0 0 2px var(--background), 0 0 0 4px var(--ring);
+
+  /* --ds-shadow-small dan --ds-shadow-menu Vercel */
+  --panel-shadow: 0px 2px 2px #0000000a;
+  --overlay-shadow:
+    0px 1px 1px #00000005, 0px 4px 8px -4px #0000000a,
+    0px 16px 24px -8px #0000000f;
+
+  /* Seri grafik: lima hue Geist langkah 700. Urutan slot tetap. */
+  --chart-1: oklch(0.5761 0.2508 258.23); /* biru   */
+  --chart-2: oklch(0.7721 0.1991 64.28); /*  amber  */
+  --chart-3: oklch(0.6458 0.1746 147.27); /* hijau  */
+  --chart-4: oklch(0.555 0.3008 306.12); /*  ungu   */
+  --chart-5: oklch(0.6492 0.1572 181.95); /* teal   */
+
+  /* 6px — --geist-radius: tombol, input, kartu, menu */
+  --radius: 0.375rem;
+
+  /* Sidebar Vercel: latar sama dengan kanvas, dipisah satu garis. Item aktif
+     ds-gray-200, teks tidak aktif #4d4d4d. */
+  --sidebar: var(--background);
+  --sidebar-foreground: var(--gray-800);
+  --sidebar-primary: var(--gray-900);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: var(--gray-200);
+  --sidebar-accent-foreground: var(--gray-900);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
+
+  /* Semantik */
+  --success: oklch(0.6458 0.1746 147.27);
+  --success-foreground: #ffffff;
+  --success-muted: #eaf6f0;
+  --warning: oklch(0.7721 0.1991 64.28);
+  --warning-foreground: #ffffff;
+  --warning-muted: #fdf0e7;
+  --info: oklch(0.5761 0.2508 258.23);
+  --info-foreground: #ffffff;
+  --info-muted: #e7f3fe;
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  /* Sisi gelap Geist. Kanvas #0a0a0a, panel #141414 supaya hitam pekat
+     tidak jadi latar seluruh layar di monitor OLED. */
+  --gray-50: #0a0a0a;
+  --gray-100: #1a1a1a;
+  --gray-200: #1f1f1f;
+  --gray-300: #292929;
+  --gray-400: #454545;
+  --gray-500: #878787;
+  --gray-600: #8f8f8f;
+  --gray-700: #7d7d7d;
+  --gray-800: #a1a1a1;
+  --gray-900: #ededed;
+
+  --gray-alpha-100: #ffffff0f;
+  --gray-alpha-200: #ffffff17;
+  --gray-alpha-300: #ffffff21;
+  --gray-alpha-500: #ffffff3d;
+
+  --background: var(--gray-50);
+  --foreground: var(--gray-900);
+  --card: #141414;
+  --card-foreground: var(--gray-900);
+  --popover: #141414;
+  --popover-foreground: var(--gray-900);
+
+  /* Tombol primer dibalik di tema gelap: latar terang, tinta gelap */
+  --primary: var(--gray-900);
+  --primary-foreground: #0a0a0a;
+  --secondary: var(--gray-100);
+  --secondary-foreground: var(--gray-900);
+  --muted: var(--gray-100);
+  --muted-foreground: var(--gray-800);
+  --accent: var(--gray-100);
+  --accent-foreground: var(--gray-900);
+  --destructive: oklch(0.6994 0.1907 23.19);
+
+  --border: var(--gray-300);
+  --border-subtle: var(--gray-200);
+  --input: var(--gray-300);
+  --ring: oklch(0.717 0.1648 250.794);
+  --focus-ring: 0 0 0 2px var(--background), 0 0 0 4px var(--ring);
+
+  --panel-shadow: 0px 1px 2px #00000029;
+  --overlay-shadow:
+    0px 1px 1px #0000000a, 0px 4px 8px -4px #00000029,
+    0px 16px 24px -8px #00000052;
+
+  /* Langkah 900 di tema gelap — terangnya dinaikkan, bukan nilai yang sama */
+  --chart-1: oklch(0.717 0.1648 250.794);
+  --chart-2: oklch(0.7721 0.1991 64.28);
+  --chart-3: oklch(0.731 0.2158 148.29);
+  --chart-4: oklch(0.6987 0.2037 309.51);
+  --chart-5: oklch(0.7456 0.1765 182.8);
+
+  --sidebar: var(--background);
+  --sidebar-foreground: var(--gray-800);
+  --sidebar-primary: var(--gray-900);
+  --sidebar-primary-foreground: #0a0a0a;
+  --sidebar-accent: var(--gray-200);
+  --sidebar-accent-foreground: var(--gray-900);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
+
+  --success: oklch(0.731 0.2158 148.29);
+  --success-foreground: #10241b;
+  --success-muted: #16281f;
+  --warning: oklch(0.7721 0.1991 64.28);
+  --warning-foreground: #2a1608;
+  --warning-muted: #2c1c0e;
+  --info: oklch(0.717 0.1648 250.794);
+  --info-foreground: #0b1c2b;
+  --info-muted: #12212e;
 }
 
 @layer base {

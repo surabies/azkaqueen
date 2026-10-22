@@ -12,8 +12,8 @@ import "server-only"
 // tanpa cache setiap pengunjung anonim memicu 4 agregasi. Angka-angka ini
 // bergerak sebulan sekali (closing), jadi 1 jam pun sudah terlalu rajin.
 import { unstable_cache } from "next/cache"
-import { prisma } from "@workspace/db"
-import { dateToPeriode } from "@workspace/domain/periode"
+import { prisma } from "@/lib/prisma"
+import { dateToPeriode } from "@/lib/domain/periode"
 
 export interface StatsBeranda {
   pelangganAktif: number

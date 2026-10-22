@@ -12,7 +12,7 @@
 import * as React from "react"
 import { Camera, X } from "lucide-react"
 import { BingkaiFoto, type RasioFoto } from "@/components/bingkai-foto"
-import { Field, FieldDescription, FieldLabel } from "@workspace/ui/components/field"
+import { Field, FieldDescription, FieldLabel } from "@/components/ui/field"
 import { compressImage } from "../lib/compress-image"
 
 /// Batas berkas ASLI sebelum dikompres di browser. Lebih longgar dari batas

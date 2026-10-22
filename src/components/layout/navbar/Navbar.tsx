@@ -1,16 +1,25 @@
 // components/layout/navbar/Navbar.tsx
 // Tugas: HANYA merakit komponen-komponen kecil menjadi satu navbar.
-import Link from "next/link"
-import { HugeiconsIcon } from "@hugeicons/react"
-import { Github01Icon } from "@hugeicons/core-free-icons"
 import { NavbarBrand } from "./NavbarBrand"
 import { NavbarLinks } from "./NavbarLinks"
 import { NavbarPlus } from "./NavbarPlus"
 import { NavbarSearch } from "./NavbarSearch"
 import { NavbarMobileBar } from "./NavbarMobileBar"
 import { MobileMenu } from "./MobileMenu"
+import { UserMenu } from "./user-menu"
 
-export function Navbar() {
+export function Navbar({
+  user,
+  onKeluar,
+}: {
+  user: {
+    name: string | null
+    email: string
+    image: string | null
+    role: string
+  }
+  onKeluar: () => Promise<void>
+}) {
   return (
     <header className="fixed inset-x-0 top-0 z-10 border-b bg-background">
       {/* ===== Bar utama (tampil di semua ukuran layar) ===== */}
@@ -28,24 +37,19 @@ export function Navbar() {
             <MobileMenu />
           </div>
 
-          {/* DESKTOP SAJA: link menu, kotak sorot "Bantuan", GitHub */}
+          {/* DESKTOP SAJA: link menu dan kotak sorot "Bantuan" */}
           <div className="flex items-center gap-6 max-lg:hidden">
             <NavbarLinks />
             <NavbarPlus />
-            <Link
-              href="https://github.com"
-              target="_blank"
-              rel="noreferrer"
-              aria-label="GitHub Repository"
-              className="text-muted-foreground hover:text-foreground"
-            >
-              <HugeiconsIcon
-                icon={Github01Icon}
-                strokeWidth={2}
-                className="size-5"
-              />
-            </Link>
           </div>
+
+          <UserMenu
+            nama={user.name}
+            email={user.email}
+            image={user.image}
+            role={user.role}
+            onKeluar={onKeluar}
+          />
         </div>
       </div>
 

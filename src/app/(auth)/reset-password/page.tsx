@@ -7,7 +7,7 @@
 // token bisa saja kedaluwarsa atau dipakai di tab lain).
 import type { Metadata } from "next"
 import { redirect } from "next/navigation"
-import { auth } from "@workspace/auth"
+import { auth } from "@/lib/auth"
 import { tokenResetValid } from "@/features/auth/lib/password-reset"
 import { ResetPasswordCard } from "@/features/auth/components/reset-password-card"
 

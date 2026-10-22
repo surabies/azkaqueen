@@ -15,7 +15,7 @@
 import Link from "next/link";
 import { AppLogo } from "@/components/app-logo";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Button } from "@workspace/ui/components/button";
+import { Button } from "@/components/ui/button";
 import { TombolPasang } from "@/components/pwa/tombol-pasang";
 import { NAV_LAYANAN } from "./nav-links";
 import { MobileNav } from "./mobile-nav";

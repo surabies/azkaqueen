@@ -23,8 +23,10 @@ export default function DashboardPage() {
 
   return (
     <PageContainer
-      title="Dashboard"
-      description="Selamat datang di sistem informasi terintegrasi Perumda Tirtawening Kota Bandung."
+      breadcrumbs={[
+        { label: "Ringkasan", href: "/dashboard" },
+        { label: "Dashboard" },
+      ]}
     >
       <section aria-label="Statistik">
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

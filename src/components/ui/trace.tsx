@@ -6,7 +6,8 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
-import { ChevronRightIcon } from "lucide-react"
+import { HugeiconsIcon } from "@hugeicons/react"
+import { ArrowRight01Icon } from "@hugeicons/core-free-icons"
 
 function Trace({ className, ...props }: React.ComponentProps<"div">) {
   return (
@@ -84,7 +85,7 @@ function TraceDescription({
 function TraceCollapsible({
   className,
   ...props
-}: Omit<React.ComponentProps<typeof Collapsible>, "open"> &
+}: Omit<React.ComponentProps<typeof Collapsible>, "asChild" | "open"> &
   (
     | { open?: undefined }
     | {
@@ -107,7 +108,7 @@ function TraceCollapsibleTrigger({
   className,
   children,
   ...props
-}: React.ComponentProps<typeof CollapsibleTrigger>) {
+}: Omit<React.ComponentProps<typeof CollapsibleTrigger>, "asChild">) {
   return (
     <CollapsibleTrigger
       data-slot="trace-collapsible-trigger"
@@ -119,8 +120,7 @@ function TraceCollapsibleTrigger({
     >
       {children}
       <TraceIcon className="transition-transform group-aria-expanded/trace-collapsible-trigger:rotate-90">
-        <ChevronRightIcon
-        />
+        <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} />
       </TraceIcon>
     </CollapsibleTrigger>
   )
@@ -130,11 +130,11 @@ function TraceCollapsibleContent({
   className,
   children,
   ...props
-}: React.ComponentProps<typeof CollapsibleContent>) {
+}: Omit<React.ComponentProps<typeof CollapsibleContent>, "asChild">) {
   return (
     <CollapsibleContent
       data-slot="trace-collapsible-content"
-      className="h-(--collapsible-panel-height) min-w-0 overflow-hidden transition-[height] duration-200 data-ending-style:h-0 data-starting-style:h-0"
+      className="min-w-0 overflow-hidden duration-200 [--radix-accordion-content-height:var(--radix-collapsible-content-height)] data-open:animate-accordion-down data-closed:animate-accordion-up"
       {...props}
     >
       <div

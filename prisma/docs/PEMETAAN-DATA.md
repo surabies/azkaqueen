@@ -372,23 +372,25 @@ sepenuhnya berbeda (aturan di `prisma/seed/lib/domain/tagihan.ts` yang diterapka
 baris per baris saat impor) dan bertemu persis dengan hitungan langsung atas
 file mentah. Aturan taksiran & minimum yang direkonstruksi memang benar.
 
-### Anomali data yang ditemukan uji regresi
+### Normalisasi tarif pelanggan kontrak khusus
 
-Pelanggan **`00008001503`** (RM. TINGGAL PANGDAM VI/SL), golongan 2B:
+Pelanggan **`00008001503`** (RM. TINGGAL PANGDAM VI/SL), golongan 2B,
+memiliki `pakai_drd` **3.000 m³** pada periode 202601–202608. STI sebelumnya
+menerapkan harga kontrak khusus pada `jmlhargaair`; aplikasi ini tidak
+memodelkan kontrak tersebut, sehingga data CSV dinormalisasi ke tarif
+standar aplikasi:
 
-| | |
-|---|---|
-| Stand | 79.313 → 80.222 = **909 m³** terbaca |
-| `pakai_drd` (kolom pemakaian) | **3.000 m³** |
-| `jmlhargaair` | 11.385.750 |
-| Harga tarif untuk 909 m³ | **11.385.750** ← cocok persis |
-| Harga tarif untuk 3.000 m³ | 38.046.000 |
+| Komponen | Nilai |
+|---|---:|
+| Harga air 2B untuk 3.000 m³ | 38.046.000 |
+| Bea beban | 43.000 |
+| Bea admin | 10.000 |
+| Air kotor | 11.100 |
+| Lain-lain | 0 |
+| **Total tagihan standar** | **38.110.100** |
 
-**Tagihannya benar** (dihitung untuk 909 m³, sesuai meter). Yang salah
-adalah kolom `pakai_drd`-nya. Dampaknya bukan ke uang, tapi ke **setiap
-laporan berbasis kubikasi** — total m³ terjual, NRW, dan target kinerja
-akan kelebihan ~2.091 m³ dari satu baris ini saja. Perlu dikonfirmasi ke
-bagian yang menerbitkan ProgresCater.
+Pemakaian 3.000 m³ dipertahankan; nilai kontrak khusus pada tagihan sumber
+bukan dasar untuk mengubah pemakaian atau rumus tarif aplikasi.
 
 ## 7. Closing periode — SUDAH ADA (butir 1 lama)
 
@@ -400,7 +402,7 @@ Arah aliran data sudah dibalik. Aplikasi kini **memproduksi** closing:
 | Mesin buka bulan baru | `packages/server/modules/closing/bulan-baru.service.ts` |
 | API | `packages/server/modules/closing/closing.router.ts` |
 | Layar operator | `apps/web/app/(dashboard)/dashboard/closing/page.tsx` + `features/dashboard/components/closing/` |
-| Uji regresi | `packages/server/scripts/cek-closing.ts` → `pnpm cek-closing [periode]` |
+| Uji regresi | `src/lib/server/scripts/cek-closing.ts` → `pnpm server:cek-closing [periode]` |
 
 Enam endpoint, kewenangan berjenjang: `GET /closing` (daftar, STAFF_UP),
 `GET /closing/:periode` (pratinjau, tidak menulis, STAFF_UP),
@@ -411,15 +413,14 @@ Enam endpoint, kewenangan berjenjang: `GET /closing` (daftar, STAFF_UP),
 
 ### Buktinya, bukan klaimnya
 
-`pnpm cek-closing` menghitung ulang SELURUH pembacaan 202605 lewat jalur
+`pnpm server:cek-closing 202605` menghitung ulang SELURUH pembacaan lewat jalur
 closing aplikasi lalu membandingkannya dengan tagihan yang benar-benar
 tersimpan:
 
 ```
-Dibandingkan     : 22515
-COCOK            : 22514
-BEDA (baru)      : 0
-BEDA (terduga)   : 1     <- anomali 00008001503, sudah didaftarkan
+Dibandingkan     : 22523
+COCOK            : 22523
+BEDA             : 0
 ```
 
 Uji ini lebih kuat daripada `db:verifikasi-tarif`: yang itu menguji rumus
@@ -427,11 +428,8 @@ terhadap CSV, yang ini menguji **seluruh jalur** (pembacaan di DB → tarif
 berlaku → biaya tetap per ukuran meter → total).
 
 Skrip keluar dengan kode 0 sekarang, jadi **bisa dipasang sebagai gerbang
-CI**. Anomali sumber yang sudah diketahui didaftarkan di konstanta
-`ANOMALI_DIKETAHUI` dan tidak menggagalkan; selisih pada nomor lain
-menggagalkan. Entri yang ternyata sudah cocok **juga** menggagalkan —
-supaya daftar pengecualian itu tidak menumpuk jadi abadi setelah sumbernya
-dikoreksi.
+CI**. Semua selisih, termasuk perubahan tarif, menggagalkan pemeriksaan
+sampai data dan tagihan tersimpan selaras.
 
 ### 8 pelanggan yang TIDAK bisa ditagih mesin ini
 
@@ -575,11 +573,7 @@ pelanggan" belum dibangun — lihat 7b.
    tersisa untuk DRD yang benar-benar lengkap**: selama kosong, 8 pelanggan
    di tabel atas tidak akan pernah masuk closing.
 
-2. **Anomali `00008001503`** masih menunggu konfirmasi bagian penerbit
-   ProgresCater (lihat bagian 6). Perlu diputuskan mana yang benar: stand
-   909 m³ atau `pakai_drd` 3.000 m³.
-
-3. **Upload master pelanggan dari STI** (`PEL{periode}-PW5.csv`) — belum ada
+2. **Upload master pelanggan dari STI** (`PEL{periode}-PW5.csv`) — belum ada
    sebagai fitur aplikasi. Formatnya sudah dipetakan di 7d dan terbukti cocok
    dengan isi database, jadi tinggal dibangun. Ini padanan tiga langkah
    Aurora sekaligus: upload master, sync pelanggan baru, update data
@@ -956,18 +950,18 @@ periode, seluruhnya bisa direkonstruksi tanpa satu pun konflik:
 | 2A3 | 56.140 | 3.120 | 5.520 | 8.880 | 12.840 | 56140/56140 |
 | 2A4 | 46.672 | 3.960 | 7.200 | 11.280 | 15.120 | 46672/46672 |
 | 2A5 | 132 | 4.800 | 8.880 | 13.680 | 17.400 | 132/132 |
-| 2B | 573 | 3.150 | 5.700 | 9.000 | 12.750 | 567/573 * |
+| 2B | 573 | 3.150 | 5.700 | 9.000 | 12.750 | 573/573 * |
 | 3A | 7.219 | 4.350 | 7.950 | 13.050 | 18.900 | 7219/7219 |
 | 3B | 19.833 | 6.900 | 10.800 | 16.050 | 21.600 | 19833/19833 |
 | 3C | 332 | 9.450 | 13.650 | 19.050 | 24.300 | 332/332 |
 | **4A** | 156 | 7.350 | 11.250 | **16.950** | **21.450** | 156/156 |
 | 4B | 204 | 10.200 | 14.400 | 19.950 | 24.450 | 204/204 |
 
-\* Keenam selisih 2B adalah pelanggan yang SAMA (`00008001503`) di enam bulan
-berturut-turut. Setiap bulan `pakai_drd`-nya dipatok 3.000 sementara
-`jmlhargaair`-nya persis harga untuk **selisih stand** (728, 897, 749, 342,
-909, 1.008 m³). Jadi rumus 2B benar; kolom kubikasi pelanggan itu yang macet
-di sumber — bukan kejadian sekali, melainkan cacat menahun.
+* Selisih 2B sebelumnya berasal dari harga kontrak khusus pelanggan
+  `00008001503`, bukan dari kesalahan rumus atau pemakaian. Sumber periode
+  202601–202608 dan tujuh tagihan tersimpan kini dinormalisasi ke harga
+  standar untuk 3.000 m³. Uji regresi tarif: 180.213/180.213 cocok; 11 baris
+  tidak dapat diuji karena blok tarif sumbernya belum tersedia.
 
 Blok 2A1 (4 baru) dan 4A (2 yang kurang) sudah diisi, ditandai lewat kolom
 baru `TarifBlok.catatan` bahwa dasarnya rekonstruksi dan **masih menunggu
@@ -1033,7 +1027,7 @@ Hasil: **22.522 dari 22.523 terisi.**
 |---|---|
 | Tepat satu golongan cocok dari harga | 22.030 |
 | Ambigu, diputus oleh golongan berjalan yang termasuk kandidat | 492 |
-| Tidak bisa diturunkan | **1** (`00008001503`, baris rusak yang sudah dikenal) |
+| Tidak bisa diturunkan | **1** (hasil backfill sebelumnya; perlu dijalankan ulang) |
 
 Ambiguitasnya nyata dan tak terhindarkan: 1A & 1B punya harga blok 1–2 yang
 identik (900/900), dan pemakaian 0 m³ menghasilkan harga 0 di SELURUH
@@ -1042,12 +1036,13 @@ termasuk kandidat yang memang mereproduksi angkanya — harga sudah
 menyempitkan pilihan, golongan berjalan tinggal memilih di antara yang
 sama-sama benar.
 
-**Dampak terukur** — `pnpm cek-closing` sesudahnya:
+**Dampak terukur** — `pnpm server:cek-closing 202605` sesudahnya:
 
 ```
-Dibandingkan : 22.523   (sebelumnya 22.515; blok tarif kini lengkap)
-BEDA (baru)  : 0
-HASIL        : 22.522/22.523 direproduksi persis
+Dibandingkan : 22.523
+COCOK        : 22.523
+BEDA         : 0
+HASIL        : 22.523/22.523 direproduksi persis
 ```
 
 ### 12b. Pemetaan sambungan ke rute

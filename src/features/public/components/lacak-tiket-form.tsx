@@ -14,11 +14,11 @@
 // server/modules/pengaduan/tiket.ts.
 import * as React from "react"
 import { Search, TriangleAlert } from "lucide-react"
-import { Alert, AlertDescription } from "@workspace/ui/components/alert"
-import { Button } from "@workspace/ui/components/button"
-import { Input } from "@workspace/ui/components/input"
-import { Field, FieldDescription, FieldGroup, FieldLabel } from "@workspace/ui/components/field"
-import { Spinner } from "@workspace/ui/components/spinner"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field"
+import { Spinner } from "@/components/ui/spinner"
 import { lacakTiket, ApiError, type StatusTiket } from "../lib/api"
 import { KartuTiket } from "./pelacakan/kartu-tiket"
 

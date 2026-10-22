@@ -10,7 +10,7 @@
 //
 // Server component murni presentasional — boleh diimpor komponen client
 // (ikut jadi bundle client di sana, dan itu tidak apa-apa).
-import { cn } from "@workspace/ui/lib/utils"
+import { cn } from "@/lib/utils"
 import { WaterFlowField } from "@/features/beranda/components/motion/water-flow-field"
 import { WaterRipple } from "@/features/beranda/components/motion/water-ripple"
 

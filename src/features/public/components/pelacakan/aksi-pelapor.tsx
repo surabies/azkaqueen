@@ -10,10 +10,10 @@
 // dari sisi petugas ditolak eksplisit (server/modules/pengaduan/pengaduan.router.ts).
 import * as React from "react"
 import { RotateCcw, Star, ThumbsUp, TriangleAlert } from "lucide-react"
-import { Alert, AlertDescription } from "@workspace/ui/components/alert"
-import { Button } from "@workspace/ui/components/button"
-import { Textarea } from "@workspace/ui/components/textarea"
-import { Spinner } from "@workspace/ui/components/spinner"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Button } from "@/components/ui/button"
+import { Textarea } from "@/components/ui/textarea"
+import { Spinner } from "@/components/ui/spinner"
 import { bukaKembaliTiket, konfirmasiTiket, ApiError } from "../../lib/api"
 
 type Mode = "pilih" | "nilai" | "buka"

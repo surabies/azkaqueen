@@ -10,7 +10,7 @@ import { SpotlightCard } from "./motion/spotlight-card"
 
 function VinyetCekTagihan() {
   return (
-    <div aria-hidden="true" className="pointer-events-none select-none rounded-xl border border-white/10 bg-white/[0.03] p-4">
+    <div aria-hidden="true" className="pointer-events-none select-none rounded-xl border border-white/10 bg-white/3 p-4">
       <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2.5">
         <Search className="size-3.5 text-slate-500" />
         <span className="font-mono text-xs text-slate-400">00401700010</span>
@@ -41,7 +41,7 @@ function VinyetCekTagihan() {
 
 function VinyetLaporMeter() {
   return (
-    <div aria-hidden="true" className="pointer-events-none select-none rounded-xl border border-white/10 bg-white/[0.03] p-4">
+    <div aria-hidden="true" className="pointer-events-none select-none rounded-xl border border-white/10 bg-white/3 p-4">
       <div className="flex flex-col items-center gap-1.5 rounded-lg border-2 border-dashed border-white/10 py-5">
         <Camera className="size-5 text-slate-400" />
         <span className="text-[11px] text-slate-400">Foto angka meter</span>
@@ -62,7 +62,7 @@ function VinyetLaporMeter() {
 
 function VinyetPengaduan() {
   return (
-    <div aria-hidden="true" className="pointer-events-none select-none rounded-xl border border-white/10 bg-white/[0.03] p-4">
+    <div aria-hidden="true" className="pointer-events-none select-none rounded-xl border border-white/10 bg-white/3 p-4">
       <div className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-3 py-2.5">
         <span className="flex items-center gap-2">
           <Ticket className="size-3.5 text-slate-500" />
@@ -73,8 +73,8 @@ function VinyetPengaduan() {
       <ol className="mt-3 space-y-0">
         {["Diterima", "Ditugaskan ke petugas", "Sedang ditangani"].map((t, i, arr) => (
           <li key={t} className="relative flex gap-3 pb-3 last:pb-0">
-            {i < arr.length - 1 && <span className="absolute top-3 left-[3px] h-full w-px bg-white/10" />}
-            <span className={"mt-1.5 size-[7px] shrink-0 rounded-full " + (i === arr.length - 1 ? "bg-cyan-300" : "bg-slate-600")} />
+            {i < arr.length - 1 && <span className="absolute top-3 left-0.75 h-full w-px bg-white/10" />}
+            <span className={"mt-1.5 size-1.75 shrink-0 rounded-full " + (i === arr.length - 1 ? "bg-cyan-300" : "bg-slate-600")} />
             <span className="text-[11px] text-slate-400">{t}</span>
           </li>
         ))}
@@ -166,7 +166,7 @@ export function LayananShowcase() {
                   <div
                     aria-disabled="true"
                     title="Sementara tidak tersedia"
-                    className="cursor-not-allowed rounded-2xl border border-white/10 bg-white/[0.02] opacity-60"
+                    className="cursor-not-allowed rounded-2xl border border-white/10 bg-white/2 opacity-60"
                   >
                     {isi}
                   </div>

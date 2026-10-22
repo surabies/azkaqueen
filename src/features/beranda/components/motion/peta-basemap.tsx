@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import maplibregl from "maplibre-gl"
+import * as maplibregl from "maplibre-gl"
 import "maplibre-gl/dist/maplibre-gl.css"
 import type { PetaCakupan } from "../../lib/peta-tipe"
 
@@ -112,7 +112,7 @@ export function PetaBasemap({ data }: { data: PetaCakupan }) {
           event.preventDefault()
           event.stopPropagation()
         }}
-        className="h-[360px] w-full overscroll-contain sm:h-[480px]"
+        className="h-90 w-full overscroll-contain sm:h-120"
       />
       <div className="border-t border-white/10 bg-tirta/90 px-3 py-2.5 text-[11px] text-slate-300 backdrop-blur-xl">
         Batas wilayah administratif dan titik sambungan pelanggan anonim.

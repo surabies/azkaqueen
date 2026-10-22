@@ -10,8 +10,8 @@
 import * as React from "react"
 import { useRouter } from "next/navigation"
 import { ArrowRight } from "lucide-react"
-import { Button } from "@workspace/ui/components/button"
-import { Input } from "@workspace/ui/components/input"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 
 // Cek tagihan dinonaktifkan SEMENTARA (lihat catatan di nav-links.ts) —
 // form ditampilkan disabled + kursor "not-allowed", bukan dihapus, supaya
@@ -32,7 +32,6 @@ export function CekCepatForm() {
     <div>
       <form
         onSubmit={lanjut}
-        aria-disabled={NONAKTIF}
         title={NONAKTIF ? "Sementara tidak tersedia" : undefined}
         className={"flex w-full max-w-md items-stretch gap-2" + (NONAKTIF ? " cursor-not-allowed" : "")}
       >
@@ -52,7 +51,7 @@ export function CekCepatForm() {
         <Button
           type="submit"
           disabled={!lengkap || NONAKTIF}
-          className="group h-11 rounded-xl bg-gradient-to-r from-cyan-400 to-teal-400 px-4 text-tirta hover:from-cyan-300 hover:to-teal-300 disabled:cursor-not-allowed disabled:opacity-40"
+          className="group h-11 rounded-xl bg-linear-to-r from-cyan-400 to-teal-400 px-4 text-tirta hover:from-cyan-300 hover:to-teal-300 disabled:cursor-not-allowed disabled:opacity-40"
         >
           Cek
           <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />

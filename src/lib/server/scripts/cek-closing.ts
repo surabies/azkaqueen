@@ -23,54 +23,6 @@ import {
 } from "../modules/closing/closing.service"
 import { pratinjauBulanBaru } from "../modules/closing/bulan-baru.service"
 
-/// Baris sumber yang SUDAH DIKETAHUI cacat di data warisan Aurora — bukan
-/// bug mesin closing. Didaftarkan eksplisit karena tanpa ini skrip ini
-/// selamanya keluar dengan kode != 0, dan gerbang CI yang selalu merah sama
-/// saja dengan tidak ada gerbang: orang berhenti membacanya.
-///
-/// Aturannya dua arah, dan yang kedua sama pentingnya:
-///   - selisih pada nomor yang TERDAFTAR di sini -> tidak menggagalkan;
-///   - selisih pada nomor LAIN -> menggagalkan (regresi nyata);
-///   - nomor terdaftar yang TERNYATA SUDAH COCOK -> juga menggagalkan,
-///     supaya daftar ini tidak menumpuk jadi pengecualian abadi setelah
-///     sumbernya dikoreksi.
-/// `00008001503` (RM.TINGGAL PANGDAM VI/SL, golongan 2B) — SATU pelanggan,
-/// TUJUH periode berturut-turut. Kolom `pakai_drd` di sumber macet di 3.000
-/// m3 tiap bulan, sementara standnya bergerak wajar (342-1.008 m3) dan
-/// `jmlhargaair` justru dihitung untuk selisih stand yang benar. Jadi baris
-/// sumbernya bertentangan dengan dirinya sendiri, dan yang salah adalah
-/// kolom kubikasinya — bukan tagihannya, bukan mesin closing kita.
-///
-/// Dampaknya bukan ke uang melainkan ke SETIAP laporan berbasis kubikasi
-/// (total m3 terjual, NRW, target kinerja): satu baris ini menambah ~2.000
-/// m3 palsu per bulan. Menunggu konfirmasi bagian penerbit ProgresCater —
-/// lihat prisma/PEMETAAN-DATA.md bagian "Anomali data".
-const ANOMALI_2B_MENAHUN = (
-  standAwal: number,
-  standAkhir: number,
-  hargaAir: string,
-) => ({
-  nomorLangganan: "00008001503",
-  alasan:
-    `RM.TINGGAL PANGDAM VI/SL — stand bergerak ${standAkhir - standAwal} m3 ` +
-    `(${standAwal.toLocaleString("id-ID")}->${standAkhir.toLocaleString("id-ID")}) tapi pakai_drd sumber tertulis 3.000 m3. ` +
-    `Tagihan Aurora justru dihitung untuk selisih stand yang benar (Rp ${hargaAir}), ` +
-    `jadi baris sumbernya bertentangan dengan dirinya sendiri.`,
-})
-
-const ANOMALI_DIKETAHUI: Record<
-  number,
-  { nomorLangganan: string; alasan: string }[]
-> = {
-  202601: [ANOMALI_2B_MENAHUN(76_597, 77_325, "9.078.000")],
-  202602: [ANOMALI_2B_MENAHUN(77_325, 78_222, "11.232.750")],
-  202603: [ANOMALI_2B_MENAHUN(78_222, 78_971, "9.345.750")],
-  202604: [ANOMALI_2B_MENAHUN(78_971, 79_313, "4.156.500")],
-  202605: [ANOMALI_2B_MENAHUN(79_313, 80_222, "11.385.750")],
-  202606: [ANOMALI_2B_MENAHUN(80_222, 81_230, "12.648.000")],
-  202607: [ANOMALI_2B_MENAHUN(81_230, 82_157, "11.615.250")],
-}
-
 function cetakHambatan(h: {
   kode: string
   pesan: string
@@ -185,18 +137,10 @@ async function main(): Promise<void> {
     ).flatMap((t) => (t.pembacaanId ? [[t.pembacaanId, t] as const] : [])),
   )
 
-  const daftarAnomali = ANOMALI_DIKETAHUI[periodeThbl] ?? []
-  const anomaliDiharapkan = new Map(
-    daftarAnomali.map((a) => [a.nomorLangganan, a]),
-  )
-  const anomaliTerpakai = new Set<string>()
-
   let cocok = 0
   let beda = 0
-  let bedaTerduga = 0
   let takAdaPembanding = 0
   const contoh: string[] = []
-  const contohTerduga: string[] = []
   const bedaPerKomponen = {
     jmlHargaAir: 0,
     beaBeban: 0,
@@ -238,61 +182,28 @@ async function main(): Promise<void> {
       continue
     }
     const rincian = `  ${b.nomorLangganan} (pembacaan=${b.pembacaanId}) pakai=${b.pemakaianM3} -> ${selisih.join(", ")}`
-    if (anomaliDiharapkan.has(b.nomorLangganan)) {
-      bedaTerduga++
-      anomaliTerpakai.add(b.nomorLangganan)
-      if (contohTerduga.length < 10) contohTerduga.push(rincian)
-    } else {
-      beda++
-      if (contoh.length < 10) contoh.push(rincian)
-    }
+    beda++
+    if (contoh.length < 10) contoh.push(rincian)
   }
 
-  const dibandingkan = cocok + beda + bedaTerduga
+  const dibandingkan = cocok + beda
   console.log(`Dibandingkan     : ${dibandingkan}`)
   console.log(`COCOK            : ${cocok}`)
-  console.log(`BEDA (baru)      : ${beda}`)
-  console.log(
-    `BEDA (terduga)   : ${bedaTerduga}  <- anomali sumber yang sudah didaftarkan`,
-  )
+  console.log(`BEDA             : ${beda}`)
   if (takAdaPembanding > 0)
     console.log(`Belum bertagihan : ${takAdaPembanding} (tidak ada pembanding)`)
   if (beda > 0) {
     console.log(`Beda per komponen: ${JSON.stringify(bedaPerKomponen)}`)
-    console.log("Contoh selisih BARU (hitung vs tersimpan):")
+    console.log("Contoh selisih (hitung vs tersimpan):")
     for (const c of contoh) console.log(c)
   }
-  if (bedaTerduga > 0) {
-    console.log("Selisih terduga (anomali sumber yang sudah diketahui):")
-    for (const c of contohTerduga) console.log(c)
-    for (const n of anomaliTerpakai)
-      console.log(`    alasan ${n}: ${anomaliDiharapkan.get(n)?.alasan}`)
-  }
-
-  // Entri baseline yang ternyata sudah cocok = daftar pengecualian yang basi.
-  const anomaliBasi = daftarAnomali.filter(
-    (a) => !anomaliTerpakai.has(a.nomorLangganan),
-  )
-  if (anomaliBasi.length > 0) {
-    console.log(
-      `\nBASELINE BASI    : ${anomaliBasi.length} nomor terdaftar sebagai anomali TAPI sudah cocok — hapus dari ANOMALI_DIKETAHUI di skrip ini:`,
-    )
-    for (const a of anomaliBasi) console.log(`  ${a.nomorLangganan}`)
-  }
-
   console.log(
-    `\nHASIL: ${cocok}/${dibandingkan} tagihan direproduksi persis lewat jalur closing aplikasi` +
-      (bedaTerduga > 0
-        ? ` (+${bedaTerduga} anomali sumber yang sudah diketahui)`
-        : ""),
+    `\nHASIL: ${cocok}/${dibandingkan} tagihan direproduksi persis lewat jalur closing aplikasi`,
   )
   console.log("==========================================================")
 
   await prisma.$disconnect()
-  // Gagal HANYA untuk selisih baru atau baseline yang sudah basi. Anomali
-  // sumber yang sudah didaftarkan sengaja tidak menggagalkan — lihat alasan
-  // di ANOMALI_DIKETAHUI.
-  if (beda > 0 || anomaliBasi.length > 0) process.exitCode = 1
+  if (beda > 0) process.exitCode = 1
 }
 
 main().catch(async (err) => {

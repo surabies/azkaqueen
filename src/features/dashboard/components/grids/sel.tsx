@@ -123,5 +123,5 @@ export function fmtBool(labelYa: string, labelTidak: string) {
 }
 
 /** Kelas sel angka: mono + rata kanan (dipakai di colDef.cellClass). */
-export const KELAS_ANGKA = "font-mono tabular-nums text-right";
-export const KELAS_MONO = "font-mono";
+export const KELAS_ANGKA = "font-mono tabular-nums tracking-tight text-right";
+export const KELAS_MONO = "font-mono tabular-nums tracking-tight";

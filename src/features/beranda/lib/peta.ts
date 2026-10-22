@@ -18,7 +18,7 @@ import "server-only"
 // langganan) — titik-titik itu jadi dekorasi kepadatan sambungan, bukan
 // data yang bisa dilacak balik ke pelanggan tertentu.
 import { unstable_cache } from "next/cache"
-import { prisma } from "@workspace/db"
+import { prisma } from "@/lib/prisma"
 import type { WilayahJalur, ParamProyeksi, PetaCakupan } from "./peta-tipe"
 
 // Tipe diekspor-ulang (bukan didefinisikan di sini) supaya pemanggil lama

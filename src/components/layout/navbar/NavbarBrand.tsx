@@ -22,19 +22,15 @@ export function NavbarBrand() {
       </Link>
 
       <DropdownMenu>
-        {/* shadcn versi Base UI memakai `render`, BUKAN `asChild`.
-            Tombolnya dikirim lewat render, teksnya jadi isi (children) trigger. */}
-        <DropdownMenuTrigger
-          render={
-            <Button
-              variant="secondary"
-              size="sm"
-              className="h-7 rounded-2xl px-2.5 text-xs tabular-nums"
-              aria-label="Pilih versi aplikasi"
-            />
-          }
-        >
-          {versions[0]}
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="secondary"
+            size="sm"
+            className="h-7 rounded-2xl px-2.5 text-xs tabular-nums"
+            aria-label="Pilih versi aplikasi"
+          >
+            {versions[0]}
+          </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start">
           {/* map(): ubah array versi menjadi daftar item, tanpa menulis satu-satu */}

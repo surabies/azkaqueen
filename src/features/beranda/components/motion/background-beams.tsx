@@ -7,9 +7,9 @@
 export function BackgroundBeams() {
   return (
     <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
-      <div className="absolute top-1/2 left-1/4 size-[420px] -translate-y-1/2 animate-beam-drift-a rounded-full bg-cyan-500/20 blur-[100px]" />
-      <div className="absolute top-1/3 right-1/4 size-[380px] animate-beam-drift-b rounded-full bg-emas/15 blur-[100px]" />
-      <div className="absolute bottom-0 left-1/2 size-[320px] -translate-x-1/2 animate-beam-drift-a rounded-full bg-emerald-500/15 blur-[100px]" />
+      <div className="absolute top-1/2 left-1/4 size-105 -translate-y-1/2 animate-beam-drift-a rounded-full bg-cyan-500/20 blur-[100px]" />
+      <div className="absolute top-1/3 right-1/4 size-95 animate-beam-drift-b rounded-full bg-emas/15 blur-[100px]" />
+      <div className="absolute bottom-0 left-1/2 size-80 -translate-x-1/2 animate-beam-drift-a rounded-full bg-emerald-500/15 blur-[100px]" />
     </div>
   )
 }

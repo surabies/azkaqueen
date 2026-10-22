@@ -7,11 +7,11 @@
 // kebijakan layanan; menyalinnya ke browser berarti dua sumber kebenaran
 // yang pasti menyimpang, dan yang di browser tidak bisa dipercaya siapa pun.
 import { CircleUser, Clock, ImageIcon, MapPin, Star, TriangleAlert, Video } from "lucide-react"
-import { Badge } from "@workspace/ui/components/badge"
+import { Badge } from "@/components/ui/badge"
 import { BingkaiFoto } from "@/components/bingkai-foto"
 import { BingkaiVideo } from "@/components/bingkai-video"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
-import { Separator } from "@workspace/ui/components/separator"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Separator } from "@/components/ui/separator"
 import type { StatusTiket } from "../../lib/api"
 import {
   formatSisaWaktu,

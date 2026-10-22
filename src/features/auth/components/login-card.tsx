@@ -9,8 +9,8 @@
 // disediakan sebagai alternatif untuk akun yang belum/tidak memakai Google.
 import Link from "next/link"
 import { AppLogo } from "@/components/app-logo"
-import { Alert, AlertDescription } from "@workspace/ui/components/alert"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { TriangleAlert } from "lucide-react"
 import { pesanErrorMasuk } from "../lib/sign-in-errors"
 import { GoogleSignInButton } from "./google-sign-in-button"

@@ -14,7 +14,7 @@
 import * as React from "react"
 import Link from "next/link"
 import { Menu } from "lucide-react"
-import { Button } from "@workspace/ui/components/button"
+import { Button } from "@/components/ui/button"
 import {
   Sheet,
   SheetContent,
@@ -22,7 +22,7 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from "@workspace/ui/components/sheet"
+} from "@/components/ui/sheet"
 import { TombolPasang } from "@/components/pwa/tombol-pasang"
 import { NAV_LAYANAN } from "./nav-links"
 
@@ -53,7 +53,7 @@ export function MobileNav({
         side="right"
         className={
           gelap
-            ? "w-80 gap-0 border-white/10 bg-tirta/95 p-0 text-white backdrop-blur-xl [&_[data-slot=sheet-close]]:text-slate-400 [&_[data-slot=sheet-close]]:hover:text-white"
+            ? "w-80 gap-0 border-white/10 bg-tirta/95 p-0 text-white backdrop-blur-xl **:data-[slot=sheet-close]:text-slate-400 **:data-[slot=sheet-close]:hover:text-white"
             : "w-80 gap-0 p-0"
         }
       >
@@ -119,7 +119,7 @@ export function MobileNav({
             asChild
             className={
               gelap
-                ? "h-10 w-full rounded-xl bg-gradient-to-r from-cyan-400 to-teal-400 text-tirta hover:from-cyan-300 hover:to-teal-300"
+                ? "h-10 w-full rounded-xl bg-linear-to-r from-cyan-400 to-teal-400 text-tirta hover:from-cyan-300 hover:to-teal-300"
                 : "h-10 w-full"
             }
           >

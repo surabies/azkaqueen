@@ -2,7 +2,7 @@
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { AppLogo } from "@/components/app-logo"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ForgotPasswordForm } from "./forgot-password-form"
 
 export function ForgotPasswordCard() {

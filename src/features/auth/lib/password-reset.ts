@@ -26,11 +26,11 @@ import "server-only"
 // ditebak lewat brute force/kamus, sehingga key-stretching bcrypt tidak
 // memberi manfaat apa pun di sini dan hanya memperlambat verifikasi.
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto"
-import { prisma } from "@workspace/db"
+import { prisma } from "@/lib/prisma"
 
 // Di-re-export supaya modul auth cukup mengimpor dari satu tempat. Aturan
 // hashing-nya sendiri (argon2id + parameternya) hanya ada di lib/password.ts.
-export { hashPassword } from "@workspace/auth/password"
+export { hashPassword } from "./password"
 
 const MASA_BERLAKU_MENIT = 60
 

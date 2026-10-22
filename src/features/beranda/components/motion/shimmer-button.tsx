@@ -10,8 +10,8 @@
 // tempat token `emas` (globals.css) boleh muncul selain badge kecil
 // sesekali. Lihat aturan palet di globals.css: emas dipakai hemat di
 // "titik tanda tangan" seperti ini, bukan disebar ke seluruh halaman.
-import { Button } from "@workspace/ui/components/button"
-import { cn } from "@workspace/ui/lib/utils"
+import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 import type { ComponentProps } from "react"
 
 export function ShimmerButton({ className, children, ...props }: ComponentProps<typeof Button>) {

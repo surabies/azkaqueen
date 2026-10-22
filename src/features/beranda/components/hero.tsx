@@ -40,7 +40,7 @@ export function Hero() {
       {/* Ambient glow di belakang konten — dekoratif murni, tidak menyentuh kontras teks. */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 bg-gradient-to-b from-emerald-950/10 via-transparent to-emerald-950/30"
+        className="pointer-events-none absolute inset-0 bg-linear-to-b from-emerald-950/10 via-transparent to-emerald-950/30"
       />
       <WaterFlowField />
       <WaterRipple />
@@ -60,7 +60,7 @@ export function Hero() {
           <h1 id="hero-judul" className="mt-5 text-4xl leading-[1.05] font-semibold tracking-tight sm:text-5xl lg:text-6xl">
             <TextReveal
               text="Urusan air rumah Anda,"
-              className="bg-gradient-to-r from-cyan-300 to-emerald-300 bg-clip-text text-transparent"
+              className="bg-linear-to-r from-cyan-300 to-emerald-300 bg-clip-text text-transparent"
             />
             <br />
             <TextReveal text="selesai dari genggaman." className="text-slate-400" />
@@ -107,7 +107,7 @@ export function Hero() {
           <Reveal delay={0.2} className="relative w-full">
             <TiltCard className="relative w-full">
               <div className="absolute -inset-6 rounded-3xl border border-white/10" />
-              <div className="relative rounded-2xl border border-white/10 bg-white/[0.04] shadow-[0_16px_60px_-24px_rgba(34,211,238,0.25)] backdrop-blur-xl">
+              <div className="relative rounded-2xl border border-white/10 bg-white/4 shadow-[0_16px_60px_-24px_rgba(34,211,238,0.25)] backdrop-blur-xl">
                 <div className="flex items-start justify-between border-b border-white/10 px-5 py-4">
                   <div>
                     <p className="text-[10px] font-semibold tracking-widest text-slate-400 uppercase">

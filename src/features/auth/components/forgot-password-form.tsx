@@ -12,11 +12,11 @@
 // tanpa useState manual.
 import { useActionState } from "react"
 import { CheckCircle2, TriangleAlert } from "lucide-react"
-import { Button } from "@workspace/ui/components/button"
-import { Input } from "@workspace/ui/components/input"
-import { Field, FieldError, FieldGroup, FieldLabel } from "@workspace/ui/components/field"
-import { Alert, AlertDescription } from "@workspace/ui/components/alert"
-import { Spinner } from "@workspace/ui/components/spinner"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Spinner } from "@/components/ui/spinner"
 import { forgotPasswordAction, type ForgotPasswordState } from "../actions/forgot-password"
 
 const AWAL: ForgotPasswordState = { status: "idle" }

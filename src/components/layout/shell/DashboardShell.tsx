@@ -28,15 +28,23 @@ export function DashboardShell({ children }: { children: ReactNode }) {
         {/* Pita garis miring | konten | pita garis miring */}
         <div className="grid flex-1 grid-cols-[1rem_minmax(0,1fr)_1rem] sm:grid-cols-[2.5rem_minmax(0,1fr)_2.5rem]">
           <PatternStrip />
-          <main className="min-w-0">{children}</main>
+          <div className="flex min-w-0 flex-col">
+            <main className="flex min-w-0 flex-1 flex-col">{children}</main>
+            <footer className="border-t border-border/60 px-3 py-4 text-xs/5 text-muted-foreground sm:px-5 sm:py-5 lg:px-8">
+              <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+                <p className="font-medium tracking-wide text-foreground/75">
+                  Perumda Tirtawening Kota Bandung
+                </p>
+                <p className="flex items-center gap-2">
+                  <span>Sistem Informasi Terintegrasi</span>
+                  <span aria-hidden="true" className="size-1 rounded-full bg-border" />
+                  <span>&copy; {new Date().getFullYear()}</span>
+                </p>
+              </div>
+            </footer>
+          </div>
           <PatternStrip />
         </div>
-
-        {/* Footer: garis memanjang menyeberangi pita garis miring */}
-        <footer className="border-t border-(--pattern-fg) px-6 py-8 text-sm/6 text-muted-foreground sm:px-12">
-          Perumda Tirtawening Kota Bandung &middot; Sistem Informasi
-          Terintegrasi
-        </footer>
       </div>
     </div>
   )

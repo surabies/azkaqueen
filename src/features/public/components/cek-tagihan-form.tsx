@@ -13,9 +13,9 @@
 // ini, bukan cuma pemiliknya).
 import * as React from "react"
 import { Search, TriangleAlert } from "lucide-react"
-import { Alert, AlertDescription } from "@workspace/ui/components/alert"
-import { Input } from "@workspace/ui/components/input"
-import { Spinner } from "@workspace/ui/components/spinner"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Input } from "@/components/ui/input"
+import { Spinner } from "@/components/ui/spinner"
 import { cekTagihan, ApiError, type HasilCekTagihan } from "../lib/api"
 import { HasilTagihan } from "./hasil-tagihan"
 import { KartuBerbingkai } from "./halaman-publik"
@@ -90,7 +90,7 @@ export function CekTagihanForm({ nomorAwal }: { nomorAwal?: string }) {
       </KartuBerbingkai>
 
       {hasil && (
-        <div className="dark rounded-2xl border border-white/10 bg-white/[0.03] text-foreground backdrop-blur-xl">
+        <div className="dark rounded-2xl border border-white/10 bg-white/3 text-foreground backdrop-blur-xl">
           <HasilTagihan hasil={hasil} />
         </div>
       )}

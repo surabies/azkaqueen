@@ -7,7 +7,7 @@ import "server-only"
 // Kolom geometry bertipe Unsupported di Prisma — HARUS lewat raw SQL
 // (ST_AsGeoJSON). Mengikuti aturan server/lib/spatial.ts: $queryRawUnsafe
 // dengan identifier tetap (bukan input), tanpa Prisma.raw().
-import { prisma } from "@workspace/db"
+import { prisma } from "@db"
 
 export interface FC {
   type: "FeatureCollection"

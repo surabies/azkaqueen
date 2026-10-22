@@ -6,9 +6,9 @@
 import Link from "next/link"
 import { TriangleAlert } from "lucide-react"
 import { AppLogo } from "@/components/app-logo"
-import { Alert, AlertDescription } from "@workspace/ui/components/alert"
-import { Button } from "@workspace/ui/components/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ResetPasswordForm } from "./reset-password-form"
 
 export function ResetPasswordCard({

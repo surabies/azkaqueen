@@ -20,7 +20,7 @@ export function AppLogo({ className }: { className?: string }) {
     // memastikan className caller (mis. "size-7") tetap menang kalau ada.
     <div className={cn("flex size-9 items-center justify-center", className)}>
       <Image
-        src="/images/logo.png"
+        src="/logo.png"
         alt="Logo PERUMDA Tirtawening"
         width={36}
         height={36}

@@ -10,7 +10,7 @@
 // panjang atau logika domain di file ini.
 import type { Metadata } from "next"
 import { redirect } from "next/navigation"
-import { auth } from "@workspace/auth"
+import { auth } from "@/lib/auth"
 import { LoginCard } from "@/features/auth/components/login-card"
 
 export const metadata: Metadata = {

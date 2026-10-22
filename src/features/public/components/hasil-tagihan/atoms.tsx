@@ -1,7 +1,7 @@
 // features/publik/components/hasil-tagihan/atoms.tsx — primitif tampilan
 // bersama antar tab hasil cek-tagihan. Murni presentasional: tanpa logika
 // bisnis, tanpa pengambilan data.
-import { cn } from "@workspace/ui/lib/utils"
+import { cn } from "@/lib/utils"
 import { formatRupiah } from "../../lib/format"
 
 export function FieldLabel({ children }: { children: React.ReactNode }) {

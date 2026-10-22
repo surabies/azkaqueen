@@ -15,8 +15,8 @@
 // adalah tugas aplikasi Flutter (native, cepat), bukan web.
 import * as React from "react"
 import { Video, X } from "lucide-react"
-import { Field, FieldDescription, FieldLabel } from "@workspace/ui/components/field"
-import { Spinner } from "@workspace/ui/components/spinner"
+import { Field, FieldDescription, FieldLabel } from "@/components/ui/field"
+import { Spinner } from "@/components/ui/spinner"
 
 /// Batas ukuran berkas video — SEJALAN dengan MAKS_UKURAN_VIDEO_BYTE server
 /// (50 MB) di server/lib/storage.ts. Ditolak di sini lebih dulu supaya warga

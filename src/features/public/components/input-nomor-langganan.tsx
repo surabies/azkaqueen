@@ -13,9 +13,9 @@
 // satu diam-diam menulis ulang className sendiri lagi.
 import * as React from "react"
 import { Loader2, Search } from "lucide-react"
-import { Button } from "@workspace/ui/components/button"
-import { Input } from "@workspace/ui/components/input"
-import { Label } from "@workspace/ui/components/label"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 
 export function InputNomorLangganan({
   id,

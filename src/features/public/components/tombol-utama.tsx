@@ -9,8 +9,8 @@
 //
 // Server component murni presentasional (tidak butuh "use client" — cuma
 // Button + Slot di baliknya).
-import { Button } from "@workspace/ui/components/button"
-import { cn } from "@workspace/ui/lib/utils"
+import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 import type { ComponentProps } from "react"
 
 export function TombolUtama({
@@ -43,7 +43,7 @@ export function TombolUtama({
       />
       <Button
         className={cn(
-          "relative rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 font-semibold text-white shadow-[0_8px_30px_-8px_rgba(20,184,166,0.45)] hover:from-cyan-400 hover:to-teal-400 disabled:opacity-90",
+          "relative rounded-xl bg-linear-to-r from-cyan-500 to-teal-500 font-semibold text-white shadow-[0_8px_30px_-8px_rgba(20,184,166,0.45)] hover:from-cyan-400 hover:to-teal-400 disabled:opacity-90",
           className
         )}
         {...props}

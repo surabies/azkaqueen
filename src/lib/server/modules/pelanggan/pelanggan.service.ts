@@ -59,6 +59,20 @@ function toGeoJsonPoint(koordinat: { lat: number; lng: number }): GeoJsonPoint {
   return { type: "Point", coordinates: [koordinat.lng, koordinat.lat] }
 }
 
+function buildStringFilter(
+  value: string,
+  operator: ListPelangganQuery["namaOperator"] | undefined,
+  caseInsensitive = true
+) {
+  const filter =
+    operator === "equals"
+      ? { equals: value }
+      : operator === "startsWith"
+        ? { startsWith: value }
+        : { contains: value }
+  return caseInsensitive ? { ...filter, mode: "insensitive" as const } : filter
+}
+
 export async function listPelanggan(
   query: ListPelangganQuery,
   requester: SessionUser,
@@ -69,6 +83,48 @@ export async function listPelanggan(
   const where: Prisma.PelangganWhereInput = {
     deletedAt: showDeleted ? undefined : null,
     status: query.status,
+    nomorLangganan: query.nomorLangganan
+      ? buildStringFilter(
+          query.nomorLangganan,
+          query.nomorLanggananOperator,
+          false
+        )
+      : undefined,
+    nama: query.nama
+      ? buildStringFilter(query.nama, query.namaOperator)
+      : undefined,
+    alamat: query.alamat
+      ? buildStringFilter(query.alamat, query.alamatOperator)
+      : undefined,
+    rt: query.rt
+      ? buildStringFilter(query.rt, query.rtOperator, false)
+      : undefined,
+    rw: query.rw
+      ? buildStringFilter(query.rw, query.rwOperator, false)
+      : undefined,
+    kecamatan: query.kecamatan
+      ? {
+          is: {
+            nama: buildStringFilter(
+              query.kecamatan,
+              query.kecamatanOperator
+            ),
+          },
+        }
+      : undefined,
+    kelurahan: query.kelurahan
+      ? {
+          is: {
+            nama: buildStringFilter(
+              query.kelurahan,
+              query.kelurahanOperator
+            ),
+          },
+        }
+      : undefined,
+    tarifGolongan: query.golTarif
+      ? { is: { kode: query.golTarif } }
+      : undefined,
     seksiCaterId: query.seksiCaterId,
     ruteId: query.ruteId,
     zonaId: query.zonaId,

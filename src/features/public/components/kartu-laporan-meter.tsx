@@ -11,9 +11,9 @@
 // ("sudah diverifikasi?", "berapa pemakaiannya?") datang JADI dari server,
 // komponen ini tidak menghitung ulang apa pun.
 import { ImageIcon } from "lucide-react"
-import { Badge } from "@workspace/ui/components/badge"
+import { Badge } from "@/components/ui/badge"
 import { BingkaiFoto } from "@/components/bingkai-foto"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import type { DetailLaporanBulanIni } from "../lib/api"
 import { formatPeriode, formatWaktu, statusLaporanMandiriWarga } from "../lib/format"
 

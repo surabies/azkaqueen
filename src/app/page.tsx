@@ -55,9 +55,9 @@ export default function HomePage() {
             <Button
               variant="link"
               className="h-auto p-0 font-semibold text-gray-950 underline decoration-sky-400 underline-offset-3 hover:decoration-2 dark:text-white"
-              render={<a href="https://tailwindcss.com/docs" />}
+              asChild
             >
-              Read the docs &rarr;
+              <a href="https://tailwindcss.com/docs">Read the docs &rarr;</a>
             </Button>
           </CardContent>
         </Card>

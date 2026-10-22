@@ -1,5 +1,10 @@
 import { z } from "zod"
-import { StatusPelanggan, StatusPasokanAir, ObjekBayar } from "@db"
+import {
+  GolonganTarif,
+  StatusPelanggan,
+  StatusPasokanAir,
+  ObjekBayar,
+} from "@db"
 import { paginationQuerySchema, sortQuery } from "../../lib/pagination"
 
 const timeOfDaySchema = z
@@ -17,6 +22,9 @@ const koordinatSchema = z
   .optional()
 
 const idRefSchema = z.string().min(1).nullable().optional()
+const operatorFilterSchema = z
+  .enum(["equals", "contains", "startsWith"])
+  .optional()
 
 export const createPelangganSchema = z.object({
   // 11 digit zero-padded, kunci bisnis permanen — TIDAK ada di updateSchema.
@@ -61,6 +69,21 @@ export const updatePelangganSchema = createPelangganSchema
 export const listPelangganQuerySchema = paginationQuerySchema.extend({
   ...sortQuery(["nomorLangganan", "nama", "alamat", "status", "createdAt"]),
   q: z.string().trim().min(1).optional(),
+  nomorLangganan: z.string().trim().min(1).max(11).optional(),
+  nomorLanggananOperator: operatorFilterSchema,
+  nama: z.string().trim().min(1).max(200).optional(),
+  namaOperator: operatorFilterSchema,
+  alamat: z.string().trim().min(1).max(500).optional(),
+  alamatOperator: operatorFilterSchema,
+  kecamatan: z.string().trim().min(1).max(200).optional(),
+  kecamatanOperator: operatorFilterSchema,
+  kelurahan: z.string().trim().min(1).max(200).optional(),
+  kelurahanOperator: operatorFilterSchema,
+  rt: z.string().trim().min(1).max(3).optional(),
+  rtOperator: operatorFilterSchema,
+  rw: z.string().trim().min(1).max(3).optional(),
+  rwOperator: operatorFilterSchema,
+  golTarif: z.enum(GolonganTarif).optional(),
   status: z.enum(StatusPelanggan).optional(),
   seksiCaterId: z.string().optional(),
   ruteId: z.string().optional(),

@@ -3,7 +3,7 @@
 // features/publik/components/hasil-tagihan/index.tsx — kartu hasil
 // cek-tagihan: header identitas + tab (tagihan/riwayat/info).
 import { CreditCard, BarChart2, User } from "lucide-react"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@workspace/ui/components/tabs"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { HasilTagihanHeader } from "./header"
 import { TabTagihan } from "./tab-tagihan"
 import { TabRiwayat } from "./tab-riwayat"

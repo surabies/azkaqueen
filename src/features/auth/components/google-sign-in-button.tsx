@@ -8,8 +8,8 @@
 // sisa halaman tetap server component.
 import * as React from "react"
 import { signIn } from "next-auth/react"
-import { Button } from "@workspace/ui/components/button"
-import { Spinner } from "@workspace/ui/components/spinner"
+import { Button } from "@/components/ui/button"
+import { Spinner } from "@/components/ui/spinner"
 
 // Logo G resmi Google. Warnanya dikunci (bukan currentColor) karena brand
 // guideline Google mewajibkan logo tampil 4 warna aslinya — jadi logo ini

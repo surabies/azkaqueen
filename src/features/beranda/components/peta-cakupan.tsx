@@ -32,7 +32,7 @@ export async function PetaCakupan() {
           </p>
         </Reveal>
 
-        <Reveal delay={0.12} className="mt-10 rounded-3xl border border-white/10 bg-white/[0.02] p-4 md:p-6">
+        <Reveal delay={0.12} className="mt-10 rounded-3xl border border-white/10 bg-white/2 p-4 md:p-6">
           <PetaBasemap data={peta} />
         </Reveal>
       </div>

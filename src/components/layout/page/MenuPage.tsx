@@ -10,8 +10,6 @@ export function MenuPage({ href }: { href: string }) {
 
   return (
     <PageContainer
-      title={item.title}
-      description={item.description}
       breadcrumbs={[
         { label: group.title, href: group.items[0].href },
         { label: item.title },

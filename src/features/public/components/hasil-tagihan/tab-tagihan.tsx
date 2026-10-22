@@ -9,7 +9,7 @@
 // Yang tersisa kini hanya fakta tagihannya sendiri: periode, tanggal jatuh
 // tempo sebagai keterangan, dan rincian biayanya.
 import { Droplets, Calendar } from "lucide-react"
-import { Separator } from "@workspace/ui/components/separator"
+import { Separator } from "@/components/ui/separator"
 import { BiayaRow, FieldLabel, FieldValue, SectionLabel } from "./atoms"
 import { formatPeriode, formatRupiah, formatTanggal } from "../../lib/format"
 import type { HasilCekTagihan, TagihanPublik } from "../../lib/api"

@@ -9,7 +9,7 @@
 // re-render komponen di setiap piksel (itulah kenapa Motion punya API ini).
 import { motion, useMotionTemplate, useMotionValue } from "motion/react"
 import type { MouseEvent, ReactNode } from "react"
-import { cn } from "@workspace/ui/lib/utils"
+import { cn } from "@/lib/utils"
 
 export function SpotlightCard({
   children,
@@ -33,7 +33,7 @@ export function SpotlightCard({
     <div
       onMouseMove={urusGerakMouse}
       className={cn(
-        "group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-xl",
+        "group relative overflow-hidden rounded-2xl border border-white/10 bg-white/3 backdrop-blur-xl",
         className
       )}
     >

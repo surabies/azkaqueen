@@ -14,14 +14,17 @@ import "server-only"
 // Bandingkan dengan features/publik: di sana komponen memang client dan
 // memanggil /api/public lewat fetch — karena rate limit-nya berbasis IP
 // pemakai, bukan IP server.
-import { prisma } from "@workspace/db"
-import { dateToPeriode } from "@workspace/domain/periode"
+import { prisma } from "@db"
+import { dateToPeriode } from "@/lib/domain/periode"
 // Impor STATIS, bukan `await import()` di dalam fungsi: impor dinamis membuat
 // resolusinya baru diuji saat halaman dijalankan, sehingga kesalahan resolusi
 // lolos dari typecheck DAN build lalu baru meledak di layar operator.
-import { periksaKesehatan } from "@workspace/server/kesehatan"
-import { daftarAnomali, trenAnomali } from "@workspace/server/anomali"
-import { AMBANG_BULAN_DEFAULT, SEMUA_KATEGORI } from "@workspace/domain/anomali"
+import { periksaKesehatan } from "@/lib/server/modules/kesehatan/kesehatan.service"
+import { daftarAnomali, trenAnomali } from "@server/modules/anomali"
+import {
+  AMBANG_BULAN_DEFAULT,
+  SEMUA_KATEGORI,
+} from "@/lib/domain/anomali"
 
 async function periodeTerakhir(): Promise<Date | null> {
   const baris = await prisma.tagihan.findFirst({ orderBy: { periode: "desc" }, select: { periode: true } })

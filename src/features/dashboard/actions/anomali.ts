@@ -18,9 +18,13 @@
 // endpoint yang bisa dipanggil dari browser — jadi hanya server action yang
 // boleh di-export dari sini, dan masing-masing WAJIB memeriksa sesinya
 // sendiri. Tidak ada middleware yang menjaganya.
-import { auth } from "@workspace/auth"
-import { daftarAnomali, riwayatSambungan, type OpsiDaftar } from "@workspace/server/anomali"
-import { SEMUA_KATEGORI, type KategoriAnomali } from "@workspace/domain/anomali"
+import { auth } from "@/lib/auth"
+import {
+  daftarAnomali,
+  riwayatSambungan,
+  type OpsiDaftar,
+} from "@server/modules/anomali"
+import { SEMUA_KATEGORI, type KategoriAnomali } from "@/lib/domain/anomali"
 
 export type RiwayatSambungan = NonNullable<Awaited<ReturnType<typeof riwayatSambungan>>>
 

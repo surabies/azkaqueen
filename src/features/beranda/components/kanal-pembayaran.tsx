@@ -68,14 +68,14 @@ export function KanalPembayaran() {
              tunggal statis tidak butuh efek ini). */}
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute inset-y-0 left-0 z-10 w-10 bg-gradient-to-r from-tirta to-transparent motion-reduce:hidden"
+            className="pointer-events-none absolute inset-y-0 left-0 z-10 w-10 bg-linear-to-r from-tirta to-transparent motion-reduce:hidden"
           />
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute inset-y-0 right-0 z-10 w-10 bg-gradient-to-l from-tirta to-transparent motion-reduce:hidden"
+            className="pointer-events-none absolute inset-y-0 right-0 z-10 w-10 bg-linear-to-l from-tirta to-transparent motion-reduce:hidden"
           />
 
-          <div className="flex w-max animate-marquee group-hover:[animation-play-state:paused] motion-reduce:w-full motion-reduce:animate-none">
+          <div className="flex w-max animate-marquee group-hover:paused motion-reduce:w-full motion-reduce:animate-none">
             <ul className="flex shrink-0 gap-3 pr-3">
               {KANAL.map((k) => (
                 <li key={k.label}>

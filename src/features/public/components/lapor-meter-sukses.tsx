@@ -11,7 +11,7 @@
 import Link from "next/link"
 import { ArrowRight, BadgeCheck, Clock3 } from "lucide-react"
 import { BingkaiFoto } from "@/components/bingkai-foto"
-import { Button } from "@workspace/ui/components/button"
+import { Button } from "@/components/ui/button"
 import { TombolUtama } from "./tombol-utama"
 import { statusLaporanMandiriWarga, formatWaktu } from "../lib/format"
 
