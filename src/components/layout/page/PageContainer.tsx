@@ -25,14 +25,16 @@ export function PageContainer({
   return (
     <div
       className={cn(
-        "mx-auto w-full min-w-0 px-3 py-4 sm:px-5 sm:py-5 lg:px-8 lg:py-6",
+        "mx-auto w-full min-w-0 px-3 py-3 sm:px-5 sm:py-4 lg:px-8 lg:py-5",
         className,
       )}
     >
-      <header className="mb-6 border-b border-(--pattern-fg) pb-5 sm:mb-8 sm:pb-6">
+      {/* Header: breadcrumb -> judul -> deskripsi -> garis. Dibuat rapat:
+          garis hanya 12px di bawah deskripsi, konten 16-20px di bawah garis. */}
+      <header className="mb-4 border-b border-(--pattern-fg) pb-3 sm:mb-5">
         {breadcrumbs && breadcrumbs.length > 0 && (
-          <nav aria-label="Breadcrumb" className="mb-3">
-            <ol className="flex flex-wrap items-center gap-1.5 text-sm/6 font-medium text-sky-700 dark:text-sky-400">
+          <nav aria-label="Breadcrumb" className="mb-1.5">
+            <ol className="flex flex-wrap items-center gap-1.5 text-xs/5 font-medium text-sky-700 dark:text-sky-400">
               {breadcrumbs.map((crumb, index) => {
                 const isLast = index === breadcrumbs.length - 1
                 return (
@@ -61,15 +63,15 @@ export function PageContainer({
           </nav>
         )}
 
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <h1 className="text-2xl font-medium tracking-tight text-foreground sm:text-3xl">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h1 className="text-xl/7 font-semibold tracking-tight text-foreground sm:text-2xl/7">
             {title}
           </h1>
           {actions && <div className="flex items-center gap-2">{actions}</div>}
         </div>
 
         {description && (
-          <p className="mt-3 max-w-4xl text-sm/6 text-muted-foreground sm:text-base/7">
+          <p className="mt-0.5 max-w-4xl text-sm/5 text-muted-foreground">
             {description}
           </p>
         )}
