@@ -20,7 +20,7 @@ import { prisma } from "./lib/db"
 import { readProgresCater } from "./lib/csv"
 import { normalizeGolonganTarif, normalizeUkuranMeter, parseIntOrNull } from "./lib/normalize"
 import { turunkanTarifBlok, turunkanBiayaTetap, type ObservasiTarif } from "./lib/tarif"
-import { hitungHargaAir, hitungTotalTagihan, type HargaBlok } from "./lib/domain/tagihan"
+import { hitungHargaAir, hitungTotalTagihan, type HargaBlok } from "@/lib/domain/tagihan"
 
 interface SumberTarif {
   nama: string

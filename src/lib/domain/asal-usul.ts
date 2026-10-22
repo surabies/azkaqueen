@@ -1,4 +1,4 @@
-// @workspace/db/asal-usul — PERINGKAT KEPERCAYAAN SUMBER DATA PER KOLOM.
+// Data provenance rules for resolving competing customer data sources.
 //
 // MASALAH YANG DIPECAHKAN. Data pelanggan diisi oleh beberapa berkas luar
 // (ProgresCater, master STI, PBPK, lapdatameter, r-nomor) dan oleh manusia.
@@ -64,8 +64,20 @@ export type KolomTerjaga = (typeof KOLOM_TERJAGA)[number]
 ///   ke warga dan ditetapkan lewat survei bagian langganan. Berkas ekspor
 ///   boleh mengusulkan, tidak boleh menulis.
 const PERINGKAT: Record<KolomTerjaga, Partial<Record<SumberData, number>>> = {
-  nama: { MANUSIA: 100, MASTER_STI: 80, PBPK: 60, LAPDATAMETER: 40, PROGRES_CATER: 20 },
-  alamat: { MANUSIA: 100, MASTER_STI: 80, PBPK: 60, LAPDATAMETER: 40, PROGRES_CATER: 20 },
+  nama: {
+    MANUSIA: 100,
+    MASTER_STI: 80,
+    PBPK: 60,
+    LAPDATAMETER: 40,
+    PROGRES_CATER: 20,
+  },
+  alamat: {
+    MANUSIA: 100,
+    MASTER_STI: 80,
+    PBPK: 60,
+    LAPDATAMETER: 40,
+    PROGRES_CATER: 20,
+  },
   rt: { MANUSIA: 100, MASTER_STI: 80, PBPK: 60, PROGRES_CATER: 20 },
   rw: { MANUSIA: 100, MASTER_STI: 80, PBPK: 60, PROGRES_CATER: 20 },
   notelp: { MANUSIA: 100, PROGRES_CATER: 60, PBPK: 40, LAPDATAMETER: 20 },
@@ -74,7 +86,10 @@ const PERINGKAT: Record<KolomTerjaga, Partial<Record<SumberData, number>>> = {
 
 const KOLOM_SET: ReadonlySet<string> = new Set(KOLOM_TERJAGA)
 
-function peringkat(kolom: KolomTerjaga, sumber: SumberData | null): number | null {
+function peringkat(
+  kolom: KolomTerjaga,
+  sumber: SumberData | null,
+): number | null {
   if (sumber === null) return null
   return PERINGKAT[kolom][sumber] ?? null
 }
@@ -86,7 +101,8 @@ export type PetaAsalUsul = Partial<Record<KolomTerjaga, SumberData>>
 /// diam-diam — kolom ini catatan bantu, bukan data resmi; isinya yang rusak
 /// tidak boleh menggagalkan impor.
 export function bacaAsalUsul(mentah: unknown): PetaAsalUsul {
-  if (mentah === null || typeof mentah !== "object" || Array.isArray(mentah)) return {}
+  if (mentah === null || typeof mentah !== "object" || Array.isArray(mentah))
+    return {}
   const hasil: PetaAsalUsul = {}
   for (const [k, v] of Object.entries(mentah as Record<string, unknown>)) {
     if (!KOLOM_SET.has(k)) continue
@@ -100,7 +116,11 @@ export function bacaAsalUsul(mentah: unknown): PetaAsalUsul {
 /// Kosong = belum pernah diisi. String kosong dianggap kosong: berkas ekspor
 /// lazim mengisi "" alih-alih membiarkan sel hilang.
 function kosong(nilai: unknown): boolean {
-  return nilai === null || nilai === undefined || (typeof nilai === "string" && nilai.trim() === "")
+  return (
+    nilai === null ||
+    nilai === undefined ||
+    (typeof nilai === "string" && nilai.trim() === "")
+  )
 }
 
 export interface KeputusanKolom {
@@ -126,7 +146,9 @@ export interface HasilSaring<T> {
 /// `usulan` hanya boleh memuat kolom terjaga; kolom lain diteruskan pemanggil
 /// sendiri tanpa lewat sini. `nilaiLama` adalah isi baris sekarang di
 /// database, `asalUsulLama` isi kolom sumberKolom-nya.
-export function saringPerubahan<T extends Partial<Record<KolomTerjaga, unknown>>>(params: {
+export function saringPerubahan<
+  T extends Partial<Record<KolomTerjaga, unknown>>,
+>(params: {
   usulan: T
   sumber: SumberData
   nilaiLama: Partial<Record<KolomTerjaga, unknown>>

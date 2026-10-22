@@ -38,7 +38,7 @@ import {
   trimOrNull,
 } from "../lib/normalize"
 import { mapMutasiNamaToStatus, resolvePelangganStatus } from "../lib/status"
-import { saringPerubahan, type KolomTerjaga } from "../lib/asal-usul"
+import { saringPerubahan, type KolomTerjaga } from "@/lib/domain/asal-usul"
 
 const STEP = "05-pelanggan"
 

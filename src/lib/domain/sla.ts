@@ -1,4 +1,4 @@
-// server/modules/pengaduan/sla.ts — janji waktu penanganan tiket pengaduan.
+// Shared service-level rules for complaint handling.
 //
 // SLA di sini punya DUA tenggat yang berbeda maksud, dan membedakannya
 // penting: `respons` = berapa lama sampai aduan DISENTUH manusia (bukan
@@ -20,7 +20,7 @@
 // saat ia dibuat. Menghitung ulang saat baca akan diam-diam menulis ulang
 // sejarah: tiket yang dulu "tepat waktu" bisa berubah jadi "terlambat"
 // hanya karena angka di file ini diedit.
-import type { PrioritasPengaduan, StatusPengaduan } from "../types"
+import type { PrioritasPengaduan, StatusPengaduan } from "@db"
 
 export interface TargetSla {
   /// Jam sampai respons pertama (tiket ditugaskan / mulai ditangani).
@@ -64,7 +64,10 @@ export function prioritasAwal(jenis: string): PrioritasPengaduan {
 
 const JAM_MS = 60 * 60 * 1000
 
-export function hitungTargetSla(prioritas: PrioritasPengaduan, mulai: Date = new Date()) {
+export function hitungTargetSla(
+  prioritas: PrioritasPengaduan,
+  mulai: Date = new Date(),
+) {
   const target = MATRIKS_SLA[prioritas]
   return {
     targetResponsAt: new Date(mulai.getTime() + target.responsJam * JAM_MS),
@@ -75,7 +78,11 @@ export function hitungTargetSla(prioritas: PrioritasPengaduan, mulai: Date = new
 /// Status yang TIDAK lagi menghitung waktu — tiket sudah keluar dari
 /// antrean kerja. Dipakai untuk memutuskan apakah tenggat masih relevan
 /// ditampilkan/dinilai.
-const STATUS_SELESAI: readonly StatusPengaduan[] = ["SELESAI", "DITUTUP", "DITOLAK"]
+const STATUS_SELESAI: readonly StatusPengaduan[] = [
+  "SELESAI",
+  "DITUTUP",
+  "DITOLAK",
+]
 
 export function sudahTutup(status: StatusPengaduan): boolean {
   return STATUS_SELESAI.includes(status)
@@ -107,7 +114,10 @@ interface SumberSla {
 ///
 /// Sengaja fungsi murni (tanpa akses DB) supaya bisa dipakai di list, detail,
 /// maupun kelak di pekerjaan latar eskalasi tanpa query tambahan.
-export function ringkasSla(p: SumberSla, sekarang: Date = new Date()): RingkasanSla {
+export function ringkasSla(
+  p: SumberSla,
+  sekarang: Date = new Date(),
+): RingkasanSla {
   const tutup = sudahTutup(p.status)
   const terjeda = p.status === "MENUNGGU_PELANGGAN" && !!p.jedaMulaiAt
 
@@ -117,7 +127,11 @@ export function ringkasSla(p: SumberSla, sekarang: Date = new Date()): Ringkasan
   const acuan = terjeda && p.jedaMulaiAt ? p.jedaMulaiAt : sekarang
 
   const sisaMenit = p.targetSelesaiAt
-    ? Math.round((p.targetSelesaiAt.getTime() - (tutup && p.selesaiAt ? p.selesaiAt.getTime() : acuan.getTime())) / 60000)
+    ? Math.round(
+        (p.targetSelesaiAt.getTime() -
+          (tutup && p.selesaiAt ? p.selesaiAt.getTime() : acuan.getTime())) /
+          60000,
+      )
     : null
 
   return {
@@ -125,7 +139,8 @@ export function ringkasSla(p: SumberSla, sekarang: Date = new Date()): Ringkasan
     targetSelesaiAt: p.targetSelesaiAt,
     sisaMenit,
     melanggar: !tutup && sisaMenit !== null && sisaMenit < 0,
-    responsTerlambat: !!p.targetResponsAt && !!p.responsAt && p.responsAt > p.targetResponsAt,
+    responsTerlambat:
+      !!p.targetResponsAt && !!p.responsAt && p.responsAt > p.targetResponsAt,
     terjeda,
   }
 }

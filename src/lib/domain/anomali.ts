@@ -1,4 +1,4 @@
-// domain/anomali.ts — ATURAN DETEKSI SAMBUNGAN TIDAK TERUKUR.
+// Shared domain rules for detecting unmeasured customer connections.
 //
 // MASALAH YANG DIJAWAB. Meter yang tidak terbaca tidak diukur — ia ditebak.
 // Pada data nyata jan-juni 2026, 44-47% dari SELURUH pembacaan tiap bulan
@@ -35,8 +35,7 @@
 /// menurut tindakan yang dibutuhkan.
 ///
 /// Nilai-nilainya sengaja `string` biasa, bukan enum Prisma: modul ini
-/// dipakai juga oleh browser dan React Native, dan menariknya dari
-/// @workspace/db akan menyeret Prisma Client ke sana.
+/// can be used by the server, browser, and React Native without loading Prisma.
 export const KONDISI_ANOMALI = {
   TERKUNCI: ["DK", "TERHALANG", "ADA_ANJING"],
   DIDUGA_KOSONG: ["RUMAH_KOSONG", "TIDAK_DIPAKAI"],
@@ -60,7 +59,7 @@ export const SEMUA_KATEGORI = Object.keys(KONDISI_ANOMALI) as KategoriAnomali[]
 
 /// Seluruh kondisi yang dianggap "tidak terukur", tanpa memandang kategori.
 export const KONDISI_TIDAK_TERUKUR: readonly string[] = SEMUA_KATEGORI.flatMap(
-  (k) => KONDISI_ANOMALI[k] as readonly string[]
+  (k) => KONDISI_ANOMALI[k] as readonly string[],
 )
 
 export function kategoriDariKondisi(kondisi: string): KategoriAnomali | null {
@@ -135,7 +134,8 @@ export const LABEL_HASIL: Record<string, string> = {
 }
 
 export const RISIKO_KATEGORI: Record<KategoriAnomali, string> = {
-  TERKUNCI: "Berisiko KURANG tagih — pemakaian nyata bisa jauh di atas taksiran",
+  TERKUNCI:
+    "Berisiko KURANG tagih — pemakaian nyata bisa jauh di atas taksiran",
   DIDUGA_KOSONG: "Berisiko LEBIH tagih — menumpuk piutang yang sulit tertagih",
   METER_RUSAK: "Angka meter tidak bisa dipercaya — perlu penggantian",
 }
@@ -154,35 +154,44 @@ export interface PenjelasanKategori {
   kondisi: readonly string[]
 }
 
-export const PENJELASAN_KATEGORI: Record<KategoriAnomali, PenjelasanKategori> = {
-  TERKUNCI: {
-    apa: "Petugas datang, tetapi rumahnya terkunci atau meternya tidak bisa dijangkau — terhalang bangunan, tertutup, atau dijaga anjing. Rumahnya BERPENGHUNI; yang tidak bisa dilakukan hanyalah membaca angkanya.",
-    kenapaPenting:
-      "Karena angkanya tidak terbaca, tagihannya dihitung dari perkiraan. Keluarga yang memakai 30 m³ bisa tertagih 10 m³ selama berbulan-bulan — selisihnya adalah pendapatan yang tidak pernah masuk. Saat meternya akhirnya terbaca, seluruh selisih itu muncul sekaligus sebagai satu tagihan besar yang sulit dijelaskan dan kerap berujung keberatan pelanggan.",
-    tindakan:
-      "Datangi di jam berbeda (sore/akhir pekan), buat janji dengan penghuni, atau usulkan pemindahan meter ke luar pagar supaya bulan-bulan berikutnya terbaca sendiri.",
-    kondisi: ["DK", "TERHALANG", "ADA ANJING"],
-  },
-  DIDUGA_KOSONG: {
-    apa: "Petugas mencatat rumahnya tidak berpenghuni atau sambungannya tidak dipakai. Berbeda dari DK: di sini memang tidak ada orang, bukan tidak bisa masuk.",
-    kenapaPenting:
-      "Sambungan seperti ini tetap menerima tagihan minimum tiap bulan. Karena tidak ada yang membayar, tagihannya menumpuk jadi piutang yang kemungkinan besar tidak akan pernah tertagih — memperbesar angka tunggakan di laporan tanpa ada uang yang benar-benar bisa ditagih. Sebagian bahkan sudah lama ditinggalkan pemiliknya.",
-    tindakan:
-      "Verifikasi apakah benar kosong. Bila ya, usulkan tutup sementara supaya berhenti menerbitkan tagihan yang tidak akan tertagih; bila ternyata berpenghuni, kembalikan ke pencatatan normal.",
-    kondisi: ["TIDAK DIPAKAI", "RMH/TANAH KSG"],
-  },
-  METER_RUSAK: {
-    apa: "Meternya ada dan rumahnya terjangkau, tetapi angkanya tidak bisa dipercaya — meter mati sementara air mengalir, kaca buram, angka tidak bergerak, meter terbalik, atau terendam air.",
-    kenapaPenting:
-      "Ini kerugian dua arah yang tidak terlihat di laporan mana pun. Meter mati sementara air tetap mengalir berarti air terpakai tanpa tercatat sama sekali. Sebaliknya, meter rusak yang tetap ditagih taksiran bisa menagih pelanggan atas air yang tidak dipakainya. Keduanya baru ketahuan saat ada yang mengadu.",
-    tindakan:
-      "Periksa fisik meternya, lalu ajukan penggantian. Ini satu-satunya kategori yang penyelesaiannya bukan negosiasi dengan penghuni melainkan pekerjaan teknis.",
-    kondisi: [
-      "MTA", "MB", "TTB", "BMK/BMB", "METER MATI AIR ADA",
-      "METER RUSAK", "LOS METER", "METER MUNDUR", "METER TERBALIK", "METER DALAM AIR",
-    ],
-  },
-}
+export const PENJELASAN_KATEGORI: Record<KategoriAnomali, PenjelasanKategori> =
+  {
+    TERKUNCI: {
+      apa: "Petugas datang, tetapi rumahnya terkunci atau meternya tidak bisa dijangkau — terhalang bangunan, tertutup, atau dijaga anjing. Rumahnya BERPENGHUNI; yang tidak bisa dilakukan hanyalah membaca angkanya.",
+      kenapaPenting:
+        "Karena angkanya tidak terbaca, tagihannya dihitung dari perkiraan. Keluarga yang memakai 30 m³ bisa tertagih 10 m³ selama berbulan-bulan — selisihnya adalah pendapatan yang tidak pernah masuk. Saat meternya akhirnya terbaca, seluruh selisih itu muncul sekaligus sebagai satu tagihan besar yang sulit dijelaskan dan kerap berujung keberatan pelanggan.",
+      tindakan:
+        "Datangi di jam berbeda (sore/akhir pekan), buat janji dengan penghuni, atau usulkan pemindahan meter ke luar pagar supaya bulan-bulan berikutnya terbaca sendiri.",
+      kondisi: ["DK", "TERHALANG", "ADA ANJING"],
+    },
+    DIDUGA_KOSONG: {
+      apa: "Petugas mencatat rumahnya tidak berpenghuni atau sambungannya tidak dipakai. Berbeda dari DK: di sini memang tidak ada orang, bukan tidak bisa masuk.",
+      kenapaPenting:
+        "Sambungan seperti ini tetap menerima tagihan minimum tiap bulan. Karena tidak ada yang membayar, tagihannya menumpuk jadi piutang yang kemungkinan besar tidak akan pernah tertagih — memperbesar angka tunggakan di laporan tanpa ada uang yang benar-benar bisa ditagih. Sebagian bahkan sudah lama ditinggalkan pemiliknya.",
+      tindakan:
+        "Verifikasi apakah benar kosong. Bila ya, usulkan tutup sementara supaya berhenti menerbitkan tagihan yang tidak akan tertagih; bila ternyata berpenghuni, kembalikan ke pencatatan normal.",
+      kondisi: ["TIDAK DIPAKAI", "RMH/TANAH KSG"],
+    },
+    METER_RUSAK: {
+      apa: "Meternya ada dan rumahnya terjangkau, tetapi angkanya tidak bisa dipercaya — meter mati sementara air mengalir, kaca buram, angka tidak bergerak, meter terbalik, atau terendam air.",
+      kenapaPenting:
+        "Ini kerugian dua arah yang tidak terlihat di laporan mana pun. Meter mati sementara air tetap mengalir berarti air terpakai tanpa tercatat sama sekali. Sebaliknya, meter rusak yang tetap ditagih taksiran bisa menagih pelanggan atas air yang tidak dipakainya. Keduanya baru ketahuan saat ada yang mengadu.",
+      tindakan:
+        "Periksa fisik meternya, lalu ajukan penggantian. Ini satu-satunya kategori yang penyelesaiannya bukan negosiasi dengan penghuni melainkan pekerjaan teknis.",
+      kondisi: [
+        "MTA",
+        "MB",
+        "TTB",
+        "BMK/BMB",
+        "METER MATI AIR ADA",
+        "METER RUSAK",
+        "LOS METER",
+        "METER MUNDUR",
+        "METER TERBALIK",
+        "METER DALAM AIR",
+      ],
+    },
+  }
 
 /// Berapa bulan berturut-turut tidak terbaca sebelum sebuah sambungan masuk
 /// daftar. Tiga dipilih dari data: dengan ambang 3 bulan, kategori TERKUNCI
@@ -227,7 +236,7 @@ export interface HasilDeteksi {
 /// relevan adalah temuan terakhir petugas di lapangan.
 export function deteksiAnomali(
   riwayat: readonly BarisRiwayat[],
-  ambangBulan: number = AMBANG_BULAN_DEFAULT
+  ambangBulan: number = AMBANG_BULAN_DEFAULT,
 ): HasilDeteksi {
   let bulanBerturut = 0
   let m3TanpaDasar = 0

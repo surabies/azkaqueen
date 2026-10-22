@@ -1,4 +1,4 @@
-// domain/lapor-mandiri.ts — JENDELA WAKTU pelaporan meter mandiri oleh warga.
+// Shared time-window rules for customer self-reported meter readings.
 //
 // Aturannya: warga hanya boleh melaporkan angka meternya sendiri pada
 // TANGGAL 1–25 setiap bulan. Lewat tanggal itu sistem menolak, dan
@@ -33,8 +33,18 @@ export const TANGGAL_TUTUP_LAPOR_MANDIRI = 25
 const OFFSET_WIB_MS = 7 * 60 * 60 * 1000
 
 const NAMA_BULAN = [
-  "Januari", "Februari", "Maret", "April", "Mei", "Juni",
-  "Juli", "Agustus", "September", "Oktober", "November", "Desember",
+  "Januari",
+  "Februari",
+  "Maret",
+  "April",
+  "Mei",
+  "Juni",
+  "Juli",
+  "Agustus",
+  "September",
+  "Oktober",
+  "November",
+  "Desember",
 ] as const
 
 /// Waktu `sekarang` digeser ke WIB, lalu dibaca lewat getUTC* — trik yang
@@ -81,16 +91,21 @@ export interface JendelaLaporMandiri {
 function tanggalUji(): number | null {
   // globalThis.process dipakai lewat penjagaan supaya modul ini tetap aman
   // di React Native & browser, yang tidak selalu punya `process`.
-  const env = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env
+  const env = (
+    globalThis as { process?: { env?: Record<string, string | undefined> } }
+  ).process?.env
   if (!env) return null
   if (env.NODE_ENV === "production") return null
-  const mentah = env.LAPOR_MANDIRI_TANGGAL_UJI ?? env.NEXT_PUBLIC_LAPOR_MANDIRI_TANGGAL_UJI
+  const mentah =
+    env.LAPOR_MANDIRI_TANGGAL_UJI ?? env.NEXT_PUBLIC_LAPOR_MANDIRI_TANGGAL_UJI
   if (!mentah) return null
   const n = Number(mentah)
   return Number.isInteger(n) && n >= 1 && n <= 31 ? n : null
 }
 
-export function jendelaLaporMandiri(sekarang: Date = new Date()): JendelaLaporMandiri {
+export function jendelaLaporMandiri(
+  sekarang: Date = new Date(),
+): JendelaLaporMandiri {
   const wib = keWib(sekarang)
   const geser = tanggalUji()
   if (geser !== null) wib.setUTCDate(geser)
@@ -99,7 +114,9 @@ export function jendelaLaporMandiri(sekarang: Date = new Date()): JendelaLaporMa
   const tahun = wib.getUTCFullYear()
   const periode = tahun * 100 + (bulan + 1)
 
-  const boleh = tanggal >= TANGGAL_BUKA_LAPOR_MANDIRI && tanggal <= TANGGAL_TUTUP_LAPOR_MANDIRI
+  const boleh =
+    tanggal >= TANGGAL_BUKA_LAPOR_MANDIRI &&
+    tanggal <= TANGGAL_TUTUP_LAPOR_MANDIRI
 
   if (boleh) {
     const sisaHari = TANGGAL_TUTUP_LAPOR_MANDIRI - tanggal

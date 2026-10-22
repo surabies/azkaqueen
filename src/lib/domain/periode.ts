@@ -1,4 +1,4 @@
-// server/lib/periode.ts — konversi "periode" yang dipakai dua bentuk
+// Shared conversion between the period formats used by Prisma models.
 // berbeda di schema ini (mengikuti data sumber, bukan pilihan desain baru):
 //   - PembacaanMeter.periode / Tagihan.periode : DateTime (tanggal 1 bulan ybs)
 //   - LaporanHarianPetugas.periode / MutasiPelanggan.periode / Pemutusan.periode : Int (thbl, mis. 202605)

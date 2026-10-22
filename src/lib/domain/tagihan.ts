@@ -1,4 +1,4 @@
-// packages/domain/tagihan.ts — mesin perhitungan tagihan air.
+// Shared pure business rules for water billing calculations.
 //
 // MURNI: modul ini sengaja TIDAK mengimpor apa pun (tidak Prisma, tidak
 // database, tidak I/O). Semua masukan berupa angka & string biasa supaya
@@ -11,7 +11,7 @@
 // persis dengan fungsi-fungsi di bawah. Lihat prisma/docs/PEMETAAN-DATA.md dan
 // jalankan `pnpm db:verifikasi-tarif` untuk membuktikan ulang.
 //
-// KENAPA DI helper domain seed, BUKAN DI prisma/index.ts:
+// KENAPA DI LIB DOMAIN, BUKAN DI prisma/index.ts:
 // rumus tagihan bukan urusan penyimpanan. Ia dipakai oleh server (menerbitkan
 // tagihan), oleh skrip seed (memverifikasi hasil impor), dan kelak oleh
 // panel verifikator (pratinjau sebelum closing). Menaruhnya di sini membuat
@@ -21,7 +21,11 @@
 /// Batas blok konsumsi progresif, seragam untuk SEMUA golongan tarif.
 /// Terverifikasi dari data: harga marginal berubah tepat di 11, 21, dan 31
 /// m3 pada setiap golongan yang datanya cukup padat untuk diuji.
-export const BATAS_BLOK: readonly { blok: number; batasAwalM3: number; batasAkhirM3: number | null }[] = [
+export const BATAS_BLOK: readonly {
+  blok: number
+  batasAwalM3: number
+  batasAkhirM3: number | null
+}[] = [
   { blok: 1, batasAwalM3: 1, batasAkhirM3: 10 },
   { blok: 2, batasAwalM3: 11, batasAkhirM3: 20 },
   { blok: 3, batasAwalM3: 21, batasAkhirM3: 30 },
@@ -63,7 +67,7 @@ export interface RincianBlok {
 /// mungkin berbeda.
 export function hitungRincianHargaAir(
   pemakaianM3: number,
-  blokTarif: readonly HargaBlok[]
+  blokTarif: readonly HargaBlok[],
 ): { total: number; rincian: RincianBlok[] } {
   const rincian: RincianBlok[] = []
   if (pemakaianM3 <= 0) return { total: 0, rincian }
@@ -76,7 +80,8 @@ export function hitungRincianHargaAir(
     if (sisa <= 0) break
     const terpakaiSebelumnya = b.batasAwalM3 - 1
     if (pemakaianM3 <= terpakaiSebelumnya) break
-    const lebarBlok = b.batasAkhirM3 === null ? Infinity : b.batasAkhirM3 - b.batasAwalM3 + 1
+    const lebarBlok =
+      b.batasAkhirM3 === null ? Infinity : b.batasAkhirM3 - b.batasAwalM3 + 1
     const volumeM3 = Math.min(sisa, lebarBlok)
     const subtotal = volumeM3 * b.hargaPerM3
     total += subtotal
@@ -97,7 +102,10 @@ export function hitungRincianHargaAir(
 /// Harga air progresif: tiap m3 dikenakan harga blok tempat m3 itu jatuh,
 /// BUKAN seluruh pemakaian dikenakan harga blok tertinggi. Contoh 2A3
 /// dengan pakai 21 m3: 10x3.120 + 10x5.520 + 1x8.880 = 95.280.
-export function hitungHargaAir(pemakaianM3: number, blokTarif: readonly HargaBlok[]): number {
+export function hitungHargaAir(
+  pemakaianM3: number,
+  blokTarif: readonly HargaBlok[],
+): number {
   return hitungRincianHargaAir(pemakaianM3, blokTarif).total
 }
 
