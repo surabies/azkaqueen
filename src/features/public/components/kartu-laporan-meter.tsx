@@ -1,0 +1,79 @@
+// features/public/components/kartu-laporan-meter.tsx — tampilan lengkap
+// laporan meter mandiri periode BERJALAN untuk pelapor: status verifikasi,
+// angka yang dilaporkan, pemakaian resmi (begitu tersedia), dan foto
+// buktinya sendiri.
+//
+// Sengaja HANYA periode berjalan (bukan daftar riwayat semua periode) —
+// permintaan produk: warga hanya perlu tahu status laporan bulan ini, bukan
+// diarsipkan menggulung riwayat lama. Lihat cek-laporan-meter-form.tsx.
+//
+// Pola sama dengan kartu-tiket.tsx (pelacakan pengaduan): semua penilaian
+// ("sudah diverifikasi?", "berapa pemakaiannya?") datang JADI dari server,
+// komponen ini tidak menghitung ulang apa pun.
+import { ImageIcon } from "lucide-react"
+import { Badge } from "@workspace/ui/components/badge"
+import { BingkaiFoto } from "@/components/bingkai-foto"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
+import type { DetailLaporanBulanIni } from "../lib/api"
+import { formatPeriode, formatWaktu, statusLaporanMandiriWarga } from "../lib/format"
+
+export function KartuLaporanMeter({ laporan }: { laporan: DetailLaporanBulanIni }) {
+  const status = statusLaporanMandiriWarga(laporan.status)
+  const periodeLabel = formatPeriode(laporan.periode)
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <CardTitle className="text-base">Periode {periodeLabel}</CardTitle>
+          <Badge variant="outline" className={status.badgeClass}>
+            {status.label}
+          </Badge>
+        </div>
+        <CardDescription>Dikirim {formatWaktu(laporan.createdAt)} WIB</CardDescription>
+      </CardHeader>
+
+      <CardContent className="flex flex-col gap-4">
+        {/* Alasan penolakan tampil ke WARGA, bukan disembunyikan — persis yang
+            perlu mereka baca sebelum mengirim ulang. */}
+        {laporan.status === "DITOLAK" && laporan.alasanDitolak && (
+          <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/40 dark:text-red-400">
+            {laporan.alasanDitolak}
+          </div>
+        )}
+
+        <div className="grid gap-4 sm:grid-cols-3">
+          <div>
+            <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">Stand dilaporkan</p>
+            <p className="font-mono text-sm font-medium">{laporan.standDilaporkan.toLocaleString("id-ID")} m³</p>
+          </div>
+
+          {/* Hanya ada setelah petugas memverifikasi (PembacaanMeter resmi
+              dibuat) — lihat catatan pemakaianM3 di features/public/lib/api.ts. */}
+          {laporan.pemakaianM3 !== null && (
+            <div>
+              <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">Pemakaian tercatat</p>
+              <p className="font-mono text-sm font-semibold text-foreground">
+                {laporan.pemakaianM3.toLocaleString("id-ID")} m³
+              </p>
+            </div>
+          )}
+
+          {laporan.verifiedAt && (
+            <div>
+              <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">Diverifikasi</p>
+              <p className="text-sm">{formatWaktu(laporan.verifiedAt)} WIB</p>
+            </div>
+          )}
+        </div>
+
+        <div>
+          <p className="mb-1.5 flex items-center gap-1.5 text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
+            <ImageIcon className="size-3.5" /> Foto stand meter yang dikirim
+          </p>
+          <BingkaiFoto src={laporan.fotoUrl} alt={`Foto stand meter periode ${periodeLabel}`} mode="utuh" rasio="16/9" />
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
