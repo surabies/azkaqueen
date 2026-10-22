@@ -6,7 +6,7 @@
 // zod (jangan percaya client) -> kerjakan -> kembalikan state serializable
 // untuk useActionState. Jangan pernah melempar error mentah ke client.
 import { headers } from "next/headers"
-import { prisma } from "@workspace/db"
+import { prisma } from "@/lib/prisma"
 import { forgotPasswordSchema } from "../lib/schema"
 import { buatTokenReset } from "../lib/password-reset"
 import { kirimEmail } from "../lib/mailer"
@@ -41,11 +41,16 @@ function lewatBatas(kunci: string): boolean {
 
 export async function forgotPasswordAction(
   _prev: ForgotPasswordState,
-  formData: FormData
+  formData: FormData,
 ): Promise<ForgotPasswordState> {
-  const parsed = forgotPasswordSchema.safeParse({ email: formData.get("email") })
+  const parsed = forgotPasswordSchema.safeParse({
+    email: formData.get("email"),
+  })
   if (!parsed.success) {
-    return { status: "error", errors: { email: parsed.error.issues[0]?.message ?? "Email tidak valid" } }
+    return {
+      status: "error",
+      errors: { email: parsed.error.issues[0]?.message ?? "Email tidak valid" },
+    }
   }
   const { email } = parsed.data
 
@@ -54,10 +59,12 @@ export async function forgotPasswordAction(
   // (user enumeration). Semua cabang di bawah berakhir dengan pesan ini.
   const jawabanNetral: ForgotPasswordState = {
     status: "sukses",
-    pesan: "Jika email tersebut terdaftar, kami telah mengirim tautan untuk mengatur ulang password. Periksa kotak masuk Anda.",
+    pesan:
+      "Jika email tersebut terdaftar, kami telah mengirim tautan untuk mengatur ulang password. Periksa kotak masuk Anda.",
   }
 
-  const ip = (await headers()).get("x-forwarded-for")?.split(",")[0]?.trim() ?? "lokal"
+  const ip =
+    (await headers()).get("x-forwarded-for")?.split(",")[0]?.trim() ?? "lokal"
   if (lewatBatas(`${email}|${ip}`)) {
     return {
       status: "error",
@@ -75,7 +82,7 @@ export async function forgotPasswordAction(
     const { token } = await buatTokenReset(email)
     const url = new URL(
       `/reset-password?token=${token}&email=${encodeURIComponent(email)}`,
-      process.env.AUTH_URL ?? "http://localhost:3000"
+      process.env.AUTH_URL ?? "http://localhost:3000",
     ).toString()
 
     await kirimEmail({

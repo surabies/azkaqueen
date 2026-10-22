@@ -10,11 +10,17 @@ import * as React from "react"
 import { useRouter } from "next/navigation"
 import { signIn } from "next-auth/react"
 import Link from "next/link"
-import { Button } from "@workspace/ui/components/button"
-import { Input } from "@workspace/ui/components/input"
-import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@workspace/ui/components/field"
-import { Spinner } from "@workspace/ui/components/spinner"
-import { Alert, AlertDescription } from "@workspace/ui/components/alert"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field"
+import { Spinner } from "@/components/ui/spinner"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { TriangleAlert } from "lucide-react"
 import { daftarAkun, ApiError } from "../lib/api"
 
@@ -42,8 +48,10 @@ export function DaftarForm({ callbackUrl }: { callbackUrl: string }) {
     const next: Record<string, string> = {}
     if (nama.length < 2) next.nama = "Nama wajib diisi."
     if (!email.includes("@")) next.email = "Format email tidak valid."
-    if (password.length < PANJANG_PASSWORD_MIN) next.password = `Password minimal ${PANJANG_PASSWORD_MIN} karakter.`
-    if (password !== konfirmasi) next.konfirmasi = "Konfirmasi password tidak sama."
+    if (password.length < PANJANG_PASSWORD_MIN)
+      next.password = `Password minimal ${PANJANG_PASSWORD_MIN} karakter.`
+    if (password !== konfirmasi)
+      next.konfirmasi = "Konfirmasi password tidak sama."
     if (Object.keys(next).length > 0) {
       setErrors(next)
       return
@@ -53,7 +61,11 @@ export function DaftarForm({ callbackUrl }: { callbackUrl: string }) {
     try {
       await daftarAkun({ nama, email, password })
 
-      const hasil = await signIn("credentials", { identifier: email, password, redirect: false })
+      const hasil = await signIn("credentials", {
+        identifier: email,
+        password,
+        redirect: false,
+      })
       if (hasil?.error) {
         // Akun sudah jadi tapi auto-masuk gagal (jarang terjadi) — arahkan
         // ke /login manual daripada membuatnya terlihat seperti pendaftaran
@@ -64,7 +76,9 @@ export function DaftarForm({ callbackUrl }: { callbackUrl: string }) {
       router.push(callbackUrl)
       router.refresh()
     } catch (err) {
-      setPesanError(err instanceof ApiError ? err.message : "Terjadi kesalahan. Coba lagi.")
+      setPesanError(
+        err instanceof ApiError ? err.message : "Terjadi kesalahan. Coba lagi.",
+      )
     } finally {
       setPending(false)
     }
@@ -82,7 +96,13 @@ export function DaftarForm({ callbackUrl }: { callbackUrl: string }) {
 
         <Field data-invalid={!!errors.nama}>
           <FieldLabel htmlFor="nama">Nama lengkap</FieldLabel>
-          <Input id="nama" name="nama" autoComplete="name" aria-invalid={!!errors.nama} disabled={pending} />
+          <Input
+            id="nama"
+            name="nama"
+            autoComplete="name"
+            aria-invalid={!!errors.nama}
+            disabled={pending}
+          />
           {errors.nama && <FieldError>{errors.nama}</FieldError>}
         </Field>
 
@@ -114,7 +134,9 @@ export function DaftarForm({ callbackUrl }: { callbackUrl: string }) {
           {errors.password ? (
             <FieldError>{errors.password}</FieldError>
           ) : (
-            <FieldDescription>Minimal {PANJANG_PASSWORD_MIN} karakter.</FieldDescription>
+            <FieldDescription>
+              Minimal {PANJANG_PASSWORD_MIN} karakter.
+            </FieldDescription>
           )}
         </Field>
 

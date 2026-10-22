@@ -12,8 +12,8 @@ import "server-only"
 // ulang di sini) supaya aturan "terlambat" tetap SATU sumber kebenaran —
 // modul itu memang fungsi murni tanpa akses DB, dirancang untuk dipakai
 // ulang di luar router-nya sendiri (lihat komentar di kepala file itu).
-import { prisma } from "@workspace/db"
-import { ringkasSla } from "@workspace/domain/sla"
+import { prisma } from "@/lib/prisma"
+import { ringkasSla } from "@/lib/domain/sla"
 
 export interface TiketSaya {
   id: string

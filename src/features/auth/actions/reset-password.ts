@@ -17,7 +17,7 @@ export interface ResetPasswordState {
 
 export async function resetPasswordAction(
   _prev: ResetPasswordState,
-  formData: FormData
+  formData: FormData,
 ): Promise<ResetPasswordState> {
   // Divalidasi ULANG di server memakai schema yang sama dengan client —
   // validasi di client hanya demi UX dan bisa dilewati sepenuhnya.
@@ -48,7 +48,8 @@ export async function resetPasswordAction(
     // yang pernah valid dan email mana yang terdaftar.
     return {
       status: "error",
-      pesan: "Tautan ini tidak berlaku lagi. Tautan reset hanya bisa dipakai sekali dan kedaluwarsa dalam 1 jam. Silakan minta tautan baru.",
+      pesan:
+        "Tautan ini tidak berlaku lagi. Tautan reset hanya bisa dipakai sekali dan kedaluwarsa dalam 1 jam. Silakan minta tautan baru.",
     }
   }
 
@@ -60,6 +61,7 @@ export async function resetPasswordAction(
   // yang harus diputuskan sadar, bukan diam-diam di sini.
   return {
     status: "sukses",
-    pesan: "Password berhasil diperbarui. Silakan masuk dengan password baru Anda.",
+    pesan:
+      "Password berhasil diperbarui. Silakan masuk dengan password baru Anda.",
   }
 }
