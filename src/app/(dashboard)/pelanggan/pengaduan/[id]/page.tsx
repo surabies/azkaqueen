@@ -5,6 +5,7 @@
 // penyelesaian berfoto, eskalasi, linimasa penuh). Route concern saja;
 // seluruh isi + data-fetching ada di DetailTiket (client component, karena
 // semua aksinya interaktif dan lewat /api/v1).
+
 import type { Metadata } from "next"
 import { PageContainer } from "@/components/layout"
 import { DetailTiket } from "@/features/dashboard/components/pengaduan/detail-tiket"
@@ -18,7 +19,7 @@ export default async function DetailPengaduanPage({ params }: { params: Promise<
       breadcrumbs={[
         { label: "Data Pelanggan", href: "/pelanggan" },
         { label: "Pengaduan", href: "/pelanggan/pengaduan" },
-        { label: "Penanganan tiket" },
+        { label: "Detail tiket" },
       ]}
     >
       <DetailTiket pengaduanId={id} />
