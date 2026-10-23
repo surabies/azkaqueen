@@ -2,6 +2,9 @@
 
 // Grid /dashboard/pengguna — endpoint GET /api/v1/users (MANAGEMENT_UP).
 import type { ColDef, ICellRendererParams } from "ag-grid-community"
+import { HugeiconsIcon } from "@hugeicons/react"
+import { Add01Icon } from "@hugeicons/core-free-icons"
+import { ToggleGroupItem } from "@/components/ui/toggle-group"
 import { DataGrid } from "../data-grid"
 import { selStatus, fmtLabel, fmtTanggal, KELAS_MONO } from "./sel"
 import { LABEL_ROLE, LABEL_STATUS_USER, label } from "../../lib/label"
@@ -40,9 +43,11 @@ const KOLOM: ColDef[] = [
 export function PenggunaGrid({
   onRowClicked,
   refreshKey,
+  onTambahPengguna,
 }: {
   onRowClicked?: (data: Record<string, unknown>) => void
   refreshKey?: number
+  onTambahPengguna?: () => void
 } = {}) {
   return (
     <DataGrid
@@ -51,6 +56,23 @@ export function PenggunaGrid({
       columnDefs={KOLOM}
       onRowClicked={onRowClicked}
       refreshKey={refreshKey}
+      toolbarActions={
+        onTambahPengguna ? (
+          <ToggleGroupItem
+            value="add-user"
+            onClick={onTambahPengguna}
+            aria-label="Tambah pengguna"
+            title="Tambah pengguna"
+          >
+            <HugeiconsIcon
+              icon={Add01Icon}
+              strokeWidth={2}
+              className="size-4"
+              aria-hidden
+            />
+          </ToggleGroupItem>
+        ) : null
+      }
       searchParam="q"
       searchPlaceholder="Cari nama / email…"
       filters={[

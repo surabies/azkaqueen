@@ -49,6 +49,7 @@ import {
 } from "@hugeicons/core-free-icons"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { Button } from "@/components/ui/button"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -238,6 +239,7 @@ export function DataGrid({
   onRowContextMenu,
   idTerpilih,
   refreshKey,
+  toolbarActions,
 }: {
   /** Micro-label strip header panel, mis. "Daftar Pelanggan". */
   judul: string
@@ -267,6 +269,8 @@ export function DataGrid({
   idTerpilih?: string | null
   /** Naikkan nilainya untuk memaksa muat ulang data (setelah aksi verifikasi). */
   refreshKey?: number
+  /** Aksi tambahan yang diletakkan bersama kontrol toolbar grid. */
+  toolbarActions?: React.ReactNode
 }) {
   const apiRef = React.useRef<GridApi | null>(null)
   const mobil = useIsMobile()
@@ -583,6 +587,13 @@ export function DataGrid({
     )
   }
 
+  function hapusFilterLanjutan(id: number) {
+    const barisTersisa = barisFilterLanjutan.filter((row) => row.id !== id)
+    if (barisTersisa.length === barisFilterLanjutan.length) return
+    setBarisFilterLanjutan(barisTersisa)
+    if (barisTersisa.length === 0) setFilterLanjutanTerbuka(false)
+  }
+
   async function muatLagiMobile() {
     if (mobileMemuat || !mobileAdaLagi) return
     const permintaan = mobilePermintaanRef.current
@@ -692,7 +703,7 @@ export function DataGrid({
       className="flex h-full flex-col border border-border/70 bg-card"
     >
       <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-border/70 px-3 py-2 sm:gap-2.5 sm:px-4">
-        <div className="flex w-full min-w-0 flex-1 items-center gap-2 sm:w-auto">
+        <div className="flex w-full min-w-0 items-center gap-2 sm:w-auto">
           {searchParam && (
             <div className="relative min-w-0 max-w-[22rem] flex-1">
               <HugeiconsIcon
@@ -831,12 +842,19 @@ export function DataGrid({
           </span>
         )}
 
-        <div className="flex shrink-0 items-center gap-0.5">
+        <ToggleGroup
+          type="multiple"
+          value={[]}
+          onValueChange={() => {}}
+          variant="default"
+          size="sm"
+          spacing={0}
+          className="shrink-0"
+        >
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
+              <ToggleGroupItem
+                value="columns"
                 aria-label={
                   kolomSembunyi.size > 0
                     ? `Pilih kolom; ${kolomSembunyi.size} kolom disembunyikan`
@@ -850,7 +868,7 @@ export function DataGrid({
                   className="size-4"
                   aria-hidden
                 />
-              </Button>
+              </ToggleGroupItem>
             </DropdownMenuTrigger>
             <DropdownMenuContent
               align="end"
@@ -887,9 +905,8 @@ export function DataGrid({
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <Button
-            variant="ghost"
-            size="icon"
+          <ToggleGroupItem
+            value="export"
             onClick={eksporExcel}
             disabled={mengekspor || totalTampil === 0}
             aria-label={mengekspor ? "Menyiapkan ekspor" : "Ekspor ke Excel"}
@@ -905,8 +922,9 @@ export function DataGrid({
                 aria-hidden
               />
             )}
-          </Button>
-        </div>
+          </ToggleGroupItem>
+          {toolbarActions}
+        </ToggleGroup>
       </div>
 
       {advancedFilters.length > 0 && filterLanjutanTerbuka && (
@@ -914,7 +932,7 @@ export function DataGrid({
           id="data-grid-filter-panel"
           className="flex shrink-0 flex-col gap-3 border-b border-border/70 bg-muted/15 px-3 py-3 sm:flex-row sm:items-start sm:gap-0 sm:px-4"
         >
-          <div className="min-w-0 flex-1 space-y-2 overflow-x-auto">
+          <div className="min-w-0 space-y-2 sm:grid sm:w-fit sm:flex-none sm:grid-cols-[3.5rem_auto_auto_minmax(8rem,auto)_1.75rem] sm:gap-x-2 sm:gap-y-2 sm:space-y-0">
             {barisFilterLanjutan.map((row, index) => {
               const field = advancedFilters.find(
                 (item) => item.id === row.fieldId
@@ -936,7 +954,7 @@ export function DataGrid({
               return (
                 <div
                   key={row.id}
-                  className="grid min-w-[38rem] grid-cols-[3.5rem_minmax(8rem,0.9fr)_minmax(8rem,0.8fr)_minmax(10rem,1.6fr)_1.75rem] items-center gap-2 sm:min-w-0"
+                  className="grid min-w-0 grid-cols-[3.5rem_minmax(0,1fr)_1.75rem] items-center gap-2 sm:col-span-5 sm:grid-cols-subgrid"
                 >
                   <span className="inline-flex h-7 w-full items-center justify-center whitespace-nowrap rounded-md bg-muted px-1.5 text-xs font-medium text-muted-foreground">
                     {index === 0 ? "where" : "and"}
@@ -958,7 +976,7 @@ export function DataGrid({
                     <SelectTrigger
                       aria-label="Kolom filter"
                       size="sm"
-                      className="w-full bg-background"
+                      className="col-start-2 w-full bg-background sm:col-auto"
                     >
                       <SelectValue />
                     </SelectTrigger>
@@ -981,7 +999,7 @@ export function DataGrid({
                     <SelectTrigger
                       aria-label="Operator filter"
                       size="sm"
-                      className="w-full bg-background"
+                      className="col-start-2 col-span-2 w-full bg-background sm:col-auto sm:col-span-1"
                     >
                       <SelectValue />
                     </SelectTrigger>
@@ -1005,7 +1023,7 @@ export function DataGrid({
                       <SelectTrigger
                         aria-label={`Nilai ${field.label}`}
                         size="sm"
-                        className="w-full bg-background"
+                        className="col-start-2 col-span-2 w-full bg-background sm:col-auto sm:col-span-1"
                       >
                         <SelectValue placeholder="Pilih nilai" />
                       </SelectTrigger>
@@ -1031,19 +1049,16 @@ export function DataGrid({
                         `Masukkan ${field.label.toLowerCase()}`
                       }
                       aria-label={`Nilai ${field.label}`}
-                      className="h-7 min-w-0 bg-background"
+                      className="col-start-2 col-span-2 h-7 min-w-0 bg-background sm:col-auto sm:col-span-1"
                     />
                   )}
                   <Button
                     type="button"
                     variant="ghost"
                     size="icon-sm"
+                    className="col-start-3 row-start-1 size-8 justify-self-center sm:col-auto sm:row-auto sm:size-7"
                     aria-label={`Hapus filter ${field.label}`}
-                    onClick={() =>
-                      setBarisFilterLanjutan((baris) =>
-                        baris.filter((item) => item.id !== row.id)
-                      )
-                    }
+                    onClick={() => hapusFilterLanjutan(row.id)}
                   >
                     <HugeiconsIcon
                       icon={Cancel01Icon}
