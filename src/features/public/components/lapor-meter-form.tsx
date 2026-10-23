@@ -9,7 +9,7 @@
 // stand meter/foto/pelapor baru ditampilkan. TIDAK ada field nama pelanggan
 // di sini — lihat catatan keputusan produk di server/modules/publik/verifikasi.ts.
 import * as React from "react"
-import { CheckCircle2, AlertCircle, Upload, CalendarClock } from "lucide-react"
+import { CheckCircle2, AlertCircle, Upload, CalendarClock } from "@/components/ui/hugeicons-compat"
 import { jendelaLaporMandiri } from "@/lib/domain/lapor-mandiri"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"

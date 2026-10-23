@@ -9,7 +9,7 @@
 // tidak pernah terlihat. Backend menegakkannya — PATCH status ke DITUTUP
 // dari sisi petugas ditolak eksplisit (server/modules/pengaduan/pengaduan.router.ts).
 import * as React from "react"
-import { RotateCcw, Star, ThumbsUp, TriangleAlert } from "lucide-react"
+import { RotateCcw, Star, ThumbsUp, TriangleAlert } from "@/components/ui/hugeicons-compat"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"

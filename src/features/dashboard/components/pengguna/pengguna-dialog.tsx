@@ -15,7 +15,7 @@
 // gagal.
 
 import * as React from "react"
-import { KeyRound, Loader2 } from "lucide-react"
+import { KeyRound, Loader2 } from "@/components/ui/hugeicons-compat"
 import { Button } from "@/components/ui/button"
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader,

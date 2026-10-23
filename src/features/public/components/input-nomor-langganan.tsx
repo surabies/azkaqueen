@@ -12,7 +12,7 @@
 // itu tandanya keduanya harus diputuskan ulang bareng di sini, bukan salah
 // satu diam-diam menulis ulang className sendiri lagi.
 import * as React from "react"
-import { Loader2, Search } from "lucide-react"
+import { Loader2, Search } from "@/components/ui/hugeicons-compat"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"

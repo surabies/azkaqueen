@@ -21,7 +21,7 @@
 //     ditampilkan" bukan hasil yang boleh terjadi.
 import * as React from "react"
 import Image from "next/image"
-import { Share, SquarePlus, MoreVertical, MonitorDown } from "lucide-react"
+import { Share, SquarePlus, MoreVertical, MonitorDown } from "@/components/ui/hugeicons-compat"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,

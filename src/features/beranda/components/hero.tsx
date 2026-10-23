@@ -3,7 +3,7 @@
 // ultra-modern"). Fixed dark (tidak ikut toggle tema situs) — vinyet kanan
 // tetap konten ASLI (pratinjau rekening), cuma dibungkus TiltCard + gaya
 // glass; sparkline bar tumbuh masuk saat termuat, bukan dekorasi statis.
-import { BadgeCheck, ArrowUpRight } from "lucide-react"
+import { BadgeCheck, ArrowUpRight } from "@/components/ui/hugeicons-compat"
 import Link from "next/link"
 import { CekCepatForm } from "./cek-cepat-form"
 import { Reveal } from "./motion/reveal"

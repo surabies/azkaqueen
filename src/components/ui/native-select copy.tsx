@@ -1,7 +1,7 @@
 import * as React from "react"
 
 import { cn } from "@/lib/utils"
-import { ChevronDownIcon } from "lucide-react"
+import { ChevronDownIcon } from "@/components/ui/hugeicons-compat"
 
 /*
   CATATAN PEMAKAIAN: `className` menempel di PEMBUNGKUS <div>, bukan di

@@ -3,7 +3,7 @@
 // features/publik/components/pengaduan-form.tsx
 import * as React from "react"
 import Link from "next/link"
-import { CheckCircle2, Copy, MapPin, Send, TriangleAlert, UserPlus } from "lucide-react"
+import { CheckCircle2, Copy, MapPin, Send, TriangleAlert, UserPlus } from "@/components/ui/hugeicons-compat"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"

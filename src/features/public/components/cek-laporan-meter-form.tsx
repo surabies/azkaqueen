@@ -13,7 +13,7 @@
 // laporan periode berjalan yang tampil (bukan daftar riwayat) — permintaan
 // produk, lihat riwayat percakapan.
 import * as React from "react"
-import { AlertCircle } from "lucide-react"
+import { AlertCircle } from "@/components/ui/hugeicons-compat"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { cariPelanggan, ApiError, type PelangganPratinjau } from "../lib/api"

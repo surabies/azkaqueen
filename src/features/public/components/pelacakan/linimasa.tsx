@@ -15,7 +15,7 @@ import {
   RotateCcw,
   Star,
   UserCheck,
-} from "lucide-react"
+} from "@/components/ui/hugeicons-compat"
 import type { EntriRiwayatTiket } from "../../lib/api"
 import { formatWaktu, statusPengaduanWarga } from "../../lib/format"
 

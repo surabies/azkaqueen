@@ -3,7 +3,7 @@
 // features/auth/components/reset-password-form.tsx
 import { useActionState } from "react"
 import Link from "next/link"
-import { CheckCircle2, TriangleAlert } from "lucide-react"
+import { CheckCircle2, TriangleAlert } from "@/components/ui/hugeicons-compat"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field"

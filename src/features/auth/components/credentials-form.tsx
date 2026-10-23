@@ -18,7 +18,7 @@ import { Input } from "@/components/ui/input"
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Spinner } from "@/components/ui/spinner"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { TriangleAlert } from "lucide-react"
+import { TriangleAlert } from "@/components/ui/hugeicons-compat"
 import { loginSchema } from "../lib/schema"
 
 export function CredentialsForm({ callbackUrl }: { callbackUrl: string }) {

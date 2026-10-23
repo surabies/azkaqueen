@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/field"
 import { Spinner } from "@/components/ui/spinner"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { TriangleAlert } from "lucide-react"
+import { TriangleAlert } from "@/components/ui/hugeicons-compat"
 import { daftarAkun, ApiError } from "../lib/api"
 
 const PANJANG_PASSWORD_MIN = 8

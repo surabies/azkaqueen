@@ -11,7 +11,7 @@
 // dimuat (progressive enhancement), dan status pending datang dari React
 // tanpa useState manual.
 import { useActionState } from "react"
-import { CheckCircle2, TriangleAlert } from "lucide-react"
+import { CheckCircle2, TriangleAlert } from "@/components/ui/hugeicons-compat"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field"

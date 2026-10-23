@@ -4,7 +4,7 @@
 // supaya pengguna dengan tautan kedaluwarsa langsung tahu — bukan setelah
 // bersusah payah mengetik password baru lalu ditolak.
 import Link from "next/link"
-import { TriangleAlert } from "lucide-react"
+import { TriangleAlert } from "@/components/ui/hugeicons-compat"
 import { AppLogo } from "@/components/app-logo"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"

@@ -13,7 +13,7 @@
 // halaman ini berubah jadi alat memanen aduan seluruh warga. Lihat
 // server/modules/pengaduan/tiket.ts.
 import * as React from "react"
-import { Search, TriangleAlert } from "lucide-react"
+import { Search, TriangleAlert } from "@/components/ui/hugeicons-compat"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"

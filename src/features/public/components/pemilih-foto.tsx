@@ -10,7 +10,7 @@
 // `onPilih`. Siklus hidup URL (revoke) tetap milik pemanggil karena sebagian
 // halaman (lapor-meter sukses) masih memakai URL itu setelah kirim.
 import * as React from "react"
-import { Camera, X } from "lucide-react"
+import { Camera, X } from "@/components/ui/hugeicons-compat"
 import { BingkaiFoto, type RasioFoto } from "@/components/bingkai-foto"
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field"
 import { compressImage } from "../lib/compress-image"

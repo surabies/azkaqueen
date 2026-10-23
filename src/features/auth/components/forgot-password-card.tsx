@@ -1,6 +1,6 @@
 // features/auth/components/forgot-password-card.tsx
 import Link from "next/link"
-import { ArrowLeft } from "lucide-react"
+import { ArrowLeft } from "@/components/ui/hugeicons-compat"
 import { AppLogo } from "@/components/app-logo"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ForgotPasswordForm } from "./forgot-password-form"

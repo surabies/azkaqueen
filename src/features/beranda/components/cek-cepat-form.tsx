@@ -9,7 +9,7 @@
 // bermakna dan logika verifikasi tidak terduplikasi di dua tempat.
 import * as React from "react"
 import { useRouter } from "next/navigation"
-import { ArrowRight } from "lucide-react"
+import { ArrowRight } from "@/components/ui/hugeicons-compat"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 

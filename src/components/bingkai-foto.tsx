@@ -18,7 +18,7 @@
 // Apa pun modenya, klik membuka dialog zoom (FotoZoom) — cover yang
 // memotong tepi selalu punya jalan untuk dilihat utuh.
 import * as React from "react"
-import { ImageOff, ZoomIn } from "lucide-react"
+import { ImageOff, ZoomIn } from "@/components/ui/hugeicons-compat"
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 

@@ -14,7 +14,7 @@
 // urlVideoTeroptimasi di lib/format.ts). Kompresi pra-unggah yang berat
 // adalah tugas aplikasi Flutter (native, cepat), bukan web.
 import * as React from "react"
-import { Video, X } from "lucide-react"
+import { Video, X } from "@/components/ui/hugeicons-compat"
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field"
 import { Spinner } from "@/components/ui/spinner"
 

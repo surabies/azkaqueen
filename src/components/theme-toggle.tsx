@@ -14,7 +14,7 @@
 // tanpa state, tanpa effect, tanpa kedip, dan ikon sudah benar sejak cat
 // pertama.
 import { useTheme } from "next-themes"
-import { Moon, Sun } from "lucide-react"
+import { Moon, Sun } from "@/components/ui/hugeicons-compat"
 import { Button } from "@/components/ui/button"
 
 export function ThemeToggle() {

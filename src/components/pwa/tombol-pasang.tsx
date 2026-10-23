@@ -10,7 +10,7 @@
 // Menyembunyikan diri sepenuhnya kalau aplikasinya memang sudah terpasang —
 // menawarkan "Pasang aplikasi" di dalam aplikasi yang sudah terpasang cuma
 // membingungkan.
-import { Download } from "lucide-react"
+import { Download } from "@/components/ui/hugeicons-compat"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { usePasang } from "./konteks-pasang"

@@ -4,7 +4,7 @@
 // mengklik. Kartu "Cek Tagihan" tetap memakai flag `nonaktif` yang sudah
 // ada — logic disable TIDAK diubah, cuma tampilannya.
 import Link from "next/link"
-import { ArrowRight, Camera, CheckCircle2, Search, Ticket } from "lucide-react"
+import { ArrowRight, Camera, CheckCircle2, Search, Ticket } from "@/components/ui/hugeicons-compat"
 import { Reveal } from "./motion/reveal"
 import { SpotlightCard } from "./motion/spotlight-card"
 

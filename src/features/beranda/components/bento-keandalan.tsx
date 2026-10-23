@@ -10,7 +10,7 @@
 // dicoba versi alur bergaris. Tetap dalam tema obsidian yang sama dengan
 // seluruh beranda lain (bukan tema terang aslinya) — satu sel tiba-tiba
 // terang di tengah halaman gelap akan terlihat patah/rusak.
-import { ShieldCheck, MapPinned, Timer, FileCheck2, EyeOff } from "lucide-react"
+import { ShieldCheck, MapPinned, Timer, FileCheck2, EyeOff } from "@/components/ui/hugeicons-compat"
 import { Reveal } from "./motion/reveal"
 import { SpotlightCard } from "./motion/spotlight-card"
 

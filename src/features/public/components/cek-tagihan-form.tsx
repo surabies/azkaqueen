@@ -12,7 +12,7 @@
 // yang itu berarti (siapa pun yang tahu/menebak nomornya bisa melihat data
 // ini, bukan cuma pemiliknya).
 import * as React from "react"
-import { Search, TriangleAlert } from "lucide-react"
+import { Search, TriangleAlert } from "@/components/ui/hugeicons-compat"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Input } from "@/components/ui/input"
 import { Spinner } from "@/components/ui/spinner"

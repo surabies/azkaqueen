@@ -8,7 +8,7 @@
 // peringatan itu muncul untuk semua orang, termasuk yang sudah membayar.
 // Yang tersisa kini hanya fakta tagihannya sendiri: periode, tanggal jatuh
 // tempo sebagai keterangan, dan rincian biayanya.
-import { Droplets, Calendar } from "lucide-react"
+import { Droplets, Calendar } from "@/components/ui/hugeicons-compat"
 import { Separator } from "@/components/ui/separator"
 import { BiayaRow, FieldLabel, FieldValue, SectionLabel } from "./atoms"
 import { formatPeriode, formatRupiah, formatTanggal } from "../../lib/format"

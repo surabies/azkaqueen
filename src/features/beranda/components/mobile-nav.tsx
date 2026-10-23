@@ -13,7 +13,7 @@
 // tengah halaman obsidian.
 import * as React from "react"
 import Link from "next/link"
-import { Menu } from "lucide-react"
+import { Menu } from "@/components/ui/hugeicons-compat"
 import { Button } from "@/components/ui/button"
 import {
   Sheet,

@@ -10,7 +10,7 @@
 // Pola sama dengan kartu-tiket.tsx (pelacakan pengaduan): semua penilaian
 // ("sudah diverifikasi?", "berapa pemakaiannya?") datang JADI dari server,
 // komponen ini tidak menghitung ulang apa pun.
-import { ImageIcon } from "lucide-react"
+import { ImageIcon } from "@/components/ui/hugeicons-compat"
 import { Badge } from "@/components/ui/badge"
 import { BingkaiFoto } from "@/components/bingkai-foto"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"

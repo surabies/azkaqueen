@@ -1,7 +1,7 @@
 // features/beranda/components/cta-band.tsx — ajakan penutup sebelum footer.
 // Dua jalur nyata: buat pengaduan baru, atau lacak tiket yang sudah ada.
 import Link from "next/link"
-import { ArrowRight } from "lucide-react"
+import { ArrowRight } from "@/components/ui/hugeicons-compat"
 import { BackgroundBeams } from "./motion/background-beams"
 import { Reveal } from "./motion/reveal"
 import { ShimmerButton } from "./motion/shimmer-button"

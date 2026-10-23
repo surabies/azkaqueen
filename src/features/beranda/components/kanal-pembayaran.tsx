@@ -27,7 +27,7 @@
 // judul (bukan full-bleed selebar viewport seperti versi awal) — sejalan
 // dengan lebar seksi lain di beranda, overflow-nya terjadi DI DALAM kotak
 // itu (bukan menabrak tepi layar).
-import { Landmark, Store, QrCode, Building2, RefreshCw, Wallet } from "lucide-react"
+import { Landmark, Store, QrCode, Building2, RefreshCw, Wallet } from "@/components/ui/hugeicons-compat"
 import { Reveal } from "./motion/reveal"
 
 const KANAL = [

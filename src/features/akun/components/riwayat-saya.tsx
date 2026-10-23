@@ -7,7 +7,7 @@
 // mencari, memakai ULANG KartuTiket/Linimasa/AksiPelapor yang sudah ada di
 // halaman publik — satu tempat saja yang merender detail tiket.
 import Link from "next/link"
-import { Inbox } from "lucide-react"
+import { Inbox } from "@/components/ui/hugeicons-compat"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import {

@@ -6,7 +6,7 @@
 // komponen ini tidak menghitung ulang apa pun. Aturan SLA dan alur adalah
 // kebijakan layanan; menyalinnya ke browser berarti dua sumber kebenaran
 // yang pasti menyimpang, dan yang di browser tidak bisa dipercaya siapa pun.
-import { CircleUser, Clock, ImageIcon, MapPin, Star, TriangleAlert, Video } from "lucide-react"
+import { CircleUser, Clock, ImageIcon, MapPin, Star, TriangleAlert, Video } from "@/components/ui/hugeicons-compat"
 import { Badge } from "@/components/ui/badge"
 import { BingkaiFoto } from "@/components/bingkai-foto"
 import { BingkaiVideo } from "@/components/bingkai-video"

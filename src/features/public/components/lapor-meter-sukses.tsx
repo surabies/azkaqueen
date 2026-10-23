@@ -9,7 +9,7 @@
 // siapa pun bahwa server benar-benar memprosesnya. Lihat pemanggilnya di
 // lapor-meter-form.tsx.
 import Link from "next/link"
-import { ArrowRight, BadgeCheck, Clock3 } from "lucide-react"
+import { ArrowRight, BadgeCheck, Clock3 } from "@/components/ui/hugeicons-compat"
 import { BingkaiFoto } from "@/components/bingkai-foto"
 import { Button } from "@/components/ui/button"
 import { TombolUtama } from "./tombol-utama"
