@@ -141,13 +141,14 @@ export function HeroSection() {
           di semua sisi, jadi titik menghilang halus ke latar gelap. */}
       <div
         aria-hidden
-        className="absolute inset-0 -z-10 opacity-60 [mask-image:linear-gradient(to_bottom,transparent,black_15%,black_65%,transparent)] dark:opacity-100 dark:[mask-image:radial-gradient(ellipse_80%_85%_at_50%_45%,black_30%,transparent_100%)]"
+        className="absolute inset-0 -z-10 opacity-60 mask-[linear-gradient(to_bottom,transparent,black_15%,black_65%,transparent)] dark:opacity-100 dark:mask-[radial-gradient(ellipse_80%_85%_at_50%_45%,black_30%,transparent_100%)]"
       >
         <LatarHero />
       </div>
 
-      {/* Konten: pointer-events-none agar sorotan kursor tetap menjangkau latar di belakangnya. */}
-      <div className="pointer-events-none mx-auto flex w-full max-w-362 flex-col items-center px-5 pt-8 pb-12 text-center sm:min-h-[32rem] sm:px-4 sm:pt-6 sm:pb-16 lg:min-h-[40rem] lg:px-6 lg:pt-10 lg:pb-24">
+      {/* Konten: pointer-events-none agar sorotan kursor tetap menjangkau latar di belakangnya.
+          Padding atas dinaikkan agar jarak dari navbar ke tulisan PW5 menyamai halaman Next.js. */}
+      <div className="pointer-events-none mx-auto flex w-full max-w-362 flex-col items-center px-5 pt-14 pb-12 text-center sm:min-h-136 sm:px-4 sm:pt-20 sm:pb-16 lg:min-h-176 lg:px-6 lg:pt-28 lg:pb-24">
         <TulisanMerek />
 
         {/* HP: jarak dilonggarkan agar judul tidak menimpa dasar huruf. Layar lebih besar: sama seperti sebelumnya. */}

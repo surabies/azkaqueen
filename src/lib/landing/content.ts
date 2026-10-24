@@ -91,7 +91,7 @@ export type Fitur = {
 }
 
 export const FITUR = {
-  judul: "Semua yang Anda butuhkan untuk urusan air",
+  judul: "Semua yang Anda butuhkan untuk urusan air.",
   item: [
     // 3 kartu pertama: dengan ilustrasi animasi
     { judul: "Cek Tagihan", deskripsi: "Lihat tagihan air Anda dengan nomor langganan 11 digit.", href: RUTE.cekTagihan, visual: "tagihan", tersedia: true },

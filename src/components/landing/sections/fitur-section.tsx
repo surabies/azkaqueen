@@ -97,16 +97,18 @@ export function FiturSection() {
           ))}
 
           {/*
-            TAHAP 5 — Kartu biru besar.
+            TAHAP 5 — Kartu biru besar (Pengaduan).
             Di lg ditempatkan manual: kolom 9–12, mulai baris 3, tinggi 2 baris (row-span-2).
-            Hover: warna dibalik (latar terang, teks & border biru); panah bergeser ke kanan.
-            motion-reduce mematikan transisi.
+            Warna: biru tetap (--biru, sama dengan --info tema terang) dan teks putih, jadi
+            tampilannya SAMA di tema terang dan gelap (tidak mengikuti token tema).
+            Hover/fokus: latar jadi biru sangat tipis, teks dan border tetap biru; panah bergeser
+            ke kanan. motion-reduce mematikan transisi.
           */}
           <li className="col-span-full lg:col-span-4 lg:col-start-9 lg:row-span-2 lg:row-start-3">
             <Link
               href={FITUR.rilis.href}
               aria-label={FITUR.rilis.label}
-              className="group flex min-h-60 flex-col justify-between rounded border-2 border-primary bg-primary px-6 py-4 text-primary-foreground no-underline transition-colors duration-200 hover:bg-muted hover:text-primary focus-visible:bg-muted focus-visible:text-primary focus-visible:outline-offset-4 motion-reduce:transition-none lg:h-full"
+              className="group flex min-h-60 flex-col justify-between rounded border-2 border-(--biru) bg-(--biru) px-6 py-4 text-white no-underline transition-colors duration-200 [--biru:oklch(0.5761_0.2508_258.23)] hover:bg-(--biru)/10 hover:text-(--biru) focus-visible:bg-(--biru)/10 focus-visible:text-(--biru) focus-visible:outline-offset-4 motion-reduce:transition-none lg:h-full"
             >
               <span className="flex flex-col justify-between gap-4 lg:h-full">
                 <span className="flex items-start gap-4 text-[40px] leading-12 font-semibold tracking-tight">

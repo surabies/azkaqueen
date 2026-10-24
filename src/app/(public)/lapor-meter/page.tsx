@@ -61,7 +61,7 @@ export default async function LaporMeterPage({
             <LangkahList langkah={LANGKAH} />
           </AsideBlok>
 
-          <AsideBlok label="Syarat foto" collapsible>
+          <AsideBlok label="Syarat foto">
             <ul className="list-inside space-y-1.5">
               <li>Angka pada meter terbaca jelas, tidak buram.</li>
               <li>

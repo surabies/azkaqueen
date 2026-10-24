@@ -1,87 +1,165 @@
 "use client"
 
-// Kartu angka showcase. Dibuat client component karena dua hal:
-//  1. angka menghitung naik dari 0 saat kartu masuk layar,
-//  2. kartu diberi atribut data-terlihat agar ilustrasi di dalamnya (titik, segmen) menyala bergantian.
-// Keduanya memakai IntersectionObserver dan memanipulasi DOM langsung (tanpa setState),
-// jadi tidak ada render ulang dan aman dari aturan react-hooks/set-state-in-effect.
-import { useEffect, useRef, type ReactNode } from "react"
+// Kartu angka untuk Showcase. Fungsi:
+//  - menandai kartu "terlihat" (data-terlihat) saat masuk layar, dipakai anak-anaknya
+//    lewat group-data-terlihat: untuk memulai animasi
+//  - menghitung angka naik dari 0 (berhenti di nilai akhir)
+//  - spotlight + garis tepi tipis yang mengikuti kursor mouse
+// Warna aksen diatur lewat variabel CSS --aksen (mis. "var(--info)"). Latar kartu tetap netral;
+// aksen hanya dipakai untuk elemen kecil supaya tampilan tetap sederhana dan elegan.
+import { useEffect, useRef, useState } from "react"
+import type { CSSProperties, PointerEvent, ReactNode } from "react"
 
-const DURASI = 1400 // ms
-const format = (n: number) => new Intl.NumberFormat("id-ID").format(n)
+import { cn } from "@/lib/utils"
+
+const GAYA = `
+.sc-tepi{
+  padding:1px;
+  background:radial-gradient(240px circle at var(--mx,50%) var(--my,50%),color-mix(in oklab,var(--aksen) 55%,transparent),transparent 70%);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;
+  mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  mask-composite:exclude;
+}
+`
+
+const format = new Intl.NumberFormat("id-ID")
 
 type Props = {
   nilai: number
   label: string
-  // Bagian atas kartu (ikon / ilustrasi)
-  atas?: ReactNode
-  // Latar di belakang isi kartu (mis. gelombang air)
-  latar?: ReactNode
-  // true = angka dan kartu versi besar (kartu utama)
+  /** Kartu utama: angka lebih besar dan ruang lebih lega. */
   besar?: boolean
+  /** Warna aksen kartu, mis. "var(--info)". Bawaan: warna teks tema. */
+  aksen?: string
+  /** Urutan kartu: mengatur jeda mulai hitung naik (urutan x 120 ms). */
+  urutan?: number
+  /** Isi bagian atas kartu (ikon, ilustrasi). */
+  atas?: ReactNode
+  /** Dekorasi latar yang mengisi seluruh kartu (tidak menerima klik). */
+  latar?: ReactNode
   className?: string
 }
 
-export function KartuStat({ nilai, label, atas, latar, besar = false, className = "" }: Props) {
-  const kartu = useRef<HTMLDivElement>(null)
+export function KartuStat({
+  nilai,
+  label,
+  besar,
+  aksen = "var(--foreground)",
+  urutan = 0,
+  atas,
+  latar,
+  className,
+}: Props) {
+  const akar = useRef<HTMLDivElement>(null)
   const angka = useRef<HTMLSpanElement>(null)
+  const [terlihat, setTerlihat] = useState(false)
 
   useEffect(() => {
-    const k = kartu.current
-    const a = angka.current
-    if (!k || !a) return
+    const el = akar.current
+    if (!el) return
 
-    const kurangiGerak = window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    let raf = 0
+    const kurangi = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    let bingkai = 0
+    let timer: ReturnType<typeof setTimeout> | undefined
+
+    // Hitung naik dari 0 ke nilai akhir dengan easing melambat di ujung.
+    const jalankan = () => {
+      const teks = angka.current
+      if (!teks) return
+      const mulai = performance.now()
+      const durasi = 1600
+      const langkah = (sekarang: number) => {
+        const t = Math.min((sekarang - mulai) / durasi, 1)
+        const e = t === 1 ? 1 : 1 - Math.pow(2, -10 * t)
+        teks.textContent = format.format(Math.round(nilai * e))
+        if (t < 1) bingkai = requestAnimationFrame(langkah)
+      }
+      bingkai = requestAnimationFrame(langkah)
+    }
 
     const pengamat = new IntersectionObserver(
-      ([e]) => {
-        if (!e.isIntersecting) return
+      ([entri]) => {
+        if (!entri.isIntersecting) return
         pengamat.disconnect()
-        // Tandai terlihat: memicu transisi ilustrasi lewat "group-data-[terlihat]:"
-        k.setAttribute("data-terlihat", "")
-        if (kurangiGerak) return
-
-        // Hitung naik dengan easing "easeOutCubic": cepat di awal, melambat di akhir
-        const mulai = performance.now()
-        a.textContent = format(0)
-        const langkah = (t: number) => {
-          const p = Math.min((t - mulai) / DURASI, 1)
-          a.textContent = format(Math.round(nilai * (1 - Math.pow(1 - p, 3))))
-          if (p < 1) raf = requestAnimationFrame(langkah)
-        }
-        raf = requestAnimationFrame(langkah)
+        setTerlihat(true)
+        if (kurangi) return
+        if (angka.current) angka.current.textContent = format.format(0)
+        timer = setTimeout(jalankan, urutan * 120)
       },
-      { threshold: 0.3 },
+      { threshold: 0.25 },
     )
-    pengamat.observe(k)
+    pengamat.observe(el)
 
     return () => {
       pengamat.disconnect()
-      cancelAnimationFrame(raf)
+      clearTimeout(timer)
+      cancelAnimationFrame(bingkai)
     }
-  }, [nilai])
+  }, [nilai, urutan])
+
+  // Spotlight hanya untuk mouse; layar sentuh tidak punya hover.
+  const gerak = (e: PointerEvent<HTMLDivElement>) => {
+    if (e.pointerType !== "mouse") return
+    const r = e.currentTarget.getBoundingClientRect()
+    e.currentTarget.style.setProperty("--mx", `${e.clientX - r.left}px`)
+    e.currentTarget.style.setProperty("--my", `${e.clientY - r.top}px`)
+  }
 
   return (
     <div
-      ref={kartu}
-      className={`group relative flex flex-col justify-between gap-8 overflow-hidden rounded-xs border border-border p-6 transition-colors duration-150 hover:border-foreground/30 ${className}`}
+      ref={akar}
+      data-terlihat={terlihat ? "" : undefined}
+      onPointerMove={gerak}
+      style={{ "--aksen": aksen } as CSSProperties}
+      className={cn(
+        "group relative isolate flex flex-col justify-between overflow-hidden rounded-xl border border-border bg-card p-6 shadow-panel transition-[transform,box-shadow] duration-300 hover:-translate-y-0.5 hover:shadow-overlay motion-reduce:transition-none motion-reduce:hover:translate-y-0",
+        besar && "p-8",
+        className,
+      )}
     >
-      {latar}
+      <style>{GAYA}</style>
 
-      <div className="relative z-10">{atas}</div>
+      {/* Dekorasi latar dari pemanggil (gelombang, grafik, dll.) */}
+      {latar ? <div className="pointer-events-none absolute inset-0 -z-10">{latar}</div> : null}
 
-      <div className="relative z-10 flex flex-col gap-2">
-        {/* Teks awal = angka akhir, jadi tetap benar di server / tanpa JavaScript */}
-        <span
-          ref={angka}
-          className={`font-medium tracking-tight text-foreground tabular-nums ${
-            besar ? "text-6xl lg:text-8xl" : "text-4xl lg:text-5xl"
-          }`}
-        >
-          {format(nilai)}
-        </span>
-        <span className="text-pretty text-base text-muted-foreground">{label}</span>
+      {/* Garis highlight tipis di tepi atas */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-6 top-0 h-px bg-linear-to-r from-transparent via-(--aksen) to-transparent opacity-30 transition-opacity duration-300 group-hover:opacity-70"
+      />
+
+      {/* Spotlight halus yang mengikuti kursor */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 -z-10 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+        style={{
+          background:
+            "radial-gradient(420px circle at var(--mx,50%) var(--my,50%), color-mix(in oklab, var(--aksen) 9%, transparent), transparent 70%)",
+        }}
+      />
+
+      {/* Garis tepi yang menyala tipis di dekat kursor */}
+      <div
+        aria-hidden
+        className="sc-tepi pointer-events-none absolute inset-0 rounded-[inherit] opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+      />
+
+      <div className="relative flex flex-col gap-6">{atas}</div>
+
+      <div className="relative mt-10">
+        <p className={cn("font-semibold tracking-tight tabular-nums", besar ? "text-6xl sm:text-7xl" : "text-4xl")}>
+          {/* Teks animasi disembunyikan dari pembaca layar; nilai akhir dibacakan lewat sr-only. */}
+          <span
+            ref={angka}
+            aria-hidden
+            className={besar ? "bg-linear-to-b from-foreground to-foreground/65 bg-clip-text text-transparent" : undefined}
+          >
+            {format.format(nilai)}
+          </span>
+          <span className="sr-only">{format.format(nilai)}</span>
+        </p>
+        <p className="mt-2 text-sm text-muted-foreground">{label}</p>
       </div>
     </div>
   )

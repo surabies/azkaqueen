@@ -1,9 +1,3 @@
-import { useId } from "react"
-import {
-  Expandable,
-  ExpandableContent,
-  ExpandableTrigger,
-} from "@/components/ui/expandable"
 import {
   HaloCard,
   HaloCardAction,
@@ -53,14 +47,10 @@ export function HalamanPublik({
 export function AsideBlok({
   label,
   children,
-  collapsible = false,
 }: {
   label: string
   children: React.ReactNode
-  collapsible?: boolean
 }) {
-  const contentId = useId()
-
   return (
     // Tahap 1: HaloCard tanpa prop tambahan, persis pola demo.
     <HaloCard aria-label={label}>
@@ -69,31 +59,11 @@ export function AsideBlok({
         <HaloCardTitle className="text-sm">{label}</HaloCardTitle>
       </HaloCardHeader>
 
-      {/* Tahap 3: isi kartu selalu di HaloCardContent. Mode collapsible
-          hanya membungkus isi dengan Expandable. */}
+      {/* Tahap 3: isi kartu selalu di HaloCardContent. */}
       <HaloCardContent>
-        {collapsible ? (
-          <Expandable>
-            <ExpandableTrigger
-              aria-controls={contentId}
-              aria-label={`Tampilkan atau sembunyikan detail: ${label}`}
-              className="text-xs font-medium text-primary underline-offset-4 hover:underline focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-ring"
-            >
-              Panduan
-            </ExpandableTrigger>
-            <ExpandableContent
-              className="text-sm leading-relaxed text-muted-foreground"
-              id={contentId}
-              preset="fade"
-            >
-              {children}
-            </ExpandableContent>
-          </Expandable>
-        ) : (
-          <div className="text-sm leading-relaxed text-muted-foreground">
-            {children}
-          </div>
-        )}
+        <div className="text-sm leading-relaxed text-muted-foreground">
+          {children}
+        </div>
       </HaloCardContent>
     </HaloCard>
   )

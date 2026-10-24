@@ -45,6 +45,14 @@ const paddingClass = {
 
 const BORDER_TRAIL_LOOP_MS = 5250
 
+/**
+ * Radius lapisan luar (rim + lapisan cahaya) DIKUNCI 16px, bukan `rounded-2xl`.
+ * Permukaan kartu di dalamnya `rounded-[15px]` (16px dikurangi p-px) dan lintasan cahaya
+ * memakai `round 16px`. Kalau lapisan luar mengikuti token tema (`--radius-2xl`) yang lebih
+ * kecil dari 16px, cahaya gradasi mengintip di sudut sebagai garis ganda berwarna.
+ */
+const RADIUS_LUAR = "rounded-[16px]"
+
 /** Moving rim highlight along the card edge (mask = border band only). Phase persists when hover/focus stops. */
 function HaloCardBorderTrail({ active }: { active: boolean }) {
   const progress = useMotionValue(0)
@@ -317,8 +325,13 @@ const HaloCard = forwardRef<HTMLDivElement, HaloCardProps>(function HaloCard(
       role="group"
       {...props}
     >
-      <div className="relative rounded-2xl p-px">
-        <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-2xl">
+      <div className={cn("relative p-px", RADIUS_LUAR)}>
+        <div
+          className={cn(
+            "pointer-events-none absolute inset-0 z-0 overflow-hidden",
+            RADIUS_LUAR
+          )}
+        >
           <motion.div
             animate={{
               opacity: reduceMotion
@@ -397,7 +410,12 @@ const HaloCard = forwardRef<HTMLDivElement, HaloCardProps>(function HaloCard(
         </div>
 
         {showTrailChrome ? (
-          <div className="pointer-events-none absolute inset-0 z-10 rounded-2xl">
+          <div
+            className={cn(
+              "pointer-events-none absolute inset-0 z-10",
+              RADIUS_LUAR
+            )}
+          >
             <HaloCardBorderTrail active={trailActive} />
           </div>
         ) : null}
