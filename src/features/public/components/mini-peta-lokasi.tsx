@@ -25,7 +25,7 @@ export function MiniPetaLokasi({
   const titik = koordinat ? proyeksikanTitik(peta.proyeksi, koordinat.lng, koordinat.lat) : null
 
   return (
-    <div className="mt-2 overflow-hidden rounded-xl border border-white/10 bg-white/[0.02]">
+    <div className="mt-2 overflow-hidden rounded-lg border border-border bg-card">
       <svg viewBox={`0 0 ${peta.lebar} ${peta.tinggi}`} className="h-auto max-h-40 w-full" role="img" aria-hidden="true">
         <g>
           {peta.kelurahan.map((k) => (
@@ -47,7 +47,7 @@ export function MiniPetaLokasi({
           </g>
         )}
       </svg>
-      <p className="border-t border-white/10 px-3 py-1.5 text-[11px] text-slate-500">
+      <p className="border-t border-border px-3 py-1.5 text-[11px] text-muted-foreground">
         {titik ? "Titik lokasi Anda, di atas batas wilayah cakupan PERUMDA Tirtawening." : "Peta wilayah cakupan — tekan “Deteksi lokasi saya” untuk menandai titik."}
       </p>
     </div>

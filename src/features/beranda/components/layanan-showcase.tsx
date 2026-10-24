@@ -10,10 +10,10 @@ import { SpotlightCard } from "./motion/spotlight-card"
 
 function VinyetCekTagihan() {
   return (
-    <div aria-hidden="true" className="pointer-events-none select-none rounded-xl border border-white/10 bg-white/3 p-4">
-      <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2.5">
-        <Search className="size-3.5 text-slate-500" />
-        <span className="font-mono text-xs text-slate-400">00401700010</span>
+    <div aria-hidden="true" className="pointer-events-none select-none rounded-lg border border-border bg-muted/40 p-4">
+      <div className="flex items-center gap-2 rounded-md border border-border bg-card px-3 py-2.5">
+        <Search className="size-3.5 text-muted-foreground" />
+        <span className="font-mono text-xs text-muted-foreground">00401700010</span>
       </div>
       <div className="mt-3 space-y-2">
         {[
@@ -21,15 +21,15 @@ function VinyetCekTagihan() {
           { p: "April 2026", s: "Lunas", ok: true },
           { p: "Maret 2026", s: "Jatuh tempo", ok: false },
         ].map((r) => (
-          <div key={r.p} className="flex items-center justify-between border-b border-dashed border-white/10 pb-2">
-            <span className="text-xs text-slate-300">{r.p}</span>
+          <div key={r.p} className="flex items-center justify-between border-b border-dashed border-border pb-2">
+            <span className="text-xs text-foreground">{r.p}</span>
             <span
               className={
                 "inline-flex items-center gap-1.5 text-[10px] font-semibold " +
-                (r.ok ? "text-emerald-400" : "text-red-400")
+                (r.ok ? "text-success" : "text-destructive")
               }
             >
-              <span className={"size-1.5 rounded-full " + (r.ok ? "bg-emerald-400" : "bg-red-400")} />
+              <span className={"size-1.5 rounded-full " + (r.ok ? "bg-success" : "bg-destructive")} />
               {r.s}
             </span>
           </div>
@@ -41,20 +41,20 @@ function VinyetCekTagihan() {
 
 function VinyetLaporMeter() {
   return (
-    <div aria-hidden="true" className="pointer-events-none select-none rounded-xl border border-white/10 bg-white/3 p-4">
-      <div className="flex flex-col items-center gap-1.5 rounded-lg border-2 border-dashed border-white/10 py-5">
-        <Camera className="size-5 text-slate-400" />
-        <span className="text-[11px] text-slate-400">Foto angka meter</span>
+    <div aria-hidden="true" className="pointer-events-none select-none rounded-lg border border-border bg-muted/40 p-4">
+      <div className="flex flex-col items-center gap-1.5 rounded-md border-2 border-dashed border-border py-5">
+        <Camera className="size-5 text-muted-foreground" />
+        <span className="text-[11px] text-muted-foreground">Foto angka meter</span>
       </div>
-      <div className="mt-3 flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-3 py-2.5">
-        <span className="text-[11px] text-slate-400">Stand meter</span>
-        <span className="font-mono text-sm font-bold text-white">
-          3.955 <span className="font-sans text-[10px] font-normal text-slate-400">m³</span>
+      <div className="mt-3 flex items-center justify-between rounded-md border border-border bg-card px-3 py-2.5">
+        <span className="text-[11px] text-muted-foreground">Stand meter</span>
+        <span className="font-mono text-sm font-bold text-foreground">
+          3.955 <span className="font-sans text-[10px] font-normal text-muted-foreground">m³</span>
         </span>
       </div>
       <div className="mt-2 flex items-center gap-1.5">
-        <CheckCircle2 className="size-3.5 text-cyan-300" />
-        <span className="text-[11px] text-slate-400">Menunggu verifikasi petugas</span>
+        <CheckCircle2 className="size-3.5 text-success" />
+        <span className="text-[11px] text-muted-foreground">Menunggu verifikasi petugas</span>
       </div>
     </div>
   )
@@ -62,20 +62,20 @@ function VinyetLaporMeter() {
 
 function VinyetPengaduan() {
   return (
-    <div aria-hidden="true" className="pointer-events-none select-none rounded-xl border border-white/10 bg-white/3 p-4">
-      <div className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-3 py-2.5">
+    <div aria-hidden="true" className="pointer-events-none select-none rounded-lg border border-border bg-muted/40 p-4">
+      <div className="flex items-center justify-between rounded-md border border-border bg-card px-3 py-2.5">
         <span className="flex items-center gap-2">
-          <Ticket className="size-3.5 text-slate-500" />
-          <span className="font-mono text-xs text-slate-300">TKT-2606•••</span>
+          <Ticket className="size-3.5 text-muted-foreground" />
+          <span className="font-mono text-xs text-foreground">TKT-2606•••</span>
         </span>
-        <span className="text-[10px] font-semibold text-amber-400">Sedang ditangani</span>
+        <span className="text-[10px] font-semibold text-warning">Sedang ditangani</span>
       </div>
       <ol className="mt-3 space-y-0">
         {["Diterima", "Ditugaskan ke petugas", "Sedang ditangani"].map((t, i, arr) => (
           <li key={t} className="relative flex gap-3 pb-3 last:pb-0">
-            {i < arr.length - 1 && <span className="absolute top-3 left-0.75 h-full w-px bg-white/10" />}
-            <span className={"mt-1.5 size-1.75 shrink-0 rounded-full " + (i === arr.length - 1 ? "bg-cyan-300" : "bg-slate-600")} />
-            <span className="text-[11px] text-slate-400">{t}</span>
+            {i < arr.length - 1 && <span className="absolute top-3 left-0.75 h-full w-px bg-border" />}
+            <span className={"mt-1.5 size-1.75 shrink-0 rounded-full " + (i === arr.length - 1 ? "bg-info" : "bg-muted-foreground/40")} />
+            <span className="text-[11px] text-muted-foreground">{t}</span>
           </li>
         ))}
       </ol>
@@ -116,15 +116,15 @@ const LAYANAN = [
 
 export function LayananShowcase() {
   return (
-    <section aria-labelledby="layanan-judul" className="border-b border-white/10 bg-tirta">
+    <section aria-labelledby="layanan-judul" className="border-b border-border bg-background">
       <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-10 px-5 py-14 md:px-8 lg:grid-cols-12 lg:gap-8 lg:py-20">
         <div className="lg:col-span-4">
           <Reveal className="lg:sticky lg:top-24">
-            <p className="text-[11px] font-semibold tracking-[0.2em] text-cyan-300 uppercase">Tiga layanan inti</p>
-            <h2 id="layanan-judul" className="mt-3 text-3xl font-semibold tracking-tight text-balance text-white">
+            <p className="text-xs font-medium text-primary">Tiga layanan inti</p>
+            <h2 id="layanan-judul" className="mt-3 text-3xl font-semibold tracking-tight text-balance">
               Dirancang untuk urusan yang biasanya butuh datang ke kantor.
             </h2>
-            <p className="mt-4 text-sm leading-relaxed text-slate-400">
+            <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
               Semuanya terbuka 24 jam, tanpa membuat akun. Sistem yang sama dipakai petugas di
               lapangan dan di kantor pelayanan — jadi laporan Anda masuk ke antrean kerja yang
               sungguhan, bukan kotak masuk yang tidak dibaca.
@@ -140,12 +140,12 @@ export function LayananShowcase() {
             const isi = (
               <div className={kelasIsi}>
                 <div className={i === 0 ? "sm:max-w-sm" : ""}>
-                  <h3 className="text-lg font-semibold tracking-tight text-white">{judul}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-slate-400">{deskripsi}</p>
+                  <h3 className="text-lg font-semibold tracking-tight">{judul}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{deskripsi}</p>
                   <span
                     className={
                       "mt-4 inline-flex items-center gap-1.5 text-sm font-medium " +
-                      (nonaktif ? "text-slate-500" : "text-cyan-300")
+                      (nonaktif ? "text-muted-foreground" : "text-primary")
                     }
                   >
                     {nonaktif ? "Sementara tidak tersedia" : aksi}
@@ -166,13 +166,13 @@ export function LayananShowcase() {
                   <div
                     aria-disabled="true"
                     title="Sementara tidak tersedia"
-                    className="cursor-not-allowed rounded-2xl border border-white/10 bg-white/2 opacity-60"
+                    className="cursor-not-allowed rounded-xl border border-border bg-muted/40 opacity-60"
                   >
                     {isi}
                   </div>
                 ) : (
                   <Link href={href} className="block">
-                    <SpotlightCard className="transition-colors hover:border-white/20">{isi}</SpotlightCard>
+                    <SpotlightCard className="transition-colors">{isi}</SpotlightCard>
                   </Link>
                 )}
               </Reveal>

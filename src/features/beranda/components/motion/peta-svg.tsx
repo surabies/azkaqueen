@@ -54,7 +54,7 @@ export function PetaSvg({ data }: { data: PetaCakupan }) {
                 onMouseLeave={() => setDisorot((cur) => (cur === k.id ? null : cur))}
                 className="cursor-default transition-colors duration-200"
                 fill={aktif ? warna.fillSorot : warna.fill}
-                stroke={aktif ? warna.garis : "rgba(255,255,255,0.14)"}
+                stroke={aktif ? warna.garis : "var(--border)"}
                 strokeWidth={aktif ? 1.5 : 1}
               />
             )
@@ -68,7 +68,7 @@ export function PetaSvg({ data }: { data: PetaCakupan }) {
            1px dan gampang kebaca "hilang". */}
         <g aria-hidden="true">
           {data.kecamatan.map((k) => (
-            <path key={k.id} d={k.d} fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth={2.5} />
+            <path key={k.id} d={k.d} fill="none" stroke="var(--muted-foreground)" strokeWidth={2.5} />
           ))}
         </g>
 
@@ -86,24 +86,24 @@ export function PetaSvg({ data }: { data: PetaCakupan }) {
 
       {/* Label kelurahan yang di-hover — posisi statis (bukan tooltip
          mengikuti kursor) supaya tidak pernah terpotong di tepi SVG. */}
-      <div className="pointer-events-none mt-3 rounded-lg border border-white/10 bg-tirta/90 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-xl sm:absolute sm:bottom-3 sm:left-3 sm:mt-0">
+      <div className="pointer-events-none mt-3 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground shadow-panel sm:absolute sm:bottom-3 sm:left-3 sm:mt-0">
         {namaDisorot ?? "Arahkan kursor ke peta untuk lihat nama kelurahan"}
       </div>
 
       {/* Legenda berada di alur normal pada layar sempit supaya tidak
         menutupi wilayah peta. Pada desktop ia kembali menjadi overlay. */}
-      <div className="pointer-events-none mt-3 rounded-lg border border-white/10 bg-tirta/90 px-3 py-2.5 text-[11px] text-slate-300 backdrop-blur-xl sm:absolute sm:top-3 sm:right-3 sm:mt-0">
-        <p className="mb-1.5 font-semibold tracking-wide text-white uppercase">Keterangan</p>
+      <div className="pointer-events-none mt-3 rounded-md border border-border bg-card px-3 py-2.5 text-[11px] text-muted-foreground shadow-panel sm:absolute sm:top-3 sm:right-3 sm:mt-0">
+        <p className="mb-1.5 font-semibold tracking-wide text-foreground uppercase">Keterangan</p>
         <div className="flex items-center gap-2">
-          <span className="h-0.5 w-4 shrink-0 bg-white/60" />
+          <span className="h-0.5 w-4 shrink-0 bg-muted-foreground/60" />
           <span>Batas kecamatan</span>
         </div>
         <div className="mt-1 flex items-center gap-2">
-          <span className="h-2.5 w-2.5 shrink-0 rounded-sm border border-cyan-400/40 bg-cyan-400/20" />
+          <span className="h-2.5 w-2.5 shrink-0 rounded-sm border border-info/40 bg-info/20" />
           <span>Batas kelurahan (warna cuma pembeda wilayah bersebelahan)</span>
         </div>
         <div className="mt-1 flex items-center gap-2">
-          <span className="size-1.5 shrink-0 rounded-full bg-emerald-400" />
+          <span className="size-1.5 shrink-0 rounded-full bg-success" />
           <span>Titik sambungan pelanggan (anonim)</span>
         </div>
       </div>

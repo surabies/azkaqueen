@@ -41,11 +41,11 @@ const KANAL = [
 
 function ChipKanal({ icon: Icon, label, detail }: (typeof KANAL)[number]) {
   return (
-    <div className="flex shrink-0 items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-xl transition-colors hover:border-white/20">
-      <Icon className="size-4 text-cyan-300" aria-hidden="true" />
+    <div className="flex shrink-0 items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 transition-colors hover:bg-muted">
+      <Icon className="size-4 text-info" aria-hidden="true" />
       <span className="flex flex-col leading-tight">
-        <span className="text-sm font-medium whitespace-nowrap text-white">{label}</span>
-        <span className="text-[11px] whitespace-nowrap text-slate-400">{detail}</span>
+        <span className="text-sm font-medium whitespace-nowrap text-foreground">{label}</span>
+        <span className="text-[11px] whitespace-nowrap text-muted-foreground">{detail}</span>
       </span>
     </div>
   )
@@ -53,10 +53,10 @@ function ChipKanal({ icon: Icon, label, detail }: (typeof KANAL)[number]) {
 
 export function KanalPembayaran() {
   return (
-    <section aria-labelledby="kanal-judul" className="border-b border-white/10 bg-tirta">
+    <section aria-labelledby="kanal-judul" className="border-b border-border bg-background">
       <div className="mx-auto w-full max-w-6xl px-5 pt-10 pb-12 md:px-8">
         <Reveal>
-          <h2 id="kanal-judul" className="text-[11px] font-semibold tracking-[0.2em] text-slate-400 uppercase">
+          <h2 id="kanal-judul" className="text-xs font-medium text-muted-foreground">
             Bayar lewat kanal yang sudah Anda kenal
           </h2>
         </Reveal>
@@ -68,11 +68,11 @@ export function KanalPembayaran() {
              tunggal statis tidak butuh efek ini). */}
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute inset-y-0 left-0 z-10 w-10 bg-linear-to-r from-tirta to-transparent motion-reduce:hidden"
+            className="pointer-events-none absolute inset-y-0 left-0 z-10 w-10 bg-linear-to-r from-background to-transparent motion-reduce:hidden"
           />
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute inset-y-0 right-0 z-10 w-10 bg-linear-to-l from-tirta to-transparent motion-reduce:hidden"
+            className="pointer-events-none absolute inset-y-0 right-0 z-10 w-10 bg-linear-to-l from-background to-transparent motion-reduce:hidden"
           />
 
           <div className="flex w-max animate-marquee group-hover:paused motion-reduce:w-full motion-reduce:animate-none">

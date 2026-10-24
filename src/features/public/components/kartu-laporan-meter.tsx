@@ -13,7 +13,14 @@
 import { ImageIcon } from "@/components/ui/hugeicons-compat"
 import { Badge } from "@/components/ui/badge"
 import { BingkaiFoto } from "@/components/bingkai-foto"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  HaloCard,
+  HaloCardAction,
+  HaloCardContent,
+  HaloCardDescription,
+  HaloCardHeader,
+  HaloCardTitle,
+} from "@/components/ui/halo-card"
 import type { DetailLaporanBulanIni } from "../lib/api"
 import { formatPeriode, formatWaktu, statusLaporanMandiriWarga } from "../lib/format"
 
@@ -22,22 +29,25 @@ export function KartuLaporanMeter({ laporan }: { laporan: DetailLaporanBulanIni 
   const periodeLabel = formatPeriode(laporan.periode)
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <CardTitle className="text-base">Periode {periodeLabel}</CardTitle>
+    // Tahap 1: HaloCard polos dengan aria-label.
+    <HaloCard aria-label={`Laporan meter periode ${periodeLabel}`}>
+      {/* Tahap 2: judul + deskripsi di header, badge status di slot Action. */}
+      <HaloCardHeader>
+        <HaloCardTitle className="text-base">Periode {periodeLabel}</HaloCardTitle>
+        <HaloCardDescription>Dikirim {formatWaktu(laporan.createdAt)} WIB</HaloCardDescription>
+        <HaloCardAction>
           <Badge variant="outline" className={status.badgeClass}>
             {status.label}
           </Badge>
-        </div>
-        <CardDescription>Dikirim {formatWaktu(laporan.createdAt)} WIB</CardDescription>
-      </CardHeader>
+        </HaloCardAction>
+      </HaloCardHeader>
 
-      <CardContent className="flex flex-col gap-4">
+      {/* Tahap 3: isi kartu. */}
+      <HaloCardContent className="flex flex-col gap-4">
         {/* Alasan penolakan tampil ke WARGA, bukan disembunyikan — persis yang
             perlu mereka baca sebelum mengirim ulang. */}
         {laporan.status === "DITOLAK" && laporan.alasanDitolak && (
-          <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/40 dark:text-red-400">
+          <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
             {laporan.alasanDitolak}
           </div>
         )}
@@ -73,7 +83,7 @@ export function KartuLaporanMeter({ laporan }: { laporan: DetailLaporanBulanIni 
           </p>
           <BingkaiFoto src={laporan.fotoUrl} alt={`Foto stand meter periode ${periodeLabel}`} mode="utuh" rasio="16/9" />
         </div>
-      </CardContent>
-    </Card>
+      </HaloCardContent>
+    </HaloCard>
   )
 }

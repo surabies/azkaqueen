@@ -16,21 +16,11 @@ import type { ComponentProps } from "react"
 
 export function ShimmerButton({ className, children, ...props }: ComponentProps<typeof Button>) {
   return (
-    <span className="relative inline-flex overflow-hidden rounded-full p-px">
-      <span
-        aria-hidden="true"
-        className="absolute inset-[-1000%] animate-shimmer-spin bg-[conic-gradient(from_90deg_at_50%_50%,#22d3ee_0%,#e8c170_50%,#22d3ee_100%)] motion-reduce:animate-none"
-      />
-      <Button
-        variant="ghost"
-        {...props}
-        className={cn(
-          "relative z-10 h-11 rounded-full border-0 bg-[#0b3328] px-6 text-sm font-medium text-white shadow-[0_8px_30px_-8px_rgba(34,197,94,0.5)] hover:bg-[#124738] hover:text-white",
-          className
-        )}
-      >
-        {children}
-      </Button>
-    </span>
+    <Button
+      {...props}
+      className={cn("h-11 gap-2 px-5 text-sm font-medium shadow-panel", className)}
+    >
+      {children}
+    </Button>
   )
 }

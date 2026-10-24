@@ -19,7 +19,7 @@ export function SparkBars() {
           animate={{ scaleY: 1 }}
           transition={{ duration: 0.5, delay: kurangiGerak ? 0 : 0.5 + i * 0.06, ease: [0.16, 1, 0.3, 1] }}
           style={{ height: `${t}%`, transformOrigin: "bottom" }}
-          className={i === BATANG.length - 1 ? "w-3 bg-linear-to-t from-cyan-400 to-emerald-300" : "w-3 bg-white/15"}
+          className={i === BATANG.length - 1 ? "w-3 bg-info" : "w-3 bg-muted-foreground/20"}
         />
       ))}
     </div>

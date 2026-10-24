@@ -38,7 +38,7 @@ export function LaporMeterSukses({ hasil, onReset }: { hasil: HasilLaporanTampil
         <div className="relative flex size-16 items-center justify-center">
           <span aria-hidden="true" className="absolute inset-0 rounded-full bg-emerald-400/25 blur-xl" />
           <span className="relative flex size-16 items-center justify-center rounded-full border border-emerald-400/30 bg-emerald-400/10">
-            <BadgeCheck className="size-8 text-emerald-400" />
+            <BadgeCheck className="size-8 text-success" />
           </span>
         </div>
 

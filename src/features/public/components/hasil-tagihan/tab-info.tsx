@@ -38,8 +38,8 @@ export function TabInfo({ hasil }: { hasil: HasilCekTagihan }) {
         colSpan
         value={
           <div className="flex items-center gap-1.5">
-            <StatusDot className={aktif ? "bg-emerald-500" : "bg-red-500"} />
-            <FieldValue className={aktif ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}>
+            <StatusDot className={aktif ? "bg-success" : "bg-destructive"} />
+            <FieldValue className={aktif ? "text-success" : "text-destructive"}>
               {aktif ? "Aktif" : pelanggan.status}
             </FieldValue>
           </div>

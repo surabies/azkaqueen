@@ -27,13 +27,13 @@ export function SpotlightCard({
     y.set(e.clientY - batas.top)
   }
 
-  const background = useMotionTemplate`radial-gradient(240px circle at ${x}px ${y}px, rgba(34,211,238,0.12), transparent 70%)`
+  const background = useMotionTemplate`radial-gradient(240px circle at ${x}px ${y}px, color-mix(in srgb, var(--info) 12%, transparent), transparent 70%)`
 
   return (
     <div
       onMouseMove={urusGerakMouse}
       className={cn(
-        "group relative overflow-hidden rounded-2xl border border-white/10 bg-white/3 backdrop-blur-xl",
+        "group relative overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-panel transition-colors hover:border-ring/40",
         className
       )}
     >

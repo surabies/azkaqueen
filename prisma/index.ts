@@ -51,7 +51,14 @@ if (!connectionString) {
   );
 }
 
-const adapter = new PrismaPg({ connectionString });
+const url = new URL(connectionString);
+const sslmode = url.searchParams.get("sslmode")?.toLowerCase();
+
+if (sslmode === "prefer" || sslmode === "require" || sslmode === "verify-ca") {
+  url.searchParams.set("sslmode", "verify-full");
+}
+
+const adapter = new PrismaPg({ connectionString: url.toString() });
 
 const globalForPrisma = globalThis as typeof globalThis & {
   prisma?: PrismaClient;

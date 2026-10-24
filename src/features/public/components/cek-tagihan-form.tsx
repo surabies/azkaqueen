@@ -50,14 +50,7 @@ export function CekTagihanForm({ nomorAwal }: { nomorAwal?: string }) {
 
   return (
     <div className="flex flex-col gap-8">
-      {/* `gelap`: halaman ini SELALU dipanggil dari cek-tagihan/page.tsx
-          dengan <HalamanPublik gelap>, jadi kartu ini WAJIB ikut varian
-          gelap juga — tanpanya ia jatuh ke bingkai kartu terang (border
-          solid + shadow) di atas latar obsidian, beda gaya dari kartu
-          lapor-meter/pengaduan yang sama-sama "gelap". Lihat KartuBerbingkai
-          di halaman-publik.tsx untuk detail kenapa varian ini aman dipakai
-          tanpa menulis ulang token warna form. */}
-      <KartuBerbingkai gelap label="Formulir · Cek Tagihan" chip="Tanpa Akun">
+      <KartuBerbingkai label="Formulir · Cek Tagihan" chip="Tanpa Akun">
         <label htmlFor="nomorLangganan" className="text-[10px] font-semibold tracking-widest text-muted-foreground uppercase">
           Nomor langganan
         </label>
@@ -90,7 +83,7 @@ export function CekTagihanForm({ nomorAwal }: { nomorAwal?: string }) {
       </KartuBerbingkai>
 
       {hasil && (
-        <div className="dark rounded-2xl border border-white/10 bg-white/3 text-foreground backdrop-blur-xl">
+        <div className="rounded-xl border border-border bg-card text-card-foreground shadow-panel">
           <HasilTagihan hasil={hasil} />
         </div>
       )}

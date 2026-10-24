@@ -60,7 +60,7 @@ export function KartuTiket({ tiket, onPerbarui }: { tiket: StatusTiket; onPerbar
             menunggu hanya membuat mereka menelepon — dan tidak memperbaiki
             apa pun. */}
         {sla.melanggar && (
-          <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/40 dark:text-red-400">
+          <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
             <TriangleAlert className="mt-0.5 size-4 shrink-0" />
             <span>
               Penanganan tiket ini melewati target waktu kami ({formatSisaWaktu(sla.sisaMenit)}). Mohon maaf — laporan Anda
@@ -81,7 +81,7 @@ export function KartuTiket({ tiket, onPerbarui }: { tiket: StatusTiket; onPerbar
             <BarisInfo ikon={Clock} label="Target penanganan">
               <p>{formatWaktu(sla.targetSelesaiAt)} WIB</p>
               {!["SELESAI", "DITUTUP", "DITOLAK"].includes(tiket.status) && (
-                <p className={sla.melanggar ? "text-red-600 dark:text-red-400" : "text-muted-foreground"}>
+                <p className={sla.melanggar ? "text-destructive" : "text-muted-foreground"}>
                   {formatSisaWaktu(sla.sisaMenit)}
                 </p>
               )}

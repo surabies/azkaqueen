@@ -30,14 +30,14 @@ export async function StatsStrip() {
   ];
 
   return (
-    <section aria-label="Statistik pelayanan" className="border-b border-white/10 bg-tirta">
-      <dl className="mx-auto grid w-full max-w-6xl grid-cols-2 gap-px bg-white/5 lg:grid-cols-4">
+    <section aria-label="Statistik pelayanan" className="border-b border-border bg-background">
+      <dl className="mx-auto grid w-full max-w-6xl grid-cols-2 gap-px bg-border lg:grid-cols-4">
         {items.map((item, i) => (
-          <Reveal key={item.label} delay={i * 0.06} className="bg-tirta px-5 py-7 md:px-8">
-            <dd className="order-1 font-mono text-2xl font-bold tracking-tight text-white tabular-nums sm:text-3xl">
+          <Reveal key={item.label} delay={i * 0.06} className="bg-background px-5 py-7 md:px-8">
+            <dd className="order-1 font-mono text-2xl font-semibold tracking-tight text-foreground tabular-nums sm:text-3xl">
               <AnimatedNumber value={item.nilai} />
             </dd>
-            <dt className="order-2 mt-1 text-[11px] font-medium tracking-wide text-slate-400">{item.label}</dt>
+            <dt className="order-2 mt-1 text-xs font-medium tracking-wide text-muted-foreground">{item.label}</dt>
           </Reveal>
         ))}
       </dl>
@@ -47,12 +47,12 @@ export async function StatsStrip() {
 
 export function StatsStripSkeleton() {
   return (
-    <section aria-hidden="true" className="border-b border-white/10 bg-tirta">
-      <div className="mx-auto grid w-full max-w-6xl grid-cols-2 gap-px bg-white/5 lg:grid-cols-4">
+    <section aria-hidden="true" className="border-b border-border bg-background">
+      <div className="mx-auto grid w-full max-w-6xl grid-cols-2 gap-px bg-border lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="flex flex-col gap-2 bg-tirta px-5 py-7 md:px-8">
-            <div className="h-8 w-24 animate-pulse rounded bg-white/10" />
-            <div className="h-3 w-32 animate-pulse rounded bg-white/5" />
+          <div key={i} className="flex flex-col gap-2 bg-background px-5 py-7 md:px-8">
+            <div className="h-8 w-24 animate-pulse rounded bg-muted" />
+            <div className="h-3 w-32 animate-pulse rounded bg-muted/60" />
           </div>
         ))}
       </div>

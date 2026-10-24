@@ -1,7 +1,4 @@
-// features/public/components/tombol-utama.tsx — CTA utama halaman publik
-// gelap: gradasi cyan->emerald + cincin gradien berputar, bahasa visual yang
-// SAMA dengan ShimmerButton di hero ("Laporkan gangguan air") dan bingkai
-// KartuBerbingkai. SATU definisi dipakai di seluruh CTA utama publik ("Kirim
+// Satu definisi dipakai di seluruh CTA utama publik ("Kirim
 // laporan", "Kirim pengaduan", "Cek tagihan", "Cek status laporan saya")
 // supaya "senada di semua halaman" berarti benar-benar satu sumber, bukan
 // classNames yang disalin manual ke tiap form dan lambat laun menyimpang —
@@ -36,20 +33,8 @@ export function TombolUtama({
   }
 
   return (
-    <span className="relative block overflow-hidden rounded-xl p-px">
-      <span
-        aria-hidden="true"
-        className="absolute inset-[-1000%] animate-shimmer-spin-slow bg-[conic-gradient(from_90deg_at_50%_50%,#22d3ee_0%,#e8c170_50%,#22d3ee_100%)] motion-reduce:animate-none"
-      />
-      <Button
-        className={cn(
-          "relative rounded-xl bg-linear-to-r from-cyan-500 to-teal-500 font-semibold text-white shadow-[0_8px_30px_-8px_rgba(20,184,166,0.45)] hover:from-cyan-400 hover:to-teal-400 disabled:opacity-90",
-          className
-        )}
-        {...props}
-      >
-        {children}
-      </Button>
-    </span>
+    <Button className={cn("font-medium shadow-panel", className)} {...props}>
+      {children}
+    </Button>
   )
 }

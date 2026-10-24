@@ -1,63 +1,95 @@
 "use client"
 
-// features/beranda/components/cek-cepat-form.tsx — titik fokus fungsional
-// hero: bukan mockup dashboard, tapi input nomor langganan sungguhan yang
-// mengantar ke /cek-tagihan dengan nomor sudah terisi.
-//
-// SENGAJA tidak memanggil API dari sini: pemanggilan tetap terjadi di
-// halaman cek-tagihan (dari browser pemakai) supaya rate limit per-IP tetap
-// bermakna dan logika verifikasi tidak terduplikasi di dua tempat.
-import * as React from "react"
+// Form cek tagihan cepat di hero beranda.
+// Mengikuti pola dokumentasi:
+// - HaloSearchInput: Enter ditangani lewat onKeyDown.
+// - HaloButton: type="button" + onClick, label berupa string polos,
+//   isLoading/loadingText untuk status memuat, lebar diatur div pembungkus.
+import { useState, type KeyboardEvent } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowRight } from "@/components/ui/hugeicons-compat"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 
-// Cek tagihan dinonaktifkan SEMENTARA (lihat catatan di nav-links.ts) —
-// form ditampilkan disabled + kursor "not-allowed", bukan dihapus, supaya
-// gampang diaktifkan lagi begitu tabel Tagihan mulai diisi aplikasi sendiri.
-const NONAKTIF = true
+import { HaloButton } from "@/components/ui/halo-button"
+import { HaloSearchInput } from "@/components/ui/halo-search"
+import { cn } from "@/lib/utils"
+
+const PANJANG_NOMOR = 11
+
+/**
+ * Ubah ke true saat layanan cek tagihan sudah aktif.
+ * Saat false, tombol tampak redup, klik diabaikan, dan pesan "tidak tersedia" tampil.
+ */
+const CEK_TAGIHAN_TERSEDIA = false
+
+/** Rute tujuan cek tagihan — sesuaikan dengan rute di proyek. */
+const RUTE_CEK_TAGIHAN = "/cek-tagihan"
 
 export function CekCepatForm() {
   const router = useRouter()
-  const [nomor, setNomor] = React.useState("")
-  const lengkap = nomor.length === 11
+  const [nomor, setNomor] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
 
-  function lanjut(e: React.FormEvent) {
+  // Tahap 1: tombol hanya berfungsi jika layanan aktif dan nomor lengkap.
+  const bisaCek =
+    CEK_TAGIHAN_TERSEDIA && nomor.length === PANJANG_NOMOR && !isLoading
+
+  // Tahap 2: satu jalur kirim, dipakai tombol maupun tombol Enter.
+  function kirim() {
+    if (!bisaCek) {
+      return
+    }
+    setIsLoading(true)
+    router.push(`${RUTE_CEK_TAGIHAN}?nomor=${nomor}`)
+  }
+
+  function handleKeyDown(e: KeyboardEvent<HTMLInputElement>) {
+    if (e.key !== "Enter") {
+      return
+    }
     e.preventDefault()
-    if (lengkap && !NONAKTIF) router.push(`/cek-tagihan?nomor=${nomor}`)
+    kirim()
   }
 
   return (
-    <div>
-      <form
-        onSubmit={lanjut}
-        title={NONAKTIF ? "Sementara tidak tersedia" : undefined}
-        className={"flex w-full max-w-md items-stretch gap-2" + (NONAKTIF ? " cursor-not-allowed" : "")}
+    <div className="flex w-full flex-col gap-2.5">
+      {/* Tahap 3: input selebar kolom. */}
+      <HaloSearchInput
+        aria-label="Nomor langganan"
+        autoComplete="off"
+        inputMode="numeric"
+        isLoading={isLoading}
+        loadingText="Memeriksa…"
+        maxLength={PANJANG_NOMOR}
+        onChange={(e) =>
+          setNomor(e.target.value.replace(/\D/g, "").slice(0, PANJANG_NOMOR))
+        }
+        onClear={() => setNomor("")}
+        onKeyDown={handleKeyDown}
+        placeholder={`Nomor langganan — ${PANJANG_NOMOR} digit`}
+        value={nomor}
+      />
+
+      {/* Tahap 4: tombol di dalam div selebar kolom (sama seperti demo
+          dokumentasi), jadi lebarnya sama dengan input dan tombol CTA. */}
+      <div
+        className={cn("w-full", !bisaCek && !isLoading && "opacity-60")}
+        aria-disabled={!bisaCek}
       >
-        <label htmlFor="cek-cepat" className="sr-only">
-          Nomor langganan
-        </label>
-        <Input
-          id="cek-cepat"
-          value={nomor}
-          onChange={(e) => setNomor(e.target.value.replace(/\D/g, "").slice(0, 11))}
-          inputMode="numeric"
-          autoComplete="off"
-          placeholder="Nomor langganan — 11 digit"
-          disabled={NONAKTIF}
-          className="h-11 flex-1 rounded-xl border-white/10 bg-white/5 font-mono text-sm text-white placeholder:text-slate-500 backdrop-blur-xl disabled:cursor-not-allowed"
-        />
-        <Button
-          type="submit"
-          disabled={!lengkap || NONAKTIF}
-          className="group h-11 rounded-xl bg-linear-to-r from-cyan-400 to-teal-400 px-4 text-tirta hover:from-cyan-300 hover:to-teal-300 disabled:cursor-not-allowed disabled:opacity-40"
+        <HaloButton
+          isLoading={isLoading}
+          loadingText="Memeriksa…"
+          onClick={kirim}
+          type="button"
         >
-          Cek
-          <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
-        </Button>
-      </form>
-      {NONAKTIF && <p className="mt-1.5 text-xs text-slate-500">Cek tagihan sementara tidak tersedia.</p>}
+          Cek tagihan
+        </HaloButton>
+      </div>
+
+      {/* Tahap 5: pesan status. */}
+      {!CEK_TAGIHAN_TERSEDIA ? (
+        <p role="status" className="text-xs text-muted-foreground">
+          Cek tagihan sementara tidak tersedia.
+        </p>
+      ) : null}
     </div>
   )
 }

@@ -216,7 +216,7 @@ export function LaporMeterForm() {
         {pratinjau && (
           <div className="mt-4 space-y-2.5 rounded-lg border border-green-200 bg-green-100 px-3 py-3 dark:border-green-800 dark:bg-green-900/30">
             <div className="flex items-center gap-1.5">
-              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+              <CheckCircle2 className="h-3.5 w-3.5 text-success" />
               <p className="text-sm font-semibold">{pratinjau.nama}</p>
             </div>
             <div className="grid grid-cols-2 text-xs">
@@ -235,8 +235,8 @@ export function LaporMeterForm() {
         {cariError && (
           <div className="mt-4 space-y-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-3 dark:border-red-900 dark:bg-red-900/20">
             <div className="flex items-center gap-1.5">
-              <AlertCircle className="h-3.5 w-3.5 text-red-500" />
-              <p className="text-sm font-semibold text-red-700 dark:text-red-400">{cariError}</p>
+              <AlertCircle className="h-3.5 w-3.5 text-destructive" />
+              <p className="text-sm font-semibold text-destructive">{cariError}</p>
             </div>
           </div>
         )}
