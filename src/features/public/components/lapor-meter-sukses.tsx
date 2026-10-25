@@ -97,9 +97,13 @@ export function LaporMeterSukses({ hasil, onReset }: { hasil: HasilLaporanTampil
             </Link>
           </TombolUtama>
         </div>
-        <Button onClick={onReset} variant="outline" className="h-11 flex-1">
-          Lapor meter lain
-        </Button>
+        
+        {/* Bungkus juga tombol kedua dengan div flex-1 agar tingginya konsisten */}
+        <div className="min-w-0 flex-1">
+          <Button onClick={onReset} variant="outline" className="h-11 w-full">
+            Lapor meter lain
+          </Button>
+        </div>
       </div>
     </div>
   )

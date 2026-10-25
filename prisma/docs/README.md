@@ -215,12 +215,37 @@ mengisinya, idempoten, dari dua sumber di `prisma/data/`:
   `ST_MakeValid` (polygon digitasi kerap self-intersect kecil yang membuat
   `ST_Contains` diam-diam salah). Hasil terukur: 21/21 kelurahan + 7/7
   kecamatan terisi, 0 invalid.
-- **`Data_progres_verifikasi_pelanggan_PW_5_2026.geojson`** →
-  `Pelanggan.koordinat` via "Nomor Pelanggan" (zero-pad 11 digit, titik di
-  luar kotak Bandung ±(-8..-6, 106..109) ditolak). Hasil: **917 dari 22.534
-  pelanggan** berkoordinat — ini SATU-SATUNYA sumber titik pelanggan;
-  kolom `goe_lat/goe_long` PBPK terbukti kosong total di data sumber, jadi
-  cakupan koordinat memang baru sebatas progres survei lapangan.
+- **`Data_progres_verifikasi_pelanggan_PW_5_2026.geojson`** → titik
+  pelanggan master melalui "Nomor Pelanggan" (zero-pad 11 digit, titik di
+  luar kotak Bandung ±(-8..-6, 106..109) ditolak); "Non Pelanggan" menjadi
+  `PotensiPelanggan` dan "Eks Pelanggan" menjadi arsip `Pemutusan` dengan
+  `sumberData = SURVEI_GEOJSON`. Semua baris memakai `Response Code` unik
+  sebagai kunci upsert sehingga seed dapat diulang tanpa menggandakan titik.
+  Baris dibuat dan geometri diperbarui per-batch; perubahan status prospek
+  yang dilakukan pengguna tidak ditimpa saat seed dijalankan ulang.
+  `Nomor Eks Pelanggan` hanya dipautkan ke master jika tepat satu nomor
+  dapat diparsing; teks mentah tetap disimpan untuk kasus ambigu. Kategori,
+  catatan, wilayah, tanggal pencabutan yang benar-benar tersedia, serta
+  koordinat dipertahankan. Jika tanggal pencabutan kosong, periode laporan
+  memakai tanggal survei; jika keduanya tidak tersedia, periode laporan
+  fallback ke Mei 2026 dan `tanggalCabut` tetap kosong (dicatat sebagai
+  warning, bukan dianggap tanggal pencabutan).
+  Nomor pelanggan yang tidak ada di master serta satu nomor yang muncul di
+  dua lokasi berbeda dilaporkan dan tidak dipasangkan/ditimpa secara
+  arbitrer. Hasil inspeksi berkas saat ini: 1.875 titik (928 pelanggan,
+  728 non-pelanggan, 219 eks-pelanggan); dari 924 baris berstatus pelanggan
+  yang memiliki nomor, 921 cocok dengan master, 3 tidak, dan satu nomor
+  survei muncul pada dua titik berbeda. Kolom `goe_lat/goe_long` PBPK
+  terbukti kosong total di data sumber. Seed terarah terakhir mengimpor 728
+  prospek dan 219 eks-pelanggan, serta mengisi 920 titik pelanggan master
+  yang tidak ambigu. Dari catatan eks-pelanggan, 202 nomor hasil parsing
+  tidak ada di master dan 5 catatan ambigu; nilai asli tetap disimpan tanpa
+  dipasangkan secara paksa. Anomali baris lain tetap tercatat pada laporan
+  seed JSON.
+- Peta wilayah menampilkan semua pengaduan yang berkoordinat (termasuk
+  tiket selesai/non-kebocoran), titik prospek dan eks-pelanggan survei.
+  Popup kelurahan/kecamatan merangkum status pelanggan, riwayat pemutusan,
+  total pengaduan, pengaduan aktif, dan laporan kebocoran.
 - Wilayah operasional PDAM (WilayahAdm/Dist/SeksiCater/WilayahSeksi/Zona/
   Rute) **sengaja tetap kosong** — belum ada sumber polygon-nya; jangan
   dikarang. Saat file batasnya tersedia, tambahkan pencocokannya di step

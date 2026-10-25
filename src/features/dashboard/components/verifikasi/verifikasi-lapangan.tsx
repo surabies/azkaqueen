@@ -1,0 +1,487 @@
+"use client";
+
+// features/dashboard/components/verifikasi/verifikasi-lapangan.tsx —
+// halaman verifikasi laporan petugas lapangan (master-detail): kartu
+// ringkasan + tabel laporan (kiri, kolom mengikuti tabel.md di folder ini)
+// + panel detail murni penampil (kanan).
+//
+// SELURUH AKSI lewat MENU KLIK KANAN pada baris: Verifikasi V1 (modal
+// periksa/koreksi), Validasi V2 dan Approve final V3 (dialog konfirmasi),
+// Cek ulang (modal alasan), dan Batalkan tahap terakhir (unverify).
+// Pembacaan resmi baru dibuat saat V3 — lihat laporan-harian.router.ts.
+import * as React from "react";
+import {
+  CheckCheck,
+  Eye,
+  FileCheck2,
+  RotateCcw,
+  ShieldCheck,
+  Undo2,
+  EyeOff,
+} from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Spinner } from "@/components/ui/spinner";
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/components/ui/resizable";
+import { ambilSatu, ambilList, kirimJson, ApiError } from "../../lib/api-client";
+import type { StatsVerifikasi, RingLaporanHarian } from "./tipe";
+import { tahapLaporanHarian } from "./tipe";
+import { RingkasanVerifikasi } from "./ringkasan-verifikasi";
+import { PanelTabel } from "./panel-tabel";
+import { PanelKosong } from "./panel-bagian";
+import { PanelLapangan, type AksiLapangan } from "./panel-lapangan";
+import { MenuKonteks, type AksiKonteks } from "./menu-konteks";
+
+// Cermin ROLE_GROUPS (server/middleware/rbac.ts — tidak bisa diimpor ke
+// client tanpa menyeret rantai server-only). Server tetap penjaga aslinya;
+// ini hanya menentukan item menu mana yang aktif.
+const SUPERVISOR_UP = new Set(["SUPER_ADMIN", "DIREKSI", "SENIOR_MANAGER", "MANAGER", "SUPERVISOR"]);
+const MANAGEMENT_UP = new Set(["SUPER_ADMIN", "DIREKSI", "SENIOR_MANAGER", "MANAGER"]);
+const SENIOR_UP = new Set(["SUPER_ADMIN", "DIREKSI", "SENIOR_MANAGER"]);
+
+/** Bentuk baris grid /laporan-harian yang dibaca kolom & menu konteks. */
+type BarisLaporan = RingLaporanHarian & {
+  id?: string;
+  nomorLangganan?: string;
+  namaPelanggan?: string | null;
+  alamatPelanggan?: string | null;
+  standAwal?: number;
+  standAkhir?: number;
+  standAkhirRevisi?: number | null;
+  pemakaian?: number;
+  pemakaianLalu?: number | null;
+  persentase?: number | null;
+  nomorMeter?: string | null;
+  tanggalCatat?: string | null;
+  pelanggan?: {
+    id: string;
+    nama: string;
+    alamat?: string | null;
+    tarifGolongan?: { kodeAsli: string } | null;
+    rute?: { kode: string } | null;
+    zona?: { kode: string; wilayahSeksi?: { kode: string } | null } | null;
+  } | null;
+  pencatat?: { id: string; namaLapangan: string } | null;
+  pembacaan?: { id: string; standAkhir: number } | null;
+  verif1By?: { name: string | null } | null;
+  verif2By?: { name: string | null } | null;
+  verif3By?: { name: string | null } | null;
+  verifiedBy?: { name: string | null } | null;
+};
+
+export function VerifikasiLapangan({ role }: { role: string }) {
+  const bisaV1 = SUPERVISOR_UP.has(role);
+  const bisaV2 = MANAGEMENT_UP.has(role);
+  const bisaV3 = SENIOR_UP.has(role);
+
+  // undefined = belum init (default akan diisi periode terbaru yang punya
+  // data — aturan dashboard: periode acuan = terakhir yang ADA datanya,
+  // bukan bulan berjalan). null = pengguna memilih "Semua periode".
+  const [periode, setPeriode] = React.useState<number | null | undefined>(
+    undefined,
+  );
+  const [stats, setStats] = React.useState<StatsVerifikasi | null>(null);
+  const [galatStats, setGalatStats] = React.useState<string | null>(null);
+  const [idTerpilih, setIdTerpilih] = React.useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = React.useState(0);
+  // Tab aktif diangkat ke sini: baris "belum dibaca" adalah DaftarCatat, bukan
+  // laporan, jadi id-nya TIDAK ADA di /laporan-harian/:id (penyebab galat
+  // "LaporanHarianPetugas tidak ditemukan" di panel detail).
+  const [tab, setTab] = React.useState<"laporan" | "belum">("laporan");
+  // Kartu ringkasan bisa dilipat agar tabel mendapat tinggi lebih. Ubah ke
+  // `false` bila ingin terlipat sejak awal.
+  const [ringkasanTerbuka, setRingkasanTerbuka] = React.useState(true);
+
+  // Menu klik kanan + aksi yang sedang berjalan.
+  const [menu, setMenu] = React.useState<{
+    posisi: { x: number; y: number };
+    baris: BarisLaporan;
+  } | null>(null);
+  const [aksi, setAksi] = React.useState<AksiLapangan | null>(null);
+  const [konfirmasi, setKonfirmasi] = React.useState<{
+    endpoint: "verif2" | "verif3" | "unverify";
+    id: string;
+    judul: string;
+    deskripsi: string;
+    destruktif?: boolean;
+  } | null>(null);
+  const [mengirim, setMengirim] = React.useState(false);
+  const [galatAksi, setGalatAksi] = React.useState<string | null>(null);
+
+  // Daftar pencatat untuk filter toolbar (permintaan: bisa menyaring per
+  // pencatat, sorting tanggal sudah lewat header kolom "Catat").
+  const [pencatats, setPencatats] = React.useState<
+    { id: string; namaLapangan: string }[]
+  >([]);
+  // Daftar rute untuk saringan toolbar — verifikasi dikerjakan rute demi
+  // rute, bukan 22 ribu baris bercampur.
+  const [rutes, setRutes] = React.useState<{ id: string; kode: string }[]>([]);
+
+  React.useEffect(() => {
+    let batal = false;
+    ambilList<{ id: string; namaLapangan: string }>("/pencatat", {
+      pageSize: 500,
+    })
+      .then(({ rows }) => {
+        if (!batal) setPencatats(rows);
+      })
+      .catch(() => {
+        // Filter pencatat opsional — tabel tetap berfungsi tanpa daftarnya.
+      });
+    ambilList<{ id: string; kode: string }>("/rute", { pageSize: 500 })
+      .then(({ rows }) => {
+        if (!batal) setRutes(rows);
+      })
+      .catch(() => {
+        // Sama seperti pencatat: saringan opsional, bukan syarat tabel jalan.
+      });
+    return () => {
+      batal = true;
+    };
+  }, []);
+
+  React.useEffect(() => {
+    let batal = false;
+    ambilSatu<StatsVerifikasi>("/laporan-harian/stats", {
+      periode: periode ?? undefined,
+    })
+      .then((s) => {
+        if (batal) return;
+        setStats(s);
+        setGalatStats(null);
+        setPeriode((lama) =>
+          lama === undefined ? (s.periodes[0] ?? null) : lama,
+        );
+      })
+      .catch((err) => {
+        if (!batal)
+          setGalatStats(
+            err instanceof ApiError ? err.message : "Gagal memuat ringkasan.",
+          );
+      });
+    return () => {
+      batal = true;
+    };
+  }, [periode, refreshKey]);
+
+  const ambang = stats?.ambangAnomali ?? 50;
+
+  // Kolom mengikuti header tabel.md:
+  // V1|V2|V3|No|No Pel|Nama|Alamat|Tarif|ST awal|ST akhir resmi|ST akhir
+  // catat|ST akhir revisi|m3|m3 Lalu|%|Koreksi|SISA|St rata2|RUTE|W|ZONA|
+  // Cater|Catat|Nm_al|St Angkat. SISA / St rata2 / St Angkat belum punya
+  // sumber data di sistem — tampil "—" dulu, kolomnya sudah disiapkan.
+
+  async function jalankanKonfirmasi() {
+    if (!konfirmasi) return;
+    setMengirim(true);
+    setGalatAksi(null);
+    try {
+      await kirimJson(
+        `/laporan-harian/${konfirmasi.id}/${konfirmasi.endpoint}`,
+        "PATCH",
+        {},
+      );
+      setKonfirmasi(null);
+      setRefreshKey((k) => k + 1);
+    } catch (err) {
+      setGalatAksi(
+        err instanceof ApiError ? err.message : "Aksi gagal dijalankan.",
+      );
+    } finally {
+      setMengirim(false);
+    }
+  }
+
+  /// Item menu klik kanan sesuai tahap baris + role pengguna. Item yang
+  /// belum waktunya (mis. V2 sebelum V1) disembunyikan; item yang butuh
+  /// role lebih tinggi tampil disabled — wewenangnya sudah dijaga role
+  /// akses, jadi tidak perlu dijelaskan ulang di tiap item.
+  function aksiMenu(baris: BarisLaporan): AksiKonteks[] {
+    const id = baris.id;
+    if (!id) return [];
+    const tahap = tahapLaporanHarian(baris);
+    const nama = baris.pelanggan?.nama ?? baris.namaPelanggan ?? baris.nomorLangganan ?? "";
+    const daftar: AksiKonteks[] = [
+      {
+        label: "Lihat",
+        icon: Eye,
+        onPilih: () => setMenu(null),
+      },
+    ];
+
+    if (tahap === "MENUNGGU_V1" || tahap === "DITOLAK") {
+      daftar.push({
+        label: "Verifikasi V1",
+        icon: ShieldCheck,
+        pemisah: true,
+        disabled: !bisaV1 || !baris.pelanggan,
+        onPilih: () => {
+          setMenu(null);
+          setAksi("v1");
+        },
+      });
+    }
+    if (tahap === "MENUNGGU_V2") {
+      daftar.push({
+        label: "Verifikasi V2",
+        icon: CheckCheck,
+        pemisah: true,
+        disabled: !bisaV2,
+        onPilih: () => {
+          setMenu(null);
+          setAksi("v2");
+        },
+      });
+    }
+    if (tahap === "MENUNGGU_V3") {
+      daftar.push({
+        label: "Verifikasi V3",
+        icon: FileCheck2,
+        pemisah: true,
+        disabled: !bisaV3,
+        onPilih: () => {
+          setMenu(null);
+          setAksi("v3");
+        },
+      });
+    }
+
+    if (tahap !== "RESMI" && tahap !== "DITOLAK") {
+      daftar.push({
+        label: "Cek ulang",
+        icon: RotateCcw,
+        disabled: !bisaV1,
+        onPilih: () => {
+          setMenu(null);
+          setAksi("cekulang");
+        },
+      });
+    }
+
+    // Unverifikasi: membatalkan SATU tahap terakhir.
+    if (tahap === "RESMI") {
+      daftar.push({
+        label: "Batalkan V3",
+        icon: Undo2,
+        pemisah: true,
+        destruktif: true,
+        disabled: !bisaV3,
+        onPilih: () => {
+          setMenu(null);
+          setGalatAksi(null);
+          setKonfirmasi({
+            endpoint: "unverify",
+            id,
+            destruktif: true,
+            judul: "Batalkan approve final?",
+            deskripsi: `PembacaanMeter resmi milik ${nama} dihapus dan laporan kembali ke tahap menunggu V3. Server menolak bila pembacaan sudah dipakai tagihan.`,
+          });
+        },
+      });
+    } else if (tahap === "MENUNGGU_V3") {
+      daftar.push({
+        label: "Batalkan V2",
+        icon: Undo2,
+        destruktif: true,
+        disabled: !bisaV2,
+        onPilih: () => {
+          setMenu(null);
+          setGalatAksi(null);
+          setKonfirmasi({
+            endpoint: "unverify",
+            id,
+            destruktif: true,
+            judul: "Batalkan V2?",
+            deskripsi: `Tanda validasi V2 pada laporan ${nama} dihapus; laporan kembali menunggu V2.`,
+          });
+        },
+      });
+    } else if (tahap === "MENUNGGU_V2") {
+      daftar.push({
+        label: "Batalkan V1",
+        icon: Undo2,
+        destruktif: true,
+        disabled: !bisaV1,
+        onPilih: () => {
+          setMenu(null);
+          setGalatAksi(null);
+          setKonfirmasi({
+            endpoint: "unverify",
+            id,
+            destruktif: true,
+            judul: "Batalkan V1?",
+            deskripsi: `Hasil pemeriksaan V1 pada laporan ${nama} (termasuk revisi stand dan pilihan meter) dihapus; laporan kembali menunggu V1.`,
+          });
+        },
+      });
+    } else if (tahap === "DITOLAK") {
+      daftar.push({
+        label: "Kembalikan ke antrean (batalkan tolak)",
+        icon: Undo2,
+        disabled: !bisaV1,
+        onPilih: () => {
+          setMenu(null);
+          setGalatAksi(null);
+          setKonfirmasi({
+            endpoint: "unverify",
+            id,
+            judul: "Batalkan penolakan?",
+            deskripsi: `Catatan penolakan dihapus dan laporan ${nama} kembali ke antrean menunggu V1.`,
+          });
+        },
+      });
+    }
+
+    return daftar;
+  }
+
+  return (
+    <>
+    {/* TATA LETAK: tabel KIRI, detail KANAN.
+    //
+        Sisi kiri layar sudah milik sidebar aplikasi; menaruh panel detail di
+        sana membuat dua talang vertikal bertumpuk dan memaksa mata melewati
+        dua kolom sempit sebelum sampai ke isi. Tabel adalah objek utama
+        halaman ini dan ia yang butuh lebar. Urutan bacanya pun jadi wajar:
+        pilih baris (kiri) lalu lihat rinciannya (kanan), bukan melompat
+        mundur 22 ribu kali.
+
+        TEPI MENYATU: tanpa gap & tanpa border luar. Panel tabel menempel ke
+        sidebar aplikasi dan ke navbar atas; satu-satunya garis di antara
+        kedua panel adalah pemisah yang bisa ditarik. Border ganda berjarak
+        1px jadi tidak mungkin terjadi. */}
+    <div className="h-[calc(100dvh-var(--navbar-h,3.5rem)-6.5rem)] min-h-96">
+    <ResizablePanelGroup orientation="horizontal" className="h-full min-h-0 items-stretch">
+      <ResizablePanel defaultSize="28" minSize="18" collapsible className="flex min-w-0 flex-col">
+        {/* Judul DI LUAR wadah bergulir — `sticky top-0` di dalam elemen
+            ber-`overflow-y-auto` akan terpotong oleh wadahnya sendiri.
+            Header tetap, isi yang bergulir.
+
+            BINGKAINYA SENDIRI (border-y, dan border-r di layar lebar). Itu
+            perbaikan kedua atas keluhan "border atas panel kanan tidak
+            terlihat": memindahkan judul keluar wadah bergulir memang
+            menghentikan pemotongannya, tapi panel ini memang TIDAK PERNAH
+            punya garis atas — dulu sengaja dilepas demi "tepi menyatu",
+            sehingga kotaknya terbaca menggantung tanpa sisi atas. Yang dulu
+            dihindari adalah garis GANDA berjarak 1px di antara kedua panel;
+            tepi kiri tetap dibiarkan ke pemisah yang bisa ditarik, jadi
+            bingkai luar ini tidak menghidupkannya kembali. */}
+        <aside className="bg-card border-border/70 flex h-full min-h-0 flex-col overflow-hidden rounded-lg border">
+          <div className="border-border/70 shrink-0 border-b px-4 py-2.5">
+            <h2 className="text-sm font-medium">
+              Detail laporan
+            </h2>
+          </div>
+          <div className="scrollbar-tipis min-h-0 flex-1 overflow-y-auto">
+            {/* key: ganti baris = remount panel, seluruh state form mulai
+                bersih tanpa reset sinkron di effect. */}
+            {tab === "belum" ? (
+              <PanelKosong icon={EyeOff} pesan="Sambungan ini belum punya setoran, jadi belum ada detail laporan. Tagih pencatatannya ke petugas rute." />
+            ) : (
+            <PanelLapangan
+              key={idTerpilih ?? "kosong"}
+              id={idTerpilih}
+              aksi={aksi}
+              ambangAnomali={ambang}
+              onTutupAksi={() => setAksi(null)}
+              onSelesai={() => setRefreshKey((k) => k + 1)}
+            />
+            )}
+          </div>
+        </aside>
+      </ResizablePanel>
+      <ResizableHandle withHandle />
+      <ResizablePanel defaultSize="72" minSize="40" className="flex min-w-0 flex-col">
+        <div className="flex h-full min-h-0 min-w-0 flex-col gap-3 pl-3">
+          {galatStats && <p className="text-destructive shrink-0 text-xs">{galatStats}</p>}
+
+          <RingkasanVerifikasi stats={stats} periode={periode ?? null} terbuka={ringkasanTerbuka} />
+
+          <div className="min-h-0 min-w-0 flex-1">
+            <PanelTabel
+              periodes={stats?.periodes ?? []}
+              pencatats={pencatats}
+              rutes={rutes}
+              ambangAnomali={ambang}
+              bolehRing={(r) => (r === 1 ? bisaV1 : r === 2 ? bisaV2 : bisaV3)}
+              idTerpilih={idTerpilih}
+              onPeriodeBerubah={setPeriode}
+              onKlikBaris={(row) => setIdTerpilih(row.id)}
+              onKlikKanan={(row, posisi) => {
+                setIdTerpilih(row.id)
+                setAksi(null)
+                setMenu({ posisi, baris: row as BarisLaporan })
+              }}
+              refreshKey={refreshKey}
+              onBerubah={() => setRefreshKey((k) => k + 1)}
+              sisaKerja={stats ? stats.total - stats.diverifikasi : null}
+              onTabBerubah={(t) => { setTab(t); setIdTerpilih(null); setAksi(null); }}
+              anomali={stats?.anomali ?? 0}
+              ringkasanTerbuka={ringkasanTerbuka}
+              onRingkasan={setRingkasanTerbuka}
+              stats={stats}
+            />
+          </div>
+        </div>
+      </ResizablePanel>
+    </ResizablePanelGroup>
+    </div>
+
+      {menu && (
+        <MenuKonteks
+          posisi={menu.posisi}
+          judul={`${menu.baris.nomorLangganan ?? ""} · ${menu.baris.pelanggan?.nama ?? menu.baris.namaPelanggan ?? ""}`}
+          aksi={aksiMenu(menu.baris)}
+          onTutup={() => setMenu(null)}
+        />
+      )}
+
+      <AlertDialog
+        open={konfirmasi !== null}
+        onOpenChange={(buka) => {
+          if (!buka && !mengirim) setKonfirmasi(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{konfirmasi?.judul}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {konfirmasi?.deskripsi}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {galatAksi && (
+            <p className="text-xs text-destructive">{galatAksi}</p>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={mengirim}>Batal</AlertDialogCancel>
+            {/* onClick tanpa auto-close: dialog baru ditutup setelah server
+                menjawab sukses; galat tampil di dalam dialog. */}
+            <AlertDialogAction
+              disabled={mengirim}
+              onClick={(e) => {
+                e.preventDefault();
+                void jalankanKonfirmasi();
+              }}
+            >
+              {mengirim && <Spinner className="size-3.5" />}
+              {konfirmasi?.destruktif ? "Ya, batalkan" : "Ya, lanjutkan"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+}

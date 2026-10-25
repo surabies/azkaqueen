@@ -9,9 +9,14 @@ import { z } from "zod"
 import { validate } from "../../lib/validate"
 import { prisma } from "@db"
 import { requireRole, ROLE_GROUPS } from "../../middleware/rbac"
-import { ok, created } from "../../lib/response"
+import { ok, created, paginated } from "../../lib/response"
 import { NotFoundError, ConflictError, BadRequestError } from "../../lib/errors"
 import { getNotifier } from "../notifikasi/notifier"
+import {
+  buildMeta,
+  buildSkipTake,
+  paginationQuerySchema,
+} from "../../lib/pagination"
 
 export const penugasanRuteRouter = new Hono()
 
@@ -111,6 +116,50 @@ penugasanRuteRouter.get(
   },
 )
 
+// ── Rute yang belum ditugaskan ke pencatat mana pun ────────────────────
+const ruteTanpaPetugasSchema = paginationQuerySchema.extend({
+  q: z.string().trim().min(1).optional(),
+})
+
+penugasanRuteRouter.get(
+  "/rute-tanpa-petugas",
+  requireRole(...ROLE_GROUPS.STAFF_UP),
+  validate("query", ruteTanpaPetugasSchema),
+  async (c) => {
+    const query = c.req.valid("query")
+    const { skip, take } = buildSkipTake(query)
+    const where = {
+      penugasanRute: { none: {} },
+      ...(query.q ? { kode: { contains: query.q, mode: "insensitive" as const } } : {}),
+    }
+    const [rute, total] = await Promise.all([
+      prisma.rute.findMany({
+        where,
+        orderBy: { kode: "asc" },
+        skip,
+        take,
+        select: {
+          id: true,
+          kode: true,
+          seksiCater: { select: { nama: true } },
+          _count: { select: { pelanggan: { where: { deletedAt: null } } } },
+        },
+      }),
+      prisma.rute.count({ where }),
+    ])
+    return paginated(
+      c,
+      rute.map((r) => ({
+        id: r.id,
+        kode: r.kode,
+        namaSeksi: r.seksiCater.nama,
+        target: r._count.pelanggan,
+      })),
+      buildMeta(total, query),
+    )
+  },
+)
+
 // ── Tugaskan satu rute ke pencatat (append ke urutan terakhir) ──────────
 const buatSchema = z.object({
   pencatatId: z.string().min(1),
@@ -197,6 +246,7 @@ penugasanRuteRouter.patch(
     const setMilik = new Set(milik.map((m) => m.ruteId))
     if (
       ruteIds.length !== setMilik.size ||
+      new Set(ruteIds).size !== ruteIds.length ||
       !ruteIds.every((r) => setMilik.has(r))
     ) {
       throw new BadRequestError(

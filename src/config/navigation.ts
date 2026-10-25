@@ -82,22 +82,29 @@ export const navGroups: NavGroup[] = [
     title: "Pencatatan Meter",
     items: [
       {
-        title: "Jadwal Baca Meter",
+        title: "Data Pembacaan Meter",
         href: "/meter",
-        description: "Penjadwalan rute dan petugas pencatat meter per wilayah.",
+        description: "Daftar pembacaan meter yang telah dicatat.",
         keywords: ["rute", "petugas", "cater"],
       },
       {
-        title: "Input Stand Meter",
-        href: "/meter/input",
+        title: "Stand Konsumen",
+        href: "/meter/stand",
         description: "Input angka stand meter hasil pencatatan di lapangan.",
-        keywords: ["stand", "catat meter"],
+        keywords: ["stand", "catat mandiri"],
       },
       {
-        title: "Verifikasi Pembacaan",
-        href: "/meter/verifikasi",
+        title: "Pembacaan Petugas",
+        href: "/verifikasi/baca-petugas",
         description:
           "Pemeriksaan pembacaan yang janggal sebelum dijadikan dasar tagihan.",
+        keywords: ["anomali", "validasi"],
+      },
+      {
+        title: "Pembacaan Pelanggan",
+        href: "/verifikasi/baca-pelanggan",
+        description:
+          "Pemeriksaan stand konsumen yang janggal sebelum dijadikan dasar tagihan.",
         keywords: ["anomali", "validasi"],
       },
       {
@@ -105,6 +112,18 @@ export const navGroups: NavGroup[] = [
         href: "/meter/penggantian",
         description: "Riwayat tera, kerusakan, dan penggantian water meter.",
         keywords: ["tera", "water meter", "ganti meter"],
+      },
+      {
+        title: "Pemetaan Rute Baca",
+        href: "/meter/pemetaan",
+        description: "Pemetaan rute dan lokasi pencatatan meter per wilayah.",
+        keywords: ["peta", "rute", "lokasi"],
+      },
+      {
+        title: "Pencatat Meter",
+        href: "/meter/petugas-cater",
+        description: "Manajemen dan penjadwalan petugas pencatat meter per wilayah.",
+        keywords: ["petugas", "jadwal", "pencatatan"],
       },
     ],
   },
@@ -153,8 +172,8 @@ export const navGroups: NavGroup[] = [
     title: "Jaringan & Distribusi",
     items: [
       {
-        title: "Peta Jaringan",
-        href: "/jaringan",
+        title: "Peta Wilayah",
+        href: "/peta-wilayah",
         description: "Peta pipa distribusi, sambungan, dan zona layanan.",
         keywords: ["gis", "peta", "pipa"],
       },
@@ -271,11 +290,18 @@ export const navGroups: NavGroup[] = [
         keywords: ["referensi"],
       },
       {
-        title: "Impor Data",
-        href: "/admin/impor-data",
+        title: "Input Data",
+        href: "/admin/input-data",
         description:
-          "Impor data pelanggan, meter, dan tagihan dari sistem lama atau file CSV.",
-        keywords: ["csv", "seed", "migrasi"],
+          "Input data pelanggan, meter, dan tagihan secara manual.",
+        keywords: ["manual", "input"],
+      },
+      {
+        title: "Input PBPK",
+        href: "/admin/input-pbpk",
+        description:
+          "Input data pelanggan, meter, dan tagihan secara manual.",
+        keywords: ["manual", "input"],
       },
       {
         title: "Log Aktivitas",

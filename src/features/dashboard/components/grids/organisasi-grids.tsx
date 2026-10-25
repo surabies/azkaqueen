@@ -8,7 +8,7 @@
 // jenis tugas yang tidak muat di grid baca-saja.
 import type { ColDef } from "ag-grid-community"
 import { DataGrid } from "../data-grid"
-import { selBool, fmtLabel, KELAS_MONO } from "./sel"
+import { fmtLabel, KELAS_MONO } from "./sel"
 import { LABEL_ROLE } from "../../lib/label"
 
 // Tinggi tabel tidak lagi dipatok di sini — grid memakai default `flex-1`

@@ -38,13 +38,13 @@ function EntriLinimasa({ e }: { e: EntriRiwayat }) {
       className={cn(
         "relative pb-4 pl-6 last:pb-0",
         // Rel vertikal antar-titik; entri terakhir tidak punya rel.
-        "before:absolute before:top-4 before:bottom-0 before:left-[5px] before:w-px before:bg-border last:before:hidden",
+        "before:absolute before:top-4 before:bottom-0 before:left-1.25 before:w-px before:bg-border last:before:hidden",
       )}
     >
       <span
         aria-hidden
         className={cn(
-          "absolute top-1.5 left-0 size-[11px] rounded-full border-2",
+          "absolute top-1.5 left-0 size-2.75 rounded-full border-2",
           e.isPublik ? "border-info bg-info" : "border-border bg-background",
         )}
       />
@@ -81,7 +81,7 @@ function EntriLinimasa({ e }: { e: EntriRiwayat }) {
         {e.fotoUrl && (
           // Frame rasio tetap (BingkaiFoto) — lebar dikunci 200px, tinggi ikut
           // rasio, bukan ikut file fotonya.
-          <BingkaiFoto src={e.fotoUrl} alt="Foto tindak lanjut" className="mt-2 max-w-[200px]" />
+          <BingkaiFoto src={e.fotoUrl} alt="Foto tindak lanjut" className="mt-2 max-w-50" />
         )}
       </div>
     </li>

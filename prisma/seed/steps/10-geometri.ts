@@ -31,6 +31,7 @@ import { readFileSync } from "node:fs"
 import { join } from "node:path"
 import type { PrismaClientLike } from "../lib/db"
 import type { SeedReport } from "../lib/report"
+import { parseIsoDate, trimOrNull } from "../lib/normalize"
 
 const STEP = "10-geometri"
 // Pola path sama dengan lib/csv.ts: relatif cwd (seed dijalankan dari root
@@ -40,6 +41,11 @@ const DATA_DIR = join(process.cwd(), "prisma", "data")
 interface FiturGeoJson {
   geometry: { type: string; coordinates: unknown } | null
   properties: Record<string, unknown>
+}
+
+interface TitikGeoJson {
+  longitude: number
+  latitude: number
 }
 
 function bacaGeoJson(nama: string): FiturGeoJson[] {
@@ -55,6 +61,54 @@ function bacaGeoJson(nama: string): FiturGeoJson[] {
 /// pelanggan yang terimpor — sisanya dilewati dengan catatan skipped).
 function kunciNama(nama: string): string {
   return nama.toUpperCase().replace(/\s+/g, " ").trim()
+}
+
+function teksProperti(fitur: FiturGeoJson, nama: string): string | null {
+  const nilai = fitur.properties[nama]
+  return typeof nilai === "string" || typeof nilai === "number"
+    ? trimOrNull(String(nilai))
+    : null
+}
+
+function titikSurvei(fitur: FiturGeoJson): TitikGeoJson | null {
+  if (fitur.geometry?.type !== "Point" || !Array.isArray(fitur.geometry.coordinates))
+    return null
+  const [longitude, latitude] = fitur.geometry.coordinates
+  if (
+    typeof longitude !== "number" ||
+    typeof latitude !== "number" ||
+    latitude < -8 ||
+    latitude > -6 ||
+    longitude < 106 ||
+    longitude > 109
+  )
+    return null
+  return { longitude, latitude }
+}
+
+function nomorEksPelanggan(raw: string | null): string | null {
+  if (!raw) return null
+  const kandidat = (raw.match(/\d+/g) ?? []).filter(
+    (angka) => angka.length >= 8 && angka.length <= 11,
+  )
+  return kandidat.length === 1 ? kandidat[0]!.padStart(11, "0") : null
+}
+
+function periodeSurvei(fitur: FiturGeoJson, report: SeedReport): number {
+  const tanggalCabut = teksProperti(fitur, "Tanggal Cabut")
+  const tanggalSurvei =
+    teksProperti(fitur, "Tanggal Survei") ??
+    teksProperti(fitur, "Submitted On")
+  const tanggal = parseIsoDate(tanggalCabut) ?? parseIsoDate(tanggalSurvei)
+  if (tanggal)
+    return tanggal.getUTCFullYear() * 100 + tanggal.getUTCMonth() + 1
+
+  report.warn(
+    STEP,
+    "Tanggal pencabutan dan tanggal survei tidak terbaca; periode laporan fallback ke Mei 2026 (tanggal pencabutan tetap kosong).",
+    { key: teksProperti(fitur, "Response Code") ?? undefined },
+  )
+  return 202605
 }
 
 async function isiAreaKelurahan(prisma: PrismaClientLike, report: SeedReport): Promise<void> {
@@ -119,46 +173,332 @@ async function turunkanAreaKecamatan(prisma: PrismaClientLike, report: SeedRepor
 
 async function isiKoordinatPelanggan(prisma: PrismaClientLike, report: SeedReport): Promise<void> {
   const fitur = bacaGeoJson("Data_progres_verifikasi_pelanggan_PW_5_2026.geojson")
+  const pelanggan = await prisma.pelanggan.findMany({
+    select: { id: true, nomorLangganan: true },
+  })
+  const pelangganByNomor = new Map(
+    pelanggan.map((row) => [row.nomorLangganan.trim(), row.id]),
+  )
+  const fiturByNomor = new Map<string, FiturGeoJson[]>()
+  const koordinatPelanggan: Array<{
+    id: string
+    longitude: number
+    latitude: number
+  }> = []
 
   for (const f of fitur) {
-    const nomorMentah = String(f.properties["Nomor Pelanggan"] ?? "").replace(/\D/g, "")
+    if (teksProperti(f, "Status Kepelangganan")?.toLocaleUpperCase("id-ID") !== "PELANGGAN")
+      continue
+    const nomorMentah = teksProperti(f, "Nomor Pelanggan")?.replace(/\D/g, "")
     if (!nomorMentah) {
-      // Titik survei non-pelanggan (calon/eks) — bukan error.
       report.skipped(STEP)
+      report.warn(STEP, "Survei berstatus pelanggan tidak memiliki nomor pelanggan.", {
+        key: teksProperti(f, "Response Code") ?? undefined,
+      })
       continue
     }
     const nomor = nomorMentah.padStart(11, "0")
-    const koordinat = f.geometry?.type === "Point" ? (f.geometry.coordinates as number[]) : null
-    const lng = koordinat?.[0]
-    const lat = koordinat?.[1]
-    // Kota Bandung ± sekitarnya — titik di luar kotak ini pasti salah entri
-    // GPS (0,0 dsb), jangan ditulis.
-    if (
-      typeof lat !== "number" ||
-      typeof lng !== "number" ||
-      lat < -8 ||
-      lat > -6 ||
-      lng < 106 ||
-      lng > 109
-    ) {
+    const baris = fiturByNomor.get(nomor) ?? []
+    baris.push(f)
+    fiturByNomor.set(nomor, baris)
+  }
+
+  for (const [nomor, baris] of fiturByNomor) {
+    const id = pelangganByNomor.get(nomor)
+    if (!id) {
       report.skipped(STEP)
+      report.warn(STEP, "Nomor pelanggan survei tidak ditemukan pada master pelanggan.", {
+        key: nomor,
+      })
       continue
     }
 
-    const jumlah = await prisma.$executeRawUnsafe(
-      `UPDATE pelanggan
-          SET koordinat = ST_SetSRID(ST_MakePoint($1, $2), 4326)
-        WHERE "nomorLangganan" = $3`,
-      lng,
-      lat,
-      nomor
-    )
-    if (jumlah > 0) report.updated(STEP)
-    else {
-      // Nomor survei yang tidak ada di master pelanggan — pola yang sama
-      // dengan CSV lapangan lain (referensi di luar jendela impor).
+    const titik = baris.map(titikSurvei)
+    if (titik.some((koordinat) => koordinat === null)) {
       report.skipped(STEP)
+      report.warn(STEP, "Titik koordinat pelanggan survei tidak valid.", { key: nomor })
+      continue
     }
+    const koordinatUnik = new Set(
+      titik.map((koordinat) =>
+        `${koordinat!.longitude.toFixed(7)},${koordinat!.latitude.toFixed(7)}`,
+      ),
+    )
+    if (koordinatUnik.size > 1) {
+      report.skipped(STEP)
+      report.warn(
+        STEP,
+        "Nomor pelanggan muncul pada beberapa titik survei yang berbeda; koordinat master tidak ditimpa.",
+        { key: nomor },
+      )
+      continue
+    }
+
+    const koordinat = titik[0]!
+    koordinatPelanggan.push({ id, ...koordinat })
+  }
+
+  if (koordinatPelanggan.length > 0) {
+    await prisma.$executeRawUnsafe(
+      `UPDATE pelanggan p
+          SET koordinat = ST_SetSRID(ST_MakePoint(titik.longitude, titik.latitude), 4326)
+         FROM jsonb_to_recordset($1::jsonb) AS titik(
+           id text, longitude double precision, latitude double precision
+         )
+        WHERE p.id = titik.id`,
+      JSON.stringify(koordinatPelanggan),
+    )
+    for (let i = 0; i < koordinatPelanggan.length; i++) report.updated(STEP)
+  }
+}
+
+async function petaNamaWilayah(prisma: PrismaClientLike) {
+  const [kelurahan, kecamatan] = await Promise.all([
+    prisma.kelurahan.findMany({
+      select: { id: true, nama: true },
+    }),
+    prisma.kecamatan.findMany({
+      select: { id: true, nama: true },
+    }),
+  ])
+  return {
+    kelurahan: new Map(kelurahan.map((row) => [kunciNama(row.nama), row.id])),
+    kecamatan: new Map(kecamatan.map((row) => [kunciNama(row.nama), row.id])),
+  }
+}
+
+async function isiPotensiPelanggan(
+  prisma: PrismaClientLike,
+  report: SeedReport,
+): Promise<void> {
+  const fitur = bacaGeoJson("Data_progres_verifikasi_pelanggan_PW_5_2026.geojson")
+  const wilayah = await petaNamaWilayah(prisma)
+  const survei: Array<{
+    kodeSurvei: string
+    alamat: string
+    kategori: string | null
+    catatan: string | null
+    kelurahanId: string | null
+    longitude: number
+    latitude: number
+  }> = []
+
+  for (const f of fitur) {
+    if (
+      teksProperti(f, "Status Kepelangganan")?.toLocaleUpperCase("id-ID") !==
+      "NON PELANGGAN"
+    )
+      continue
+    const kodeSurvei = teksProperti(f, "Response Code")
+    const alamat = teksProperti(f, "Alamat")
+    const titik = titikSurvei(f)
+    if (!kodeSurvei || !alamat || !titik) {
+      report.skipped(STEP)
+      report.warn(
+        STEP,
+        "Survei calon pelanggan tidak memiliki kode, alamat, atau titik valid.",
+        { key: kodeSurvei ?? undefined },
+      )
+      continue
+    }
+
+    const kelurahanNama = teksProperti(f, "KELURAHAN")
+    const kecamatanNama = teksProperti(f, "KECAMATAN")
+    const kelurahanId = kelurahanNama
+      ? wilayah.kelurahan.get(kunciNama(kelurahanNama))
+      : undefined
+    if (!kelurahanId) {
+      report.warn(STEP, "Kelurahan calon pelanggan tidak cocok dengan master wilayah.", {
+        key: kodeSurvei,
+      })
+    }
+    if (
+      kecamatanNama &&
+      !wilayah.kecamatan.has(kunciNama(kecamatanNama))
+    ) {
+      report.warn(STEP, "Kecamatan calon pelanggan tidak cocok dengan master wilayah.", {
+        key: kodeSurvei,
+      })
+    }
+
+    survei.push({
+      kodeSurvei,
+      alamat,
+      kategori: teksProperti(f, "Kategori Pelanggan"),
+      catatan: teksProperti(f, "Catatan Survei"),
+      kelurahanId: kelurahanId ?? null,
+      ...titik,
+    })
+  }
+
+  if (survei.length > 0) {
+    const dibuat = await prisma.potensiPelanggan.createMany({
+      data: survei.map((data) => ({
+        kodeSurvei: data.kodeSurvei,
+        alamat: data.alamat,
+        kategori: data.kategori,
+        catatan: data.catatan,
+        kelurahanId: data.kelurahanId,
+        status: "PROSPEK",
+      })),
+      skipDuplicates: true,
+    })
+    await prisma.$executeRawUnsafe(
+      `UPDATE potensi_pelanggan p
+          SET alamat = survei.alamat,
+              kategori = survei.kategori,
+              catatan = survei.catatan,
+              "kelurahanId" = survei."kelurahanId",
+              koordinat = ST_SetSRID(ST_MakePoint(survei.longitude, survei.latitude), 4326),
+              "updatedAt" = CURRENT_TIMESTAMP
+         FROM jsonb_to_recordset($1::jsonb) AS survei(
+           "kodeSurvei" text, alamat text, kategori text, catatan text,
+           "kelurahanId" text, longitude double precision, latitude double precision
+         )
+        WHERE p."kodeSurvei" = survei."kodeSurvei"`,
+      JSON.stringify(survei),
+    )
+    for (let i = 0; i < dibuat.count; i++) report.created(STEP)
+    for (let i = dibuat.count; i < survei.length; i++) report.updated(STEP)
+  }
+}
+
+async function isiEksPelanggan(
+  prisma: PrismaClientLike,
+  report: SeedReport,
+): Promise<void> {
+  const fitur = bacaGeoJson("Data_progres_verifikasi_pelanggan_PW_5_2026.geojson")
+  const wilayah = await petaNamaWilayah(prisma)
+  const pelanggan = await prisma.pelanggan.findMany({
+    select: { id: true, nama: true, nomorLangganan: true },
+  })
+  const pelangganByNomor = new Map(
+    pelanggan.map((row) => [
+      row.nomorLangganan.trim(),
+      { id: row.id, nama: row.nama },
+    ]),
+  )
+  const survei: Array<{
+    kodeSurvei: string
+    pelangganId: string | null
+    kelurahanId: string | null
+    kecamatanId: string | null
+    nomorLangganan: string | null
+    namaPelanggan: string | null
+    periode: number
+    tanggalCabut: Date | null
+    catatanSurveiAsli: string | null
+    catatan: string | null
+    longitude: number
+    latitude: number
+  }> = []
+
+  for (const f of fitur) {
+    if (
+      teksProperti(f, "Status Kepelangganan")?.toLocaleUpperCase("id-ID") !==
+      "EKS PELANGGAN"
+    )
+      continue
+    const kodeSurvei = teksProperti(f, "Response Code")
+    const titik = titikSurvei(f)
+    if (!kodeSurvei || !titik) {
+      report.skipped(STEP)
+      report.warn(STEP, "Survei eks-pelanggan tidak memiliki kode atau titik valid.", {
+        key: kodeSurvei ?? undefined,
+      })
+      continue
+    }
+
+    const catatanSurveiAsli = teksProperti(f, "Nomor Eks Pelanggan")
+    const nomor = nomorEksPelanggan(catatanSurveiAsli)
+    const pelangganTerkait = nomor ? pelangganByNomor.get(nomor) : undefined
+    if (catatanSurveiAsli && !nomor) {
+      report.warn(
+        STEP,
+        "Nomor eks-pelanggan tidak dapat dipasangkan secara pasti; teks asli tetap disimpan.",
+        { key: kodeSurvei },
+      )
+    } else if (nomor && !pelangganTerkait) {
+      report.warn(
+        STEP,
+        "Nomor eks-pelanggan hasil parsing tidak ditemukan pada master; nomor dan teks asli tetap disimpan.",
+        { key: kodeSurvei },
+      )
+    }
+    const tanggalCabut = parseIsoDate(teksProperti(f, "Tanggal Cabut"))
+    const periode = periodeSurvei(f, report)
+    const kelurahanNama = teksProperti(f, "KELURAHAN")
+    const kecamatanNama = teksProperti(f, "KECAMATAN")
+    const kelurahanId = kelurahanNama
+      ? wilayah.kelurahan.get(kunciNama(kelurahanNama))
+      : undefined
+    const kecamatanId = kecamatanNama
+      ? wilayah.kecamatan.get(kunciNama(kecamatanNama))
+      : undefined
+    if (!kelurahanId || !kecamatanId) {
+      report.warn(STEP, "Wilayah survei eks-pelanggan tidak lengkap atau tidak cocok.", {
+        key: kodeSurvei,
+      })
+    }
+
+    survei.push({
+      kodeSurvei,
+      pelangganId: pelangganTerkait?.id ?? null,
+      kelurahanId: kelurahanId ?? null,
+      kecamatanId: kecamatanId ?? null,
+      nomorLangganan: nomor,
+      namaPelanggan: pelangganTerkait?.nama ?? null,
+      periode,
+      tanggalCabut,
+      catatanSurveiAsli,
+      catatan: teksProperti(f, "Catatan Survei"),
+      ...titik,
+    })
+  }
+
+  if (survei.length > 0) {
+    const dibuat = await prisma.pemutusan.createMany({
+      data: survei.map((data) => ({
+        kodeSurvei: data.kodeSurvei,
+        pelangganId: data.pelangganId,
+        kelurahanId: data.kelurahanId,
+        kecamatanId: data.kecamatanId,
+        nomorLangganan: data.nomorLangganan,
+        namaPelanggan: data.namaPelanggan,
+        periode: data.periode,
+        tanggalCabut: data.tanggalCabut,
+        catatanSurveiAsli: data.catatanSurveiAsli,
+        catatan: data.catatan,
+        jenis: "LAINNYA",
+        sumberData: "SURVEI_GEOJSON",
+      })),
+      skipDuplicates: true,
+    })
+    await prisma.$executeRawUnsafe(
+      `UPDATE pemutusan p
+          SET "pelangganId" = survei."pelangganId",
+              "kelurahanId" = survei."kelurahanId",
+              "kecamatanId" = survei."kecamatanId",
+              "nomorLangganan" = survei."nomorLangganan",
+              "namaPelanggan" = survei."namaPelanggan",
+              periode = survei.periode,
+              "tanggalCabut" = survei."tanggalCabut",
+              "catatanSurveiAsli" = survei."catatanSurveiAsli",
+              catatan = survei.catatan,
+              "koordinatVerifikasi" =
+                ST_SetSRID(ST_MakePoint(survei.longitude, survei.latitude), 4326),
+              "updatedAt" = CURRENT_TIMESTAMP
+         FROM jsonb_to_recordset($1::jsonb) AS survei(
+           "kodeSurvei" text, "pelangganId" text, "kelurahanId" text,
+           "kecamatanId" text, "nomorLangganan" text, "namaPelanggan" text,
+           periode integer, "tanggalCabut" timestamptz, "catatanSurveiAsli" text,
+           catatan text, longitude double precision, latitude double precision
+         )
+        WHERE p."kodeSurvei" = survei."kodeSurvei"`,
+      JSON.stringify(survei),
+    )
+    for (let i = 0; i < dibuat.count; i++) report.created(STEP)
+    for (let i = dibuat.count; i < survei.length; i++) report.updated(STEP)
   }
 }
 
@@ -166,6 +506,8 @@ export async function seedGeometri(prisma: PrismaClientLike, report: SeedReport)
   await isiAreaKelurahan(prisma, report)
   await turunkanAreaKecamatan(prisma, report)
   await isiKoordinatPelanggan(prisma, report)
+  await isiPotensiPelanggan(prisma, report)
+  await isiEksPelanggan(prisma, report)
 
   report.warn(
     STEP,

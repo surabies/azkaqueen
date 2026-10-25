@@ -475,7 +475,9 @@ model PotensiPelanggan {
   alamat      String
   koordinat   Unsupported("geometry(Point, 4326)")?
   status      StatusPotensi            @default(PROSPEK)
+  kategori    String?
   catatan     String?
+  kodeSurvei  String?                  @unique
   petugasId   String?
   ruteId      String?
   kelurahanId String?

@@ -4,56 +4,109 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* ─────────────────────────────────────────────────────────────────────────────
+   @theme inline — jembatan variabel CSS → utilitas Tailwind
+   Urutan: font → skala teks → radius → shadcn core → brand → chart → sidebar
+           → chrome & tabel → bayangan → semantik
+───────────────────────────────────────────────────────────────────────────── */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-geist-sans);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
-  --color-destructive: var(--destructive);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
-  --color-card: var(--card);
 
-  /* Radius — skala sama dengan acuan (--radius 6px, kelipatan dari situ) */
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
+  /* Skala teks Geist (`text-label-*`, `text-copy-*`, `text-heading-*`).
+     text-sm 14px adalah gaya yang PALING sering dipakai di Geist: baris menu,
+     sel tabel, tombol. */
+  --text-xs: 0.75rem; /*    12px/16 */
+  --text-xs--line-height: 1.3333;
+  --text-sm: 0.875rem; /*   14px/20 */
+  --text-sm--line-height: 1.4286;
+  --text-base: 1rem; /*     16px/24 */
+  --text-base--line-height: 1.5;
+  --text-lg: 1.125rem; /*   18px/28 */
+  --text-lg--line-height: 1.5556;
+  --text-xl: 1.25rem; /*    20px/26 — heading-20 */
+  --text-xl--line-height: 1.3;
+  --text-2xl: 1.5rem; /*    24px/32 — heading-24, judul halaman */
+  --text-2xl--line-height: 1.3333;
+  --text-3xl: 2rem; /*      32px/40 — heading-32, angka ringkasan */
+  --text-3xl--line-height: 1.25;
+
+  /* Geist merapatkan tracking makin besar hurufnya (dibaca dari
+     `text-heading-*`): 32px → -1.28px, 24px → -0.96px, 20px → -0.4px,
+     16px → -0.32px, 14px → -0.28px. Pemakaian: `tracking-heading-24`. */
+  --tracking-heading-32: -0.04em;
+  --tracking-heading-24: -0.04em;
+  --tracking-heading-20: -0.02em;
+  --tracking-heading-16: -0.02em;
+  --tracking-heading-14: -0.02em;
+
+  /* Radius — SATU sumber: `--radius` di :root (6px, --geist-radius).
+     Dulu `--radius` ditulis dua kali (0.5rem di sini, 0.25rem di :root) dan
+     yang menang adalah 0.25rem = 4px, bukan 6px seperti komentarnya. Itu
+     penyebab sudut terasa lebih tajam daripada Vercel. */
+  --radius-sm: calc(var(--radius) * 0.6); /*  3.6px */
+  --radius-md: calc(var(--radius) * 0.8); /*  4.8px */
+  --radius-lg: var(--radius); /*              6px   — tombol, input, menu */
+  --radius-xl: calc(var(--radius) * 1.4); /*  8.4px — kartu */
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
 
+  /* shadcn core */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Merek: bidang tombol primer, hover-nya, dan merek sebagai TEKS */
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-ink: var(--brand-ink);
+
   /* Garis pemisah DI DALAM panel — satu langkah lebih terang dari --border */
   --color-border-subtle: var(--border-subtle);
 
-  /* Bayangan Geist: berlapis, opasitas rendah. Dipakai lewat shadow-panel
-     dan shadow-overlay. */
+  /* Seri grafik */
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  /* Sidebar */
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Chrome (navbar, sidebar, subheader) dan permukaan tabel */
+  --color-chrome: var(--chrome);
+  --color-chrome-accent: var(--chrome-accent);
+  --color-table-head: var(--table-head);
+  --color-table-stripe: var(--table-stripe);
+  --color-table-accent: var(--table-accent);
+
+  /* Bayangan Geist: berlapis, opasitas rendah. Pakai `shadow-panel` dan
+     `shadow-overlay`. */
   --shadow-panel: var(--panel-shadow);
   --shadow-overlay: var(--overlay-shadow);
 
@@ -67,14 +120,51 @@
   --color-info: var(--info);
   --color-info-foreground: var(--info-foreground);
   --color-info-muted: var(--info-muted);
+
+  /* Netral grafik & legenda.
+     Di versi Vercel tiga baris berikut ditulis tanpa awalan `color-`
+     (`--chart-brush-border: var(--chart-brush-border)`), artinya merujuk
+     dirinya sendiri dan tidak pernah menghasilkan utilitas. Sudah dibetulkan. */
+  --color-chart-scale-pattern-color: var(--chart-scale-pattern-color);
+  --color-chart-scale-05: var(--chart-scale-05);
+  --color-chart-scale-04: var(--chart-scale-04);
+  --color-chart-scale-03: var(--chart-scale-03);
+  --color-chart-scale-02: var(--chart-scale-02);
+  --color-chart-scale-01: var(--chart-scale-01);
+  --color-chart-label: var(--chart-label);
+  --color-chart-marker-foreground: var(--chart-marker-foreground);
+  --color-chart-marker-border: var(--chart-marker-border);
+  --color-chart-marker-background: var(--chart-marker-background);
+  --color-chart-tooltip-muted: var(--chart-tooltip-muted);
+  --color-chart-tooltip-foreground: var(--chart-tooltip-foreground);
+  --color-chart-tooltip-background: var(--chart-tooltip-background);
+  --color-chart-brush-border: var(--chart-brush-border);
+  --color-chart-grid: var(--chart-grid);
+  --color-chart-crosshair: var(--chart-crosshair);
+  --color-chart-line-secondary: var(--chart-line-secondary);
+  --color-chart-line-primary: var(--chart-line-primary);
+  --color-chart-foreground-muted: var(--chart-foreground-muted);
+  --color-chart-foreground: var(--chart-foreground);
+  --color-chart-background: var(--chart-background);
+  --color-legend-track: var(--legend-track);
+  --color-legend-muted-foreground: var(--legend-muted-foreground);
+  --color-legend-muted: var(--legend-muted);
+  --color-legend-foreground: var(--legend-foreground);
+  --color-legend: var(--legend);
 }
 
+/* ─────────────────────────────────────────────────────────────────────────────
+   Tema terang — palet Geist (Vercel)
+───────────────────────────────────────────────────────────────────────────── */
 :root {
-  /* Skala abu-abu GEIST (netral murni, tanpa hue), dari --ds-gray-* di
-     vercel.com/geist. Nama lokal --gray-50..900 sama dengan acuan.
+  /* Skala abu-abu GEIST: netral murni (tanpa hue), dari --ds-gray-* di
+     vercel.com/geist. Nama lokal --gray-50..900 dipertahankan.
        gray-50   ds-background-200  kanvas halaman
        gray-100  ds-gray-100        latar hover
        gray-200  ds-gray-200        garis, latar item aktif
+       gray-300  ds-gray-300        garis lebih tegas
+       gray-400  ds-gray-500        garis kontrol
+       gray-600  ds-gray-700        teks paling redup
        gray-800  ds-gray-900        teks sekunder
        gray-900  ds-gray-1000       teks utama & tombol primer */
   --gray-50: #fafafa;
@@ -113,8 +203,16 @@
   --accent-foreground: var(--gray-900);
   --destructive: oklch(0.6256 0.2524 23.03); /* ds-red-700 */
 
-  --border: var(--gray-200);
-  --border-subtle: var(--gray-100);
+  /* Merek = primer. Hover tombol primer Geist adalah hsl(0 0% 22%): ia
+     MENERANG, bukan menggelap, karena #171717 sudah nyaris hitam. Pakai
+     `hover:bg-brand-hover` pada tombol primer. */
+  --brand: var(--gray-900);
+  --brand-hover: #383838;
+  /* Merek sebagai TEKS (tautan, tab aktif, ikon aksen) */
+  --brand-ink: oklch(0.21 0.006 285.885);
+
+  --border: var(--gray-200); /*        garis LUAR panel */
+  --border-subtle: var(--gray-100); /* garis DI DALAM panel */
   --input: var(--gray-200);
 
   /* ds-blue-700 — satu-satunya warna interaktif di Geist. Cincin fokus dua
@@ -128,19 +226,56 @@
     0px 1px 1px #00000005, 0px 4px 8px -4px #0000000a,
     0px 16px 24px -8px #0000000f;
 
-  /* Seri grafik: lima hue Geist langkah 700. Urutan slot tetap. */
+  /* ── GEOMETRI ──────────────────────────────────────────────────────────
+     Inilah angka yang membuat tampilan terbaca sebagai Vercel. */
+  --radius: 0.375rem; /* 6px — --geist-radius: tombol, input, menu, kartu */
+
+  /* Tangga tinggi kontrol Geist: 32 (small) / 36 (default) / 40 (large).
+     36px adalah tinggi tombol "Add New", kotak pencarian, dan baris menu
+     sidebar di dashboard Vercel. Pakai `h-control` atau `h-(--control-height)`. */
+  --control-height: 2.25rem; /* 36px */
+  --header-height: 3.5rem; /*   56px — bilah atas dashboard Vercel */
+  --app-sidebar-width: 15.3125rem; /* 245px — sidebar dashboard Vercel */
+
+  /* Lapisan (z-index). Urutannya membawa arti: overlay HARUS di atas chrome,
+     karena dropdown/popover/dialog di-portal ke <body>.
+       sheet    50  panel menu HP (di bawah navbar)
+       chrome   60  navbar dan pil navigasi mengambang
+       overlay  70  dropdown, popover, select, tooltip, dialog */
+  --z-sheet: 50;
+  --z-chrome: 60;
+  --z-overlay: 70;
+
+  /* ── CHROME — navbar, sidebar, subheader ───────────────────────────────
+     Di dashboard Vercel sidebar dan halaman BERWARNA SAMA (#fafafa), hanya
+     dipisah satu garis. Jadi chrome = kanvas. Yang perlu nilai sendiri cuma
+     latar hover-nya, karena `--muted` di atas chrome yang sewarna kanvas
+     hilang sama sekali. */
+  --chrome: var(--background);
+  --chrome-accent: var(--gray-100);
+
+  /* ── TABEL ─────────────────────────────────────────────────────────────
+     Diturunkan dari satu abu netral lewat color-mix → hasilnya PADAT (opaque),
+     jadi aman untuk kepala tabel lengket: baris yang tergulir di belakangnya
+     tidak tembus pandang. */
+  --slate: #8f8f8f;
+  --table-head: color-mix(in oklch, var(--slate) 6%, var(--card));
+  --table-stripe: color-mix(in oklch, var(--slate) 3%, var(--card));
+  --table-accent: color-mix(in oklch, var(--slate) 32%, var(--card));
+
+  /* Seri grafik: lima hue Geist langkah 700. Urutan slot TETAP dan mengikuti
+     arti (1 biru, 2 amber, 3 hijau, 4 ungu, 5 teal). Merah sengaja tidak
+     masuk: ia sudah berarti "gagal" di status. */
   --chart-1: oklch(0.5761 0.2508 258.23); /* biru   */
   --chart-2: oklch(0.7721 0.1991 64.28); /*  amber  */
   --chart-3: oklch(0.6458 0.1746 147.27); /* hijau  */
   --chart-4: oklch(0.555 0.3008 306.12); /*  ungu   */
   --chart-5: oklch(0.6492 0.1572 181.95); /* teal   */
 
-  /* 6px — --geist-radius: tombol, input, kartu, menu */
-  --radius: 0.375rem;
-
-  /* Sidebar Vercel: latar sama dengan kanvas, dipisah satu garis. Item aktif
-     ds-gray-200, teks tidak aktif #4d4d4d. */
-  --sidebar: var(--background);
+  /* Sidebar Vercel: latar sama dengan chrome/kanvas, dipisah satu garis.
+     Baris menu setinggi 36px ber-radius 6px, teks #4d4d4d, hover ds-gray-100,
+     AKTIF ds-gray-200 dengan teks #171717. */
+  --sidebar: var(--chrome);
   --sidebar-foreground: var(--gray-800);
   --sidebar-primary: var(--gray-900);
   --sidebar-primary-foreground: #ffffff;
@@ -148,6 +283,12 @@
   --sidebar-accent-foreground: var(--gray-900);
   --sidebar-border: var(--border);
   --sidebar-ring: var(--ring);
+
+  /* Batang gulir: tipis, ibu jari setengah tembus, menguat saat di-hover */
+  --scrollbar-size: 0.375rem; /*      6px */
+  --scrollbar-size-coarse: 0.25rem; /* 4px — layar sentuh */
+  --scrollbar-thumb: oklch(0% 0 0 / 0.16);
+  --scrollbar-thumb-hover: oklch(0% 0 0 / 0.32);
 
   /* Semantik */
   --success: oklch(0.6458 0.1746 147.27);
@@ -159,11 +300,45 @@
   --info: oklch(0.5761 0.2508 258.23);
   --info-foreground: #ffffff;
   --info-muted: #e7f3fe;
+
+  /* Netral grafik: MENUNJUK token yang sudah berganti sendiri per tema, jadi
+     blok .dark tidak perlu mengulangnya. */
+  --chart-background: var(--card);
+  --chart-foreground: var(--gray-800);
+  --chart-foreground-muted: var(--gray-600);
+  --chart-line-primary: var(--chart-1);
+  --chart-line-secondary: var(--chart-2);
+  --chart-crosshair: var(--gray-500);
+  --chart-grid: var(--gray-200);
+  --chart-brush-border: var(--chart-grid);
+  --chart-tooltip-background: rgb(from var(--popover) r g b / 0.92);
+  --chart-tooltip-foreground: var(--gray-900);
+  --chart-tooltip-muted: var(--gray-800);
+  --chart-marker-background: var(--gray-100);
+  --chart-marker-border: var(--gray-400);
+  --chart-marker-foreground: var(--gray-900);
+  --chart-label: var(--gray-800);
+  /* Skala berurutan satu hue (biru), pucat → pekat */
+  --chart-scale-01: color-mix(in oklch, var(--chart-1) 10%, var(--card));
+  --chart-scale-02: color-mix(in oklch, var(--chart-1) 28%, var(--card));
+  --chart-scale-03: color-mix(in oklch, var(--chart-1) 48%, var(--card));
+  --chart-scale-04: color-mix(in oklch, var(--chart-1) 72%, var(--card));
+  --chart-scale-05: var(--chart-1);
+  --chart-scale-pattern-color: var(--gray-100);
+  --legend: var(--popover);
+  --legend-foreground: var(--gray-900);
+  --legend-muted: var(--gray-100);
+  --legend-muted-foreground: var(--gray-800);
+  --legend-track: var(--gray-200);
 }
 
+/* ─────────────────────────────────────────────────────────────────────────────
+   Tema gelap — sisi gelap Geist
+───────────────────────────────────────────────────────────────────────────── */
 .dark {
-  /* Sisi gelap Geist. Kanvas #0a0a0a, panel #141414 supaya hitam pekat
-     tidak jadi latar seluruh layar di monitor OLED. */
+  /* Kanvas #0a0a0a, panel #141414 supaya hitam pekat tidak jadi latar seluruh
+     layar di monitor OLED. Di gelap kanvas lebih GELAP daripada panel,
+     kebalikan dari tema terang. */
   --gray-50: #0a0a0a;
   --gray-100: #1a1a1a;
   --gray-200: #1f1f1f;
@@ -198,11 +373,25 @@
   --accent-foreground: var(--gray-900);
   --destructive: oklch(0.6994 0.1907 23.19);
 
+  --brand: var(--gray-900); /* #ededed — primer DIBALIK di tema gelap */
+  --brand-hover: #cccccc; /*  hsl(0 0% 80%), padanan Geist di tema gelap */
+  --brand-ink: var(--gray-900);
+
   --border: var(--gray-300);
   --border-subtle: var(--gray-200);
   --input: var(--gray-300);
   --ring: oklch(0.717 0.1648 250.794);
   --focus-ring: 0 0 0 2px var(--background), 0 0 0 4px var(--ring);
+
+  --chrome: var(--background);
+  --chrome-accent: var(--gray-100);
+
+  /* Di gelap yang memisahkan permukaan adalah cahaya, bukan bayangan, jadi
+     porsi abu-nya lebih besar daripada di tema terang. */
+  --slate: #878787;
+  --table-head: color-mix(in oklch, var(--slate) 9%, var(--card));
+  --table-stripe: color-mix(in oklch, var(--slate) 4%, var(--card));
+  --table-accent: color-mix(in oklch, var(--slate) 40%, var(--card));
 
   --panel-shadow: 0px 1px 2px #00000029;
   --overlay-shadow:
@@ -216,7 +405,7 @@
   --chart-4: oklch(0.6987 0.2037 309.51);
   --chart-5: oklch(0.7456 0.1765 182.8);
 
-  --sidebar: var(--background);
+  --sidebar: var(--chrome);
   --sidebar-foreground: var(--gray-800);
   --sidebar-primary: var(--gray-900);
   --sidebar-primary-foreground: #0a0a0a;
@@ -224,6 +413,10 @@
   --sidebar-accent-foreground: var(--gray-900);
   --sidebar-border: var(--border);
   --sidebar-ring: var(--ring);
+
+  /* Ibu jari batang gulir jadi terang, opasitas sedikit lebih tinggi */
+  --scrollbar-thumb: oklch(100% 0 0 / 0.2);
+  --scrollbar-thumb-hover: oklch(100% 0 0 / 0.38);
 
   --success: oklch(0.731 0.2158 148.29);
   --success-foreground: #10241b;
@@ -236,16 +429,104 @@
   --info-muted: #12212e;
 }
 
+/* ─────────────────────────────────────────────────────────────────────────────
+   Base layer
+───────────────────────────────────────────────────────────────────────────── */
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    /* text-sm (14px) = ukuran teks default di dashboard Geist. Tanpa ini teks
+       yang tidak menyebut kelas ukuran ikut 16px bawaan peramban. */
+    @apply bg-background text-sm text-foreground;
   }
   html {
     @apply font-sans;
   }
+
+  /* Batang gulir — dua sintaks karena tidak ada satu pun yang didukung semua
+     peramban: `scrollbar-*` (Firefox) dan `::-webkit-scrollbar` (Chrome, Edge,
+     Safari). Track dibiarkan transparan. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
+  }
+
+  ::-webkit-scrollbar {
+    width: var(--scrollbar-size);
+    height: var(--scrollbar-size);
+  }
+
+  ::-webkit-scrollbar-track,
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: var(--scrollbar-thumb);
+    border-radius: 9999px;
+  }
+
+  /* Hanya di perangkat berkursor: di layar sentuh :hover menempel setelah
+     disentuh dan batangnya jadi gelap permanen. */
+  @media (hover: hover) {
+    ::-webkit-scrollbar-thumb:hover {
+      background-color: var(--scrollbar-thumb-hover);
+    }
+  }
+
+  @media (pointer: coarse) {
+    ::-webkit-scrollbar {
+      width: var(--scrollbar-size-coarse);
+      height: var(--scrollbar-size-coarse);
+    }
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Utilitas
+───────────────────────────────────────────────────────────────────────────── */
+
+/* Tinggi kontrol standar (36px). Satu tempat untuk tombol, input, select. */
+@utility h-control {
+  height: var(--control-height);
+}
+
+/* Angka: proporsional + tabular, BUKAN monospace. `tabular-nums` sudah
+   menyejajarkan digit dengan lebar yang dirancang perancang hurufnya; mono
+   hanya menambah jarak aneh di titik dan koma. Mono disimpan untuk kode
+   (nomor dokumen, ID, hash). */
+@utility num {
+  font-variant-numeric: tabular-nums lining-nums;
+  letter-spacing: -0.01em;
+}
+
+/* Angka besar (KPI). Bobotnya 500, bukan lebih tebal: ukuran sudah menaikkan
+   kepentingan, dan tracking dirapatkan karena jarak yang pas pada 14px terlihat
+   longgar pada 20px. */
+@utility num-display {
+  font-variant-numeric: tabular-nums lining-nums;
+  letter-spacing: -0.022em;
+  font-weight: 500;
+}
+
+/* Label mikro — penanda KELOMPOK (judul section, kepala widget), bukan label
+   sebuah nilai. */
+@utility label-micro {
+  font-size: var(--text-xs);
+  line-height: var(--text-xs--line-height);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* Permukaan chrome (navbar, subheader). Selain memberi latar, ia memetakan
+   ulang `--muted` di dalamnya supaya `<Button variant="ghost">` yang ber-
+   `hover:bg-muted` tetap punya hover yang terlihat di atas chrome. */
+@utility chrome-surface {
+  background-color: var(--chrome);
+  --muted: var(--chrome-accent);
 }
 
 @utility bg-diagonal-pattern {
