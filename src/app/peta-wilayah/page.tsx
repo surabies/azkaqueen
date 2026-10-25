@@ -48,7 +48,7 @@ export default async function WilayahPage() {
 
   return (
     <PageContainer
-      className="flex h-[calc(100dvh-7rem-1px)] min-h-0 flex-col overflow-hidden lg:h-[calc(100dvh-3.5rem-1px)]"
+      className="flex h-[calc(100dvh-7rem-1px)] min-h-0 flex-col overflow-hidden pt-3 sm:pt-3 [&>header]:hidden sm:[&>header]:flex lg:h-[calc(100dvh-3.5rem-1px)]"
       breadcrumbs={[
         { label: "Jaringan & Distribusi", href: "/peta-wilayah" },
         { label: "Peta Wilayah" },
