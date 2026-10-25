@@ -1,11 +1,9 @@
 "use client"
 
 // features/dashboard/components/verifikasi/menu-konteks.tsx — menu aksi
-// klik kanan pada baris grid verifikasi. AG Grid menangani event contextmenu
-// sendiri (bukan lewat elemen trigger React), jadi dipakai DropdownMenu
-// terkontrol yang di-anchor ke titik kursor lewat trigger tak kasatmata —
-// bukan Radix ContextMenu yang menuntut membungkus elemen pemicunya.
-import type { LucideIcon } from "lucide-react"
+// klik kanan pada baris tabel verifikasi. DropdownMenu terkontrol yang
+// di-anchor ke titik kursor lewat trigger tak kasatmata.
+import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,7 +15,7 @@ import {
 
 export interface AksiKonteks {
   label: string
-  icon?: LucideIcon
+  icon?: IconSvgElement
   onPilih: () => void
   /** Aksi tampil tapi tidak bisa dijalankan; `keterangan` menjelaskan kenapa. */
   disabled?: boolean
@@ -60,15 +58,15 @@ export function MenuKonteks({
             <DropdownMenuSeparator />
           </>
         )}
-        {aksi.map((a) => (
+        {aksi.map((a, index) => (
           <div key={a.label}>
-            {a.pemisah && <DropdownMenuSeparator />}
+            {a.pemisah && index > 0 && <DropdownMenuSeparator />}
             <DropdownMenuItem
               disabled={a.disabled}
               variant={a.destruktif ? "destructive" : "default"}
               onSelect={a.onPilih}
             >
-              {a.icon && <a.icon className="size-3.5" />}
+              {a.icon && <HugeiconsIcon icon={a.icon} strokeWidth={2} className="size-3.5" aria-hidden />}
               <span className="flex min-w-0 flex-col">
                 <span>{a.label}</span>
                 {a.keterangan && (

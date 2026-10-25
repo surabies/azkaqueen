@@ -15,7 +15,7 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart";
 import { formatPeriode } from "@/features/public/lib/format";
-import { Panel } from "./panel";
+import { Panel } from "../panel";
 
 interface Titik {
   periode: number;

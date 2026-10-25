@@ -4,10 +4,11 @@
 // verifikasi: saringan, dua tab sumber (laporan / belum dibaca), tabel
 // berwarna, pemilihan, dan aksi massal.
 //
-// PEMILIHAN DIPEGANG DI SINI, bukan di tabel. Alasannya: aksi massal, ekspor,
-// dan pintasan papan ketik semuanya membicarakan himpunan yang sama, dan
-// menaruhnya di tabel akan memaksa ketiganya mengintip ke dalam anak
-// komponen.
+// PEMILIHAN DIPEGANG DI SINI, bukan di tabel: aksi massal, ekspor, dan
+// pintasan papan ketik semuanya membicarakan himpunan yang sama.
+//
+// Tombol tampilan (lipat ringkasan, kerapatan) kini di toolbar, sebaris dengan
+// pilihan jumlah baris. Baris tab hanya memuat tab, ringkasan sebaris, dan sisa kerja.
 
 import * as React from "react"
 import { Task01Icon, ViewOffIcon } from "@hugeicons/core-free-icons"
@@ -64,20 +65,15 @@ export function PanelTabel({
   onKlikKanan: (row: BarisVerifikasi, posisi: { x: number; y: number }) => void
   refreshKey: number
   onBerubah: () => void
-  /// Diberi tahu setiap kali periode yang dipilih berubah.
-  ///
-  /// KENAPA DIANGKAT KE INDUK. Kartu ringkasan (total, menunggu, resmi,
-  /// anomali) dirender induk dan mengambil datanya sendiri. Tanpa kaitan ini
-  /// keduanya memakai periode yang BERBEDA: tabel menampilkan Februari
-  /// sementara kartu di atasnya masih menghitung Januari — dan tidak ada
-  /// satu pun tanda bahwa keduanya bicara soal bulan yang berlainan.
+  /// Diberi tahu setiap kali periode yang dipilih berubah, supaya kartu
+  /// ringkasan di induk memakai periode yang SAMA dengan tabel.
   onPeriodeBerubah: (periode: number | null) => void
   /// Jumlah laporan periode ini yang belum lolos V3.
   sisaKerja: number | null
   /// Tab aktif diteruskan ke induk supaya panel detail tahu baris apa yang dipilih.
   onTabBerubah?: (tab: "laporan" | "belum") => void
   anomali?: number
-  /// Kartu ringkasan dilipat/dibuka dari kelompok tombol di baris tab ini.
+  /// Kartu ringkasan dilipat/dibuka dari kelompok tombol di toolbar.
   ringkasanTerbuka: boolean
   onRingkasan: (buka: boolean) => void
   stats: StatsVerifikasi | null
@@ -96,31 +92,19 @@ export function PanelTabel({
   const [hasil, setHasil] = React.useState<HasilMassal | null>(null)
   const jangkarRef = React.useRef<number | null>(null)
 
-  // Periode bawaan = PERIODE KERJA dari satu sumber (lihat
-  // lib/periode-kerja.ts), bukan "periode terbaru yang punya laporan".
-  // Bedanya terasa tepat setelah buka bulan baru: daftar kerja bulan depan
-  // sudah terbit tapi belum ada satu pun laporan, dan turunan lama akan
-  // menahan layar di bulan lalu — petugas punya pekerjaan, aplikasi belum
-  // mengakuinya.
   /// Daftar periode untuk dropdown diambil dari PERIODE KERJA, bukan dari
-  /// "periode yang punya laporan".
-  ///
-  /// Bedanya menentukan: tepat setelah buka bulan baru, daftar kerja bulan
-  /// depan sudah terbit (22.575 baris BELUM_DICATAT) tapi belum ada satu pun
-  /// laporan. Dengan sumber lama, bulan itu TIDAK MUNCUL di dropdown sama
-  /// sekali — operator tidak bisa memilihnya, dan aplikasi terasa berhenti
-  /// di bulan lalu padahal pekerjaannya sudah menunggu.
+  /// "periode yang punya laporan": tepat setelah buka bulan baru, daftar kerja
+  /// sudah terbit tapi belum ada satu pun laporan, dan bulan itu tidak akan
+  /// muncul di dropdown kalau sumbernya laporan.
   const { periodeKerja, daftar: daftarPeriode } = usePeriodeKerja()
   const periodePilihan = daftarPeriode.length > 0 ? daftarPeriode.map((d) => d.periode) : periodes
   /// Penyesuaian saat render, BUKAN useEffect — pola resmi React untuk
   /// "menyetel state ketika nilai dari luar berubah". Dengan useEffect, render
-  /// pertama memakai periode null (= semua periode) dan sempat menembakkan
-  /// pengambilan data untuk SELURUH periode sebelum efeknya menimpa filter.
+  /// pertama sempat mengambil data untuk SELURUH periode.
   const [periodeKerjaTerpakai, setPeriodeKerjaTerpakai] = React.useState<number | null>(null)
   if (periodeKerja !== null && periodeKerja !== periodeKerjaTerpakai) {
     setPeriodeKerjaTerpakai(periodeKerja)
-    // Syarat `=== null` dipertahankan: begitu operator memilih periode
-    // sendiri, periode kerja yang datang belakangan tidak boleh merebutnya.
+    // `=== null` dipertahankan: periode pilihan operator tidak boleh direbut.
     if (filter.periode === null) setFilter((f) => ({ ...f, periode: periodeKerja }))
   }
 
@@ -131,11 +115,7 @@ export function PanelTabel({
 
   React.useEffect(() => {
     let batal = false
-    // set-state-in-effect sengaja dimatikan DI SATU BARIS ini: menyalakan
-    // penanda "memuat" tepat sebelum permintaan jaringan berangkat memang
-    // harus di dalam efek — itu bukan state turunan yang bisa dihitung saat
-    // render. Menghapusnya berarti tabel tidak pernah menampilkan status
-    // memuat. Peringatan aslinya menyasar pola state turunan, bukan ini.
+    // Penanda "memuat" harus dinyalakan tepat sebelum permintaan berangkat.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setMemuat(true)
     setGalat(null)
@@ -143,14 +123,13 @@ export function PanelTabel({
       pageSize: filter.pageSize,
       periode: filter.periode ?? undefined,
       pencatatId: filter.pencatatId || undefined,
-      // Berlaku di KEDUA tab: /laporan-harian menyaringnya lewat relasi
-      // pelanggan, /belum-dibaca lewat kolom ruteId DaftarCatat.
+      // Berlaku di KEDUA tab: /laporan-harian lewat relasi pelanggan,
+      // /belum-dibaca lewat kolom ruteId DaftarCatat.
       ruteId: filter.ruteId || undefined,
       q: filter.q || undefined,
     }
     if (tab === "laporan") {
-      // Muatan ringkas: tabel cuma butuh 18 kolom, bukan 50 field + 7 relasi.
-      // Panel detail mengambil baris penuh sendiri saat baris dipilih.
+      // Muatan ringkas: tabel cuma butuh kolom tampil, bukan 50 field + 7 relasi.
       params.ringkas = "true"
       params.statusVerif = filter.statusVerif || undefined
       params.tanggalDari = filter.tanggalDari || undefined
@@ -162,9 +141,6 @@ export function PanelTabel({
     ambilList<BarisVerifikasi>(jalur, params)
       .then(({ rows: r, total: t }) => {
         if (batal) return
-        // Tab "belum dibaca" mengembalikan baris DaftarCatat; identitasnya
-        // ada di relasi `pelanggan`. Dipetakan di sini supaya tabelnya
-        // tidak perlu tahu dua bentuk data.
         setRows(r)
         setTotal(t)
         setTerpilih(new Set())
@@ -176,13 +152,9 @@ export function PanelTabel({
     return () => { batal = true }
   }, [tab, filter, refreshKey])
 
-  // Papan ketik: Ctrl+A pilih semua, panah pindah baris aktif, Space
-  // menandai. Ditangani di sini (bukan di tabel) karena baris aktif dan
-  // himpunan terpilih dua-duanya milik komponen ini.
-  //
-  // Navigasi panah inilah yang membuat 22 ribu baris bisa dikerjakan:
-  // verifikator memeriksa ratusan baris tanpa menyentuh tetikus, dan panel
-  // detail mengikuti baris aktif dengan sendirinya.
+  // Papan ketik: Ctrl+A pilih semua, panah pindah baris aktif, Space menandai.
+  // Navigasi panah inilah yang membuat 22 ribu baris bisa dikerjakan tanpa
+  // menyentuh tetikus; panel detail mengikuti baris aktif.
   React.useEffect(() => {
     function onKey(e: KeyboardEvent) {
       const t = e.target as HTMLElement | null
@@ -256,28 +228,32 @@ export function PanelTabel({
     }
   }
 
-  /// Ekspor baris terpilih ke CSV — dibuat di peramban, tanpa perjalanan
-  /// bolak-balik ke server: datanya sudah ada di layar.
+  /// Ekspor baris terpilih ke CSV — dibuat di peramban, datanya sudah ada di layar.
+  /// Urutan kolom CSV mengikuti urutan kolom tabel.
   function ekspor() {
     const pilih = rows.filter((r) => terpilih.has(r.id))
     const kolom = [
-      "No. langganan", "Nama", "Alamat", "St awal", "St akhir", "m3", "m3 lalu", "%",
-      "Kondisi", "Petugas", "Status",
+      "No. Pel", "Nama", "ST Awal", "ST Akhir", "Pakai (m3)", "Lalu (m3)", "Dev %",
+      "Kondisi", "ST Resmi", "Tagihan (m3)", "Rute", "Petugas", "Tgl Catat", "Alamat", "Status",
     ]
     const isi = pilih.map((r) => [
       r.nomorLangganan ?? r.pelanggan?.nomorLangganan ?? "",
       r.pelanggan?.nama ?? r.namaPelanggan ?? "",
-      r.pelanggan?.alamat ?? r.alamatPelanggan ?? "",
-      r.standAwal ?? "", r.standAkhirRevisi ?? r.standAkhir ?? "",
+      r.standAwal ?? "", r.standAkhir ?? "",
       r.pemakaian ?? "", r.pemakaianLalu ?? "", r.persentase ?? "",
-      r.kondisi ?? "", r.pencatat?.namaLapangan ?? "",
+      r.kondisi ?? "",
+      r.verif1At ? r.standAkhirRevisi ?? r.standAkhir ?? "" : "",
+      r.verif1At ? r.pemakaianTagihVerif ?? r.pemakaian ?? "" : "",
+      r.pelanggan?.rute?.kode ?? "",
+      r.pencatat?.namaLapangan ?? "",
+      r.tanggalCatat ? r.tanggalCatat.slice(0, 10) : "",
+      r.pelanggan?.alamat ?? r.alamatPelanggan ?? "",
       r.verif3At ? "V3" : r.verif2At ? "V2" : r.verif1At ? "V1" : "MENUNGGU",
     ])
     const csv = [kolom, ...isi]
       .map((baris) => baris.map((s) => `"${String(s).replace(/"/g, '""')}"`).join(";"))
       .join("\n")
-    // BOM: tanpa ini Excel Indonesia membaca UTF-8 sebagai ANSI dan nama
-    // beraksen jadi rusak.
+    // BOM: tanpa ini Excel Indonesia membaca UTF-8 sebagai ANSI.
     const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" })
     const a = document.createElement("a")
     a.href = URL.createObjectURL(blob)
@@ -287,8 +263,7 @@ export function PanelTabel({
   }
 
   // Periode yang daftar kerjanya sudah terbit tapi belum ada setoran: tanpa
-  // pesan ini tabel kosong terbaca seperti aplikasi berhenti. Dulu berupa Alert
-  // sendiri yang memakan satu baris layar; kini jadi isi keadaan kosong tabel.
+  // pesan ini tabel kosong terbaca seperti aplikasi berhenti.
   const tanpaSaringan =
     filter.q === "" && filter.statusVerif === "" && filter.pencatatId === "" && filter.ruteId === "" &&
     filter.tanggalDari === "" && filter.tanggalSampai === "" && !filter.hanyaAnomali
@@ -327,19 +302,12 @@ export function PanelTabel({
         <div className="ml-auto flex items-center gap-3">
           {/* Terlipat = angka ringkasan pindah ke sini, tidak hilang. */}
           {!ringkasanTerbuka && <RingkasanSebaris stats={stats} />}
-          {/* Sisa pekerjaan selalu terlihat: "masih berapa lagi" tidak boleh
-              menuntut orang membuka layar lain. */}
+          {/* Sisa pekerjaan selalu terlihat. */}
           {tab === "laporan" && sisaKerja !== null && (
             <span className="text-muted-foreground text-xs tabular-nums">
               sisa <strong className="text-foreground">{sisaKerja.toLocaleString("id-ID")}</strong> belum V3
             </span>
           )}
-          <KontrolTampilan
-            ringkasanTerbuka={ringkasanTerbuka}
-            onRingkasan={onRingkasan}
-            padat={kerapatan === "padat"}
-            onPadat={(p) => setKerapatan(p ? "padat" : "normal")}
-          />
         </div>
       </div>
 
@@ -356,6 +324,14 @@ export function PanelTabel({
           modeBelumDibaca={tab === "belum"}
           anomali={anomali ?? 0}
           ambang={ambangAnomali}
+          aksiKanan={
+            <KontrolTampilan
+              ringkasanTerbuka={ringkasanTerbuka}
+              onRingkasan={onRingkasan}
+              padat={kerapatan === "padat"}
+              onPadat={(p) => setKerapatan(p ? "padat" : "normal")}
+            />
+          }
         />
       </div>
 
@@ -379,7 +355,6 @@ export function PanelTabel({
           </AlertDescription>
         </Alert>
       )}
-
 
       <div className="min-h-0 flex-1">
         <TabelVerifikasi

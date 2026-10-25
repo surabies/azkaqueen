@@ -4,14 +4,12 @@
 // saringan layar verifikasi, versi COMPACT.
 //
 // BARIS UTAMA hanya memuat yang dipakai tiap hari: cari, periode, tanggal.
-// Sisanya (status, petugas, rute, anomali) dilipat ke panel "Filters" — pola
-// yang sama dengan toolbar data-grid (TombolFilterLanjutan). Saringan yang
-// sedang aktif tetap kelihatan lewat angka di tombolnya, jadi tidak ada
-// saringan "tersembunyi tapi menyaring".
+// Sisanya (status, petugas, rute, anomali) dilipat ke panel "Filters".
+// Saringan yang sedang aktif tetap kelihatan lewat angka di tombolnya.
 //
-// Memakai kontrol toolbar data-grid supaya identik dengan halaman lain; hanya
-// KELAS (kelas-kontrol.ts) yang diimpor, bukan AG Grid.
-// SESUAIKAN PATH folder `../data-grid/toolbar/…` dengan struktur proyekmu.
+// Di ujung kanan: jumlah tampil, pilihan jumlah baris, lalu `aksiKanan`
+// (tombol tampilan: lipat kartu ringkasan & kerapatan) — satu kelompok, satu
+// baris, tidak ada baris tambahan yang memakan tinggi layar.
 import * as React from "react"
 import { Alert02Icon, Cancel01Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
@@ -53,6 +51,7 @@ export function ToolbarVerifikasi({
   filter, onGanti, periodes, pencatats, rutes,
   jumlahTampil, jumlahTotal, memuat,
   modeBelumDibaca = false, anomali = 0, ambang = 50,
+  aksiKanan,
 }: {
   filter: FilterVerifikasi
   onGanti: (f: FilterVerifikasi) => void
@@ -66,6 +65,8 @@ export function ToolbarVerifikasi({
   modeBelumDibaca?: boolean
   anomali?: number
   ambang?: number
+  /** Dirender tepat di sebelah kanan pilihan jumlah baris. */
+  aksiKanan?: React.ReactNode
 }) {
   const [cari, setCari] = React.useState(filter.q)
   const [panelBuka, setPanelBuka] = React.useState(false)
@@ -95,7 +96,6 @@ export function ToolbarVerifikasi({
       <div className="flex flex-wrap items-center gap-2">
         <KotakCari nilai={cari} onUbah={setCari} placeholder="Cari no. langganan atau nama" />
 
-        {/* Periode hanya dipilih & ditampilkan di sini. */}
         <FilterPilihan
           filter={{ param: "periode", label: "Periode", opsi: periodes.map((p) => ({ value: String(p), label: formatPeriode(p) })) }}
           nilai={filter.periode === null ? "" : String(filter.periode)}
@@ -122,8 +122,8 @@ export function ToolbarVerifikasi({
           <span className="text-muted-foreground text-xs tabular-nums">
             {memuat ? "Memuat…" : `${jumlahTampil.toLocaleString("id-ID")} dari ${jumlahTotal.toLocaleString("id-ID")}`}
           </span>
-          {/* Bukan FilterPilihan: ia selalu menyisipkan item "Semua" (nilai
-              kosong) yang untuk ukuran halaman tidak bermakna. */}
+          {/* Bukan FilterPilihan: ia selalu menyisipkan item "Semua" yang untuk
+              ukuran halaman tidak bermakna. */}
           <Select value={String(filter.pageSize)} onValueChange={(v) => set("pageSize", Number(v))}>
             <SelectTrigger size="sm" aria-label="Baris per halaman" className={KELAS_KONTROL}>
               <SelectValue />
@@ -134,6 +134,7 @@ export function ToolbarVerifikasi({
               ))}
             </SelectContent>
           </Select>
+          {aksiKanan}
         </div>
       </div>
 

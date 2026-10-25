@@ -25,11 +25,70 @@ import {
   buildOrderBy,
   sortQuery,
 } from "../../lib/pagination"
-import { periodeToDate } from "../../lib/periode"
+import { dateToPeriode, periodeToDate } from "../../lib/periode"
 import { rentangTanggalWIB } from "../../lib/rentang-tanggal"
 import { jendelaLaporMandiri } from "@/lib/domain/lapor-mandiri"
+import {
+  ambilPembacaanResmi,
+  denganSumberResmi,
+  simpanPembacaanResmi,
+} from "./pembacaan-resmi"
 
 export const laporanMandiriRouter = new Hono()
+
+async function muatStandAwalSebelumnya(
+  rows: { pelangganId: string; periode: number }[],
+) {
+  const pelangganIds = [...new Set(rows.map((row) => row.pelangganId))]
+  if (pelangganIds.length === 0) return new Map<string, number>()
+
+  const meters = await prisma.meter.findMany({
+    where: { pelangganId: { in: pelangganIds }, isAktif: true },
+    select: { id: true, pelangganId: true },
+    orderBy: { createdAt: "desc" },
+  })
+  const meterPerPelanggan = new Map<string, string>()
+  for (const meter of meters) {
+    if (!meterPerPelanggan.has(meter.pelangganId))
+      meterPerPelanggan.set(meter.pelangganId, meter.id)
+  }
+
+  const perPeriode = new Map<number, Set<string>>()
+  for (const row of rows) {
+    const meterId = meterPerPelanggan.get(row.pelangganId)
+    if (!meterId) continue
+    const ids = perPeriode.get(row.periode) ?? new Set<string>()
+    ids.add(meterId)
+    perPeriode.set(row.periode, ids)
+  }
+
+  const hasil = new Map<string, number>()
+  for (const [thbl, meterIds] of perPeriode) {
+    const ids = [...meterIds]
+    for (let offset = 0; offset < ids.length; offset += 500) {
+      const bacaan = await prisma.pembacaanMeter.findMany({
+        where: {
+          meterId: { in: ids.slice(offset, offset + 500) },
+          periode: { lt: periodeToDate(thbl) },
+        },
+        orderBy: { periode: "desc" },
+        select: { meterId: true, standAkhir: true },
+      })
+      for (const item of bacaan) {
+        if (!hasil.has(`${thbl}:${item.meterId}`))
+          hasil.set(`${thbl}:${item.meterId}`, item.standAkhir)
+      }
+    }
+  }
+
+  return new Map(
+    rows.flatMap((row) => {
+      const meterId = meterPerPelanggan.get(row.pelangganId)
+      const stand = meterId ? hasil.get(`${row.periode}:${meterId}`) : undefined
+      return stand === undefined ? [] : [[`${row.pelangganId}:${row.periode}`, stand]]
+    }),
+  )
+}
 
 const listQuerySchema = paginationQuerySchema.extend({
   ...sortQuery([
@@ -109,12 +168,47 @@ laporanMandiriRouter.get(
         take,
         orderBy: buildOrderBy(query, { createdAt: "desc" }),
         include: {
-          pelanggan: { select: { id: true, nomorLangganan: true, nama: true } },
+          pelanggan: {
+            select: {
+              id: true,
+              nomorLangganan: true,
+              nama: true,
+              alamat: true,
+              tarifGolongan: { select: { kodeAsli: true } },
+              rute: { select: { kode: true } },
+            },
+          },
+          pembacaan: {
+            select: {
+              standLalu: true,
+              standAkhir: true,
+              pemakaianRiil: true,
+              pemakaianM3: true,
+            },
+          },
         },
       }),
       prisma.laporanMandiri.count({ where }),
     ])
-    return paginated(c, data, buildMeta(total, query))
+    const pembacaanResmi = await ambilPembacaanResmi(
+      data.map((row) => ({ pelangganId: row.pelangganId, periode: row.periode })),
+    )
+    const petaPembacaan = new Map()
+    for (const row of pembacaanResmi) {
+      const kunci = `${row.meter.pelangganId}:${dateToPeriode(row.periode)}`
+      if (!petaPembacaan.has(kunci))
+        petaPembacaan.set(kunci, denganSumberResmi(row))
+    }
+    const standAwalSebelumnya = await muatStandAwalSebelumnya(data)
+    const dataDenganPembacaan = data.map((row) => ({
+      ...row,
+      standAwal:
+        petaPembacaan.get(`${row.pelangganId}:${row.periode}`)?.standLalu ??
+        standAwalSebelumnya.get(`${row.pelangganId}:${row.periode}`) ??
+        null,
+      pembacaan: petaPembacaan.get(`${row.pelangganId}:${row.periode}`) ?? null,
+    }))
+    return paginated(c, dataDenganPembacaan, buildMeta(total, query))
   },
 )
 
@@ -171,7 +265,16 @@ laporanMandiriRouter.get(
       },
     })
     if (!row) throw new NotFoundError("LaporanMandiri")
-    return ok(c, row)
+    const pembacaan = await ambilPembacaanResmi([
+      { pelangganId: row.pelangganId, periode: row.periode },
+    ])
+    return ok(c, {
+      ...row,
+      pembacaan: denganSumberResmi(
+        pembacaan.find((item) => item.meter.pelangganId === row.pelangganId) ??
+          row.pembacaan,
+      ),
+    })
   },
 )
 
@@ -251,6 +354,7 @@ const verifySchema = z.object({
   meterId: z.string().min(1),
   standLalu: z.coerce.number().int().min(0),
   blokTarif: z.coerce.number().int().min(1).max(4),
+  pemakaianM3: z.coerce.number().int().min(0).optional(),
   /// Koreksi angka stand bila pelapor salah ketik (verifikator membandingkan
   /// dengan foto). Bila diisi, angka ini menimpa `standDilaporkan` di laporan
   /// SEKALIGUS jadi standAkhir pembacaan resmi — sengaja satu angka, bukan
@@ -267,7 +371,7 @@ laporanMandiriRouter.patch(
   validate("json", verifySchema),
   async (c) => {
     const id = c.req.param("id")
-    const { meterId, standLalu, blokTarif, standDilaporkan } =
+    const { meterId, standLalu, blokTarif, standDilaporkan, pemakaianM3 } =
       c.req.valid("json")
     const requester = getSessionUser(c)
 
@@ -282,15 +386,23 @@ laporanMandiriRouter.patch(
     if (!meter) throw new NotFoundError("Meter")
 
     const standAkhir = standDilaporkan ?? laporan.standDilaporkan
+    const pemakaianRiil = Math.max(0, standAkhir - standLalu)
+    const pemakaianTagih = pemakaianM3 ?? pemakaianRiil
 
     const row = await prisma.$transaction(async (tx) => {
-      const pembacaan = await tx.pembacaanMeter.create({
+      const pembacaan = await simpanPembacaanResmi(tx, {
+        pelangganId: laporan.pelangganId,
+        meterId,
+        periode: laporan.periode,
+        sumber: "KONSUMEN",
+        laporanId: laporan.id,
         data: {
-          meterId,
-          periode: periodeToDate(laporan.periode),
           standLalu,
           standAkhir,
-          pemakaianM3: Math.max(0, standAkhir - standLalu),
+          pemakaianM3: pemakaianTagih,
+          pemakaianRiil,
+          alasanTaksir:
+            pemakaianTagih === pemakaianRiil ? null : "OVERRIDE_MANUAL",
           blokTarif,
           kategori: "OFFSITE",
           fotoBukti: laporan.fotoUrl,

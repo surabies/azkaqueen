@@ -33,6 +33,7 @@ const listQuerySchema = paginationQuerySchema.extend({
   meterId: z.string().optional(),
   pelangganId: z.string().optional(),
   periode: z.coerce.number().int().min(190001).max(999912).optional(),
+  periodeSebelum: z.coerce.number().int().min(190001).max(999912).optional(),
   kondisi: z.enum(KondisiCatat).optional(),
   /// Penyaring per petugas. Dipasangkan dengan periode + kondisi, inilah yang
   /// menjawab "berapa banyak stand tempel milik AGUS bulan ini" — pertanyaan
@@ -51,7 +52,11 @@ pembacaanRouter.get(
       meterId: query.meterId,
       kondisi: query.kondisi,
       pencatatId: query.pencatatId,
-      periode: query.periode ? periodeToDate(query.periode) : undefined,
+      periode: query.periodeSebelum
+        ? { lt: periodeToDate(query.periodeSebelum) }
+        : query.periode
+          ? periodeToDate(query.periode)
+          : undefined,
       ...(query.pelangganId
         ? { meter: { pelangganId: query.pelangganId } }
         : {}),

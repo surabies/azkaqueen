@@ -3,21 +3,18 @@
 // features/dashboard/components/verifikasi/verifikasi-mandiri.tsx —
 // halaman verifikasi laporan meter mandiri pelanggan (master-detail),
 // kembaran verifikasi-lapangan untuk sumber data /laporan-mandiri.
-// Laporan mandiri tetap satu ring (bukan V1–V3): verify langsung membuat
-// pembacaan resmi. SELURUH AKSI lewat MENU KLIK KANAN pada baris; panel
-// detail (kanan) murni penampil. Kolom "Masuk"/"Status" sengaja tidak ada
-// (permintaan pengguna) — status tetap tersaring lewat toolbar dan terbaca
-// di panel.
+// Laporan mandiri tetap satu ring: verify langsung membuat pembacaan resmi.
+// SELURUH AKSI lewat MENU KLIK KANAN; panel detail (kanan) murni penampil.
 //
-// BARIS YANG SUDAH DIVERIFIKASI TIDAK DIHAPUS dari tabel ini. Ia berpindah
-// status ke DIGUNAKAN dan sekaligus melahirkan baris di /dashboard/pembacaan
-// — itu memang tujuannya, bukan kehilangan data. Yang membuatnya tampak
-// "hilang" hanyalah penyaring status yang masih menempel: dengan
-// "Menunggu" aktif, laporan yang baru disetujui memang keluar dari antrean.
-// Pilih "Sudah diverifikasi" (atau bersihkan saringan) untuk melihatnya lagi.
+// BARIS YANG SUDAH DIVERIFIKASI TIDAK DIHAPUS dari tabel: ia berpindah status
+// ke DIGUNAKAN. Yang membuatnya tampak "hilang" hanyalah penyaring status yang
+// masih menempel — pilih "Sudah diverifikasi" (atau bersihkan saringan).
 import * as React from "react";
-import type { ColDef, ICellRendererParams } from "ag-grid-community";
-import { Eye, ImageIcon, RotateCcw, ShieldCheck, Undo2 } from "lucide-react";
+import {
+  ArrowTurnBackwardIcon,
+  RotateLeft01Icon,
+  SecurityCheckIcon,
+} from "@hugeicons/core-free-icons";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,96 +32,24 @@ import {
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
 import { ambilSatu, kirimJson, ApiError } from "../../lib/api-client";
-import { OPSI_STATUS_LAPORAN_MANDIRI } from "../../lib/label";
-import { DataGrid } from "../data-grid";
-import {
-  fmtPeriodeInt,
-  fmtAngka,
-  KELAS_ANGKA,
-  KELAS_MONO,
-} from "../grids/sel";
 import type { StatsVerifikasi } from "./tipe";
-import { RingkasanVerifikasi, RingkasanSebaris, PilihPeriode } from "./ringkasan-verifikasi";
-import { KontrolTampilan } from "./kontrol-tampilan";
+import { RingkasanVerifikasi } from "./ringkasan-verifikasi";
+import { PanelTabelMandiri, type BarisMandiriTabel } from "./panel-tabel-mandiri";
 import { PanelMandiri, type AksiMandiri } from "./panel-mandiri";
 import { MenuKonteks, type AksiKonteks } from "./menu-konteks";
 
-function SelFoto(p: ICellRendererParams) {
-  const url = p.value as string | null | undefined;
-  if (!url) return <span className="text-muted-foreground">—</span>;
-  return (
-    <span className="inline-flex items-center gap-1.5 text-xs font-medium text-primary">
-      <ImageIcon className="size-3.5" /> 1 foto
-    </span>
-  );
-}
-
-type BarisMandiri = {
-  id?: string;
-  nomorLangganan?: string;
-  status?: "MENUNGGU" | "DIVERIFIKASI" | "DITOLAK" | "DIGUNAKAN";
-  pelanggan?: { nama?: string } | null;
-};
-
-const KOLOM: ColDef[] = [
-  {
-    field: "nomorLangganan",
-    headerName: "No. Langganan",
-    minWidth: 135,
-    maxWidth: 150,
-    cellClass: KELAS_MONO,
-    sortable: true,
-  },
-  {
-    headerName: "Pelanggan",
-    minWidth: 150,
-    flex: 2,
-    valueGetter: (p) => p.data?.pelanggan?.nama ?? "—",
-  },
-  {
-    field: "periode",
-    headerName: "Periode",
-    minWidth: 105,
-    sortable: true,
-    valueFormatter: fmtPeriodeInt,
-  },
-  {
-    field: "standDilaporkan",
-    headerName: "Stand (m³)",
-    minWidth: 100,
-    sortable: true,
-    cellClass: KELAS_ANGKA,
-    valueFormatter: fmtAngka,
-  },
-  {
-    field: "namaPelapor",
-    headerName: "Pelapor",
-    minWidth: 125,
-    sortable: true,
-  },
-  {
-    field: "fotoUrl",
-    headerName: "Lampiran",
-    minWidth: 95,
-    cellRenderer: SelFoto,
-  },
-];
-
 export function VerifikasiMandiri({ bisaAksi }: { bisaAksi: boolean }) {
   // undefined = belum init; diisi periode terbaru yang punya data.
-  const [periode, setPeriode] = React.useState<number | null | undefined>(
-    undefined,
-  );
+  const [periode, setPeriode] = React.useState<number | null | undefined>(undefined);
   const [stats, setStats] = React.useState<StatsVerifikasi | null>(null);
   const [galatStats, setGalatStats] = React.useState<string | null>(null);
   const [idTerpilih, setIdTerpilih] = React.useState<string | null>(null);
   const [refreshKey, setRefreshKey] = React.useState(0);
-  // Sama dengan halaman petugas: kartu ringkasan bisa dilipat.
   const [ringkasanTerbuka, setRingkasanTerbuka] = React.useState(true);
 
   const [menu, setMenu] = React.useState<{
     posisi: { x: number; y: number };
-    baris: BarisMandiri;
+    baris: BarisMandiriTabel;
   } | null>(null);
   const [aksi, setAksi] = React.useState<AksiMandiri | null>(null);
   const [konfirmasi, setKonfirmasi] = React.useState<{
@@ -137,22 +62,16 @@ export function VerifikasiMandiri({ bisaAksi }: { bisaAksi: boolean }) {
 
   React.useEffect(() => {
     let batal = false;
-    ambilSatu<StatsVerifikasi>("/laporan-mandiri/stats", {
-      periode: periode ?? undefined,
-    })
+    ambilSatu<StatsVerifikasi>("/laporan-mandiri/stats", { periode: periode ?? undefined })
       .then((s) => {
         if (batal) return;
         setStats(s);
         setGalatStats(null);
-        setPeriode((lama) =>
-          lama === undefined ? (s.periodes[0] ?? null) : lama,
-        );
+        setPeriode((lama) => (lama === undefined ? (s.periodes[0] ?? null) : lama));
       })
       .catch((err) => {
         if (!batal)
-          setGalatStats(
-            err instanceof ApiError ? err.message : "Gagal memuat ringkasan.",
-          );
+          setGalatStats(err instanceof ApiError ? err.message : "Gagal memuat ringkasan.");
       });
     return () => {
       batal = true;
@@ -168,32 +87,23 @@ export function VerifikasiMandiri({ bisaAksi }: { bisaAksi: boolean }) {
       setKonfirmasi(null);
       setRefreshKey((k) => k + 1);
     } catch (err) {
-      setGalatAksi(
-        err instanceof ApiError ? err.message : "Aksi gagal dijalankan.",
-      );
+      setGalatAksi(err instanceof ApiError ? err.message : "Aksi gagal dijalankan.");
     } finally {
       setMengirim(false);
     }
   }
 
-  function aksiMenu(baris: BarisMandiri): AksiKonteks[] {
+  function aksiMenu(baris: BarisMandiriTabel): AksiKonteks[] {
     const id = baris.id;
     if (!id) return [];
     const nama = baris.pelanggan?.nama ?? baris.nomorLangganan ?? "";
-    const daftar: AksiKonteks[] = [
-      {
-        label: "Lihat detail",
-        icon: Eye,
-        onPilih: () => setMenu(null),
-        keterangan: "Detail sudah tampil di panel kanan",
-      },
-    ];
+    const daftar: AksiKonteks[] = [];
 
     if (baris.status === "MENUNGGU") {
       daftar.push(
         {
           label: "Verifikasi / koreksi stand…",
-          icon: ShieldCheck,
+          icon: SecurityCheckIcon,
           pemisah: true,
           disabled: !bisaAksi,
           keterangan: bisaAksi
@@ -206,7 +116,7 @@ export function VerifikasiMandiri({ bisaAksi }: { bisaAksi: boolean }) {
         },
         {
           label: "Tolak / minta foto ulang…",
-          icon: RotateCcw,
+          icon: RotateLeft01Icon,
           disabled: !bisaAksi,
           keterangan: bisaAksi ? undefined : "Akun Anda tidak punya akses verifikasi",
           onPilih: () => {
@@ -220,7 +130,7 @@ export function VerifikasiMandiri({ bisaAksi }: { bisaAksi: boolean }) {
     if (baris.status === "DIVERIFIKASI" || baris.status === "DIGUNAKAN") {
       daftar.push({
         label: "Batalkan verifikasi",
-        icon: Undo2,
+        icon: ArrowTurnBackwardIcon,
         pemisah: true,
         destruktif: true,
         disabled: !bisaAksi,
@@ -241,7 +151,7 @@ export function VerifikasiMandiri({ bisaAksi }: { bisaAksi: boolean }) {
     if (baris.status === "DITOLAK") {
       daftar.push({
         label: "Kembalikan ke antrean (batalkan tolak)",
-        icon: Undo2,
+        icon: ArrowTurnBackwardIcon,
         pemisah: true,
         disabled: !bisaAksi,
         keterangan: bisaAksi ? undefined : "Akun Anda tidak punya akses verifikasi",
@@ -261,107 +171,65 @@ export function VerifikasiMandiri({ bisaAksi }: { bisaAksi: boolean }) {
   }
 
   return (
-    // TATA LETAK KEMBAR verifikasi-lapangan, dan itu memang tujuannya:
-    // keduanya pekerjaan yang sama (memeriksa setoran stand lalu menjadikannya
-    // pembacaan resmi) yang cuma berbeda sumbernya, jadi tidak ada alasan
-    // keduanya menuntut kebiasaan yang berbeda. Sebelumnya halaman ini masih
-    // memakai bentuk lama — panel detail di KIRI selebar 20rem, di sisi yang
-    // sudah dihuni sidebar aplikasi, dan lebarnya tidak bisa diubah.
-    //
-    // Tabel KIRI, detail KANAN, dipisah pemisah yang bisa ditarik; tanpa gap
-    // dan tanpa border luar supaya tidak ada garis ganda berjarak 1px.
+    // TATA LETAK KEMBAR verifikasi-lapangan: tabel KIRI-KANAN, panel detail
+    // di kiri terbuka di ukuran paling kecil (defaultSize = minSize) supaya
+    // tabel langsung mendapat lebar maksimal. Pemisah bisa ditarik untuk melebarkan.
     <>
-    <div className="h-[calc(100dvh-var(--navbar-h,3.5rem)-6.5rem)] min-h-96">
-    <ResizablePanelGroup orientation="horizontal" className="h-full min-h-0 items-stretch">
-      <ResizablePanel defaultSize="28" minSize="18" collapsible className="flex min-w-0 flex-col">
-        {/* Judul DI LUAR wadah bergulir. Versi sebelumnya menaruhnya sebagai
-            `sticky top-0` di dalam elemen ber-`overflow-y-auto`: elemen
-            sticky ikut terpotong oleh tepi wadahnya sendiri, dan garis atas
-            judul hilang — persis keluhan "border atasnya terpotong". Header
-            tetap + isi yang bergulir membuat tidak ada lagi yang memotongnya.
-            Sama persis dengan panel detail di Catat Meter Lapangan —
-            termasuk bingkainya: tanpa border-y panel ini terbaca menggantung
-            tanpa sisi atas. Tepi kiri tetap diserahkan ke pemisah yang bisa
-            ditarik supaya tidak ada garis ganda berjarak 1px. */}
-        <aside className="bg-card border-border/70 flex h-full min-h-0 flex-col overflow-hidden rounded-lg border">
-          <div className="border-border/70 shrink-0 border-b px-4 py-2.5">
-            <h2 className="text-sm font-medium">
-              Detail laporan
-            </h2>
-          </div>
-          <div className="scrollbar-tipis min-h-0 flex-1 overflow-y-auto">
-            {/* key: ganti baris = remount panel, seluruh state form mulai
-                bersih tanpa reset sinkron di effect. */}
-            <PanelMandiri
-              key={idTerpilih ?? "kosong"}
-              id={idTerpilih}
-              aksi={aksi}
-              onTutupAksi={() => setAksi(null)}
-              onSelesai={() => setRefreshKey((k) => k + 1)}
-            />
-          </div>
-        </aside>
-      </ResizablePanel>
-      <ResizableHandle withHandle />
-      <ResizablePanel defaultSize="72" minSize="40" className="flex min-w-0 flex-col">
-        <div className="flex h-full min-h-0 min-w-0 flex-col gap-3 pl-3">
+      <div className="h-[calc(100dvh-var(--navbar-h,3.5rem)-6.5rem)] min-h-96">
+        <ResizablePanelGroup orientation="horizontal" className="h-full min-h-0 items-stretch">
+          <ResizablePanel
+            defaultSize="18"
+            minSize="18"
+            maxSize="45"
+            collapsible
+            className="flex min-w-0 flex-col"
+          >
+            {/* Judul DI LUAR wadah bergulir supaya garis atasnya tidak terpotong. */}
+            <aside className="bg-card border-border/70 flex h-full min-h-0 flex-col overflow-hidden rounded-lg border">
+              <div className="border-border/70 shrink-0 border-b px-4 py-2.5">
+                <h2 className="text-center text-sm font-medium">Detail laporan</h2>
+              </div>
+              <div className="scrollbar-tipis min-h-0 flex-1 overflow-y-auto">
+                {/* key: ganti baris = remount panel, state mulai bersih. */}
+                <PanelMandiri
+                  key={idTerpilih ?? "kosong"}
+                  id={idTerpilih}
+                  aksi={aksi}
+                  onTutupAksi={() => setAksi(null)}
+                  onSelesai={() => setRefreshKey((k) => k + 1)}
+                />
+              </div>
+            </aside>
+          </ResizablePanel>
+          <ResizableHandle withHandle />
+          <ResizablePanel defaultSize="82" minSize="50" className="flex min-w-0 flex-col">
+            <div className="flex h-full min-h-0 min-w-0 flex-col gap-3 pl-3">
+              <RingkasanVerifikasi stats={stats} periode={periode ?? null} terbuka={ringkasanTerbuka} />
 
-        {/* Kartu paling atas: tepinya sejajar dengan panel detail di kiri. */}
-        <RingkasanVerifikasi stats={stats} periode={periode ?? null} terbuka={ringkasanTerbuka} />
+              {galatStats && <p className="shrink-0 text-xs text-destructive">{galatStats}</p>}
 
-        {galatStats && (
-          <p className="shrink-0 text-xs text-destructive">{galatStats}</p>
-        )}
-
-        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
-          {!ringkasanTerbuka && <RingkasanSebaris stats={stats} />}
-          <PilihPeriode
-            periodes={stats?.periodes ?? []}
-            nilai={periode ?? null}
-            onGanti={setPeriode}
-          />
-          <KontrolTampilan ringkasanTerbuka={ringkasanTerbuka} onRingkasan={setRingkasanTerbuka} />
-        </div>
-
-        <div className="min-h-0 min-w-0 flex-1">
-          <DataGrid
-            judul="Laporan Meter Mandiri"
-            endpoint="/laporan-mandiri"
-            columnDefs={KOLOM}
-            searchParam="q"
-            searchPlaceholder="Cari no. langganan / nama…"
-            filters={[
-              {
-                param: "status",
-                label: "Status",
-                // OPSI_STATUS_LAPORAN_MANDIRI, bukan seluruh isi enum:
-                // "Diverifikasi" di sini berarti "sudah lolos verifikasi"
-                // dan mencakup DIGUNAKAN. Sebelumnya dropdown ini menawarkan
-                // keempat nilai enum apa adanya, dan memilih "Diverifikasi"
-                // selalu memberi tabel kosong — laporan yang baru disetujui
-                // berstatus DIGUNAKAN, sehingga terlihat seperti hilang.
-                opsi: OPSI_STATUS_LAPORAN_MANDIRI,
-              },
-            ]}
-            extraParams={periode ? { periode: String(periode) } : undefined}
-            onRowClicked={(d) =>
-              setIdTerpilih((d as { id?: string }).id ?? null)
-            }
-            onRowContextMenu={(d, posisi) => {
-              const baris = d as BarisMandiri;
-              setIdTerpilih(baris.id ?? null);
-              setAksi(null);
-              setMenu({ posisi, baris });
-            }}
-            idTerpilih={idTerpilih}
-            refreshKey={refreshKey}
-            tinggiClassName="scrollbar-tipis h-full"
-          />
-        </div>
-        </div>
-      </ResizablePanel>
-    </ResizablePanelGroup>
-    </div>
+              <div className="min-h-0 min-w-0 flex-1">
+                <PanelTabelMandiri
+                  periodes={stats?.periodes ?? []}
+                  periode={periode}
+                  onPeriode={setPeriode}
+                  refreshKey={refreshKey}
+                  idTerpilih={idTerpilih}
+                  onKlikBaris={(row) => setIdTerpilih(row.id)}
+                  onKlikKanan={(row, posisi) => {
+                    setIdTerpilih(row.id);
+                    setAksi(null);
+                    setMenu({ posisi, baris: row });
+                  }}
+                  ringkasanTerbuka={ringkasanTerbuka}
+                  onRingkasan={setRingkasanTerbuka}
+                  stats={stats}
+                />
+              </div>
+            </div>
+          </ResizablePanel>
+        </ResizablePanelGroup>
+      </div>
 
       {menu && (
         <MenuKonteks
@@ -381,15 +249,11 @@ export function VerifikasiMandiri({ bisaAksi }: { bisaAksi: boolean }) {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{konfirmasi?.judul}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {konfirmasi?.deskripsi}
-            </AlertDialogDescription>
+            <AlertDialogDescription>{konfirmasi?.deskripsi}</AlertDialogDescription>
           </AlertDialogHeader>
           {galatAksi && <p className="text-xs text-destructive">{galatAksi}</p>}
           <AlertDialogFooter>
             <AlertDialogCancel disabled={mengirim}>Batal</AlertDialogCancel>
-            {/* onClick tanpa auto-close: dialog baru ditutup setelah server
-                menjawab sukses; galat tampil di dalam dialog. */}
             <AlertDialogAction
               disabled={mengirim}
               onClick={(e) => {

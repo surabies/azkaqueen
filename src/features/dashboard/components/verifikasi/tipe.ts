@@ -42,8 +42,10 @@ export interface PembacaanRingkas {
   standLalu: number
   standAkhir: number
   pemakaianM3: number
+  pemakaianRiil?: number | null
   blokTarif: number
   fotoBukti?: string | null
+  sumberLaporan?: "PETUGAS" | "KONSUMEN" | null
 }
 
 export interface LaporanHarianDetail {
@@ -76,6 +78,9 @@ export interface LaporanHarianDetail {
   verif3By?: { id: string; name: string | null } | null
   /** "ST akhir revisi" — koreksi V1; standAkhir (catat) tidak ditimpa. */
   standAkhirRevisi?: number | null
+  standAngkatLama?: number | null
+  standAwalMeterBaru?: number | null
+  pemakaianTagihVerif?: number | null
   meterVerifId?: string | null
   blokTarifVerif?: number | null
   meterVerif?: { id: string; nomorMeter: string } | null

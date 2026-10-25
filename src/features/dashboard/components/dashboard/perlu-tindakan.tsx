@@ -15,8 +15,8 @@ import {
   kodeStatusPengaduan,
   LABEL_JENIS_PENGADUAN,
 } from "@/features/public/lib/format";
-import { LABEL_STATUS_PENGADUAN_STAF_RINGKAS } from "../lib/label";
-import { Panel } from "./panel";
+import { LABEL_STATUS_PENGADUAN_STAF_RINGKAS } from "../../lib/label";
+import { Panel } from "../panel";
 
 interface Pengaduan {
   id: string;
@@ -68,7 +68,7 @@ export function PerluTindakan({
             {pengaduan.map((p, i) => (
               <Link
                 key={p.id}
-                href={`/dashboard/pengaduan?q=${p.nomorTiket}`}
+                href={`/pelanggan/pengaduan?q=${p.nomorTiket}`}
                 className={
                   "flex items-start justify-between gap-3 px-3 py-2.5 transition-colors hover:bg-accent " +
                   (i < pengaduan.length - 1

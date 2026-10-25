@@ -10,7 +10,7 @@
 /// setiap perubahan otomatis punya jejak di RiwayatPengaduan, dan transisi
 /// yang tidak masuk akal (mis. DITUTUP -> DIPROSES) ditolak.
 model Pengaduan {
-  id                       String                   @id @default(cuid())
+  id                       String                                @id @default(cuid())
   /// Format: TW-YYMM-XXXXXX (mis. "TW-2607-4F2A9K"). XXXXXX adalah 6
   /// karakter ACAK base32 Crockford — BUKAN nomor urut, dan itu
   /// LOAD-BEARING: endpoint pelacakan publik
@@ -26,7 +26,7 @@ model Pengaduan {
   /// server/modules/pengaduan/tiket.ts). Baris lama dari sistem sebelumnya
   /// masih memakai cuid dan tetap bisa dilacak — pencocokan exact match,
   /// jadi tidak perlu backfill.
-  nomorTiket               String                   @unique
+  nomorTiket               String                                @unique
   /// Kunci idempotensi dari client (UUID v4, dibuat SEKALI saat form dibuka).
   /// Jaringan warga/petugas di lapangan kerap timeout lalu di-retry — tanpa
   /// ini satu laporan bisa jadi 2-3 tiket kembar. Server memakai unique
@@ -34,7 +34,7 @@ model Pengaduan {
   /// dengan clientRequestId identik datang lagi (lihat publik.router.ts).
   /// Opsional & nullable: klien lama / anonim yang tidak mengirimnya tetap
   /// diterima (Postgres mengizinkan banyak NULL pada kolom unique).
-  clientRequestId          String?                  @unique
+  clientRequestId          String?                               @unique
   pelangganId              String?
   /// Disimpan sebagai String biasa (bukan hanya via relasi) supaya aduan
   /// dari pelapor yang belum tercatat sebagai Pelanggan (mis. warga di
@@ -46,7 +46,7 @@ model Pengaduan {
   /// ini tidak memaksa backfill manual; nilai bawaannya sengaja yang paling
   /// lazim (mayoritas aduan bukan soal nilai rekening) sehingga baris lama
   /// tidak salah tercap sebagai sengketa tagihan.
-  klasifikasi              KlasifikasiPengaduan     @default(BUKAN_NILAI_TAGIHAN_REKENING)
+  klasifikasi              KlasifikasiPengaduan                  @default(BUKAN_NILAI_TAGIHAN_REKENING)
   jenis                    JenisPengaduan
   judul                    String
   deskripsi                String
@@ -54,8 +54,8 @@ model Pengaduan {
   /// bisa di-dispatch ke petugas/rute terdekat via query jarak PostGIS.
   koordinat                Unsupported("geometry(Point, 4326)")?
   alamatKejadian           String?
-  prioritas                PrioritasPengaduan       @default(NORMAL)
-  status                   StatusPengaduan          @default(BARU)
+  prioritas                PrioritasPengaduan                    @default(NORMAL)
+  status                   StatusPengaduan                       @default(BARU)
   pelapor                  String
   kontakPelapor            String?
   fotoUrl                  String?
@@ -69,8 +69,8 @@ model Pengaduan {
   ditanganiMulai           DateTime?
   selesaiAt                DateTime?
   catatanPenyelesaian      String?
-  createdAt                DateTime                 @default(now())
-  updatedAt                DateTime                 @updatedAt
+  createdAt                DateTime                              @default(now())
+  updatedAt                DateTime                              @updatedAt
   /// `public_id` Cloudinary — dipasangkan dengan fotoUrl supaya foto bisa
   /// dihapus/ditransformasi kelak, pola sama seperti LaporanMandiri.
   fotoPublicId             String?
@@ -89,7 +89,7 @@ model Pengaduan {
   jedaMulaiAt              DateTime?
   /// Akumulasi total menit tiket tertahan menunggu pelapor — disimpan untuk
   /// pelaporan kinerja (durasi kotor vs bersih).
-  jedaTotalMenit           Int                      @default(0)
+  jedaTotalMenit           Int                                   @default(0)
   eskalasiAt               DateTime?
   eskalasiKeId             String?
   alasanEskalasi           String?
@@ -102,7 +102,7 @@ model Pengaduan {
   /// Berapa kali pelapor menyatakan masalahnya belum beres setelah tiket
   /// di-SELESAI-kan. Angka > 0 adalah sinyal kualitas penanganan yang layak
   /// dilihat supervisor, bukan sekadar penghitung.
-  jumlahDibukaKembali      Int                      @default(0)
+  jumlahDibukaKembali      Int                                   @default(0)
   fotoPenyelesaianPublicId String?
   /// Foto bukti hasil pekerjaan dari petugas — WAJIB (ditegakkan router)
   /// saat transisi ke SELESAI, supaya "selesai" selalu bisa dibuktikan ke
@@ -122,11 +122,11 @@ model Pengaduan {
   konfirmasiBatasAt        DateTime?
   /// Kapan operator memverifikasi kelengkapan aduan (BARU -> TERVERIFIKASI).
   verifikasiAt             DateTime?
-  ditugaskanKe             User?                    @relation("PengaduanDitugaskan", fields: [ditugaskanKeId], references: [id])
-  eskalasiKe               User?                    @relation("PengaduanEskalasi", fields: [eskalasiKeId], references: [id])
-  kecamatan                Kecamatan?               @relation(fields: [kecamatanId], references: [id])
-  kelurahan                Kelurahan?               @relation(fields: [kelurahanId], references: [id])
-  pelanggan                Pelanggan?               @relation(fields: [pelangganId], references: [id])
+  ditugaskanKe             User?                                 @relation("PengaduanDitugaskan", fields: [ditugaskanKeId], references: [id])
+  eskalasiKe               User?                                 @relation("PengaduanEskalasi", fields: [eskalasiKeId], references: [id])
+  kecamatan                Kecamatan?                            @relation(fields: [kecamatanId], references: [id])
+  kelurahan                Kelurahan?                            @relation(fields: [kelurahanId], references: [id])
+  pelanggan                Pelanggan?                            @relation(fields: [pelangganId], references: [id])
   riwayat                  RiwayatPengaduan[]
 
   @@index([pelangganId])
@@ -187,68 +187,66 @@ model RiwayatPengaduan {
 }
 
 model LaporanHarianPetugas {
-  id               String            @id @default(cuid())
+  id                  String            @id @default(cuid())
   /// nolg TETAP disimpan sebagai String (natural key dari CSV, dipakai
   /// @@unique di bawah) — TAPI sekarang juga ada `pelangganId` (relasi
   /// asli, opsional) di bawah supaya frontend bisa `include: { pelanggan }`
   /// begitu baris ini resolved ke Pelanggan yang sudah ada.
-  nomorLangganan   String
+  nomorLangganan      String
   /// FK opsional ke Pelanggan. Opsional (bukan wajib) karena 11 pelanggan
   /// PBPK baru masuk ke lapdatameter SEBELUM ada di tabel Pelanggan — FK
   /// wajib akan membuat import crash. Diisi belakangan (backfill) begitu
   /// Pelanggan-nya ter-import dari PBPK.
-  pelangganId      String?
+  pelangganId         String?
   /// Snapshot nama pelanggan APA ADANYA dari CSV saat laporan dibuat.
   /// WAJIB diisi saat import (bukan opsional-kosong) supaya baris orphan
   /// (pelangganId masih null) tetap punya identitas yang bisa dibaca di
   /// UI, bukan "Unknown". Bukan sumber kebenaran — begitu pelangganId
   /// terisi, tampilkan nama dari relasi `pelanggan`, bukan snapshot ini.
-  namaPelanggan    String?
-  alamatPelanggan  String?
-  periode          Int
-  standAwal        Int
-  standAkhir       Int
-  pemakaian        Int
-  pemakaianLalu    Int?
+  namaPelanggan       String?
+  alamatPelanggan     String?
+  periode             Int
+  standAwal           Int
+  standAkhir          Int
+  pemakaian           Int
+  pemakaianLalu       Int?
   /// Persentase penyimpangan dari bulan lalu (range: -100 s/d 4010 di
   /// data nyata). Threshold anomali dikonfigurasi via Konfigurasi
   /// (key: AMBANG_ANOMALI_PERSEN).
-  persentase       Int?
-  kondisi          KondisiCatat      @default(NORMAL)
-  kategori         KategoriPembacaan @default(ONSITE)
+  persentase          Int?
+  kondisi             KondisiCatat      @default(NORMAL)
+  kategori            KategoriPembacaan @default(ONSITE)
   /// kd_wm = nomor meter. Disimpan String karena bisa orphan saat import
   /// awal.
-  nomorMeter       String?
+  nomorMeter          String?
   /// FK ke Pencatat (bukan User langsung). kd_petugas "-" -> pencatatId
   /// null (petugas tidak diketahui).
-  pencatatId       String?
-  tanggalCatat     DateTime?
-  tanggalUpload    DateTime?
-  isVerified       Boolean           @default(false)
-  verifiedAt       DateTime?
-  verifiedById     String?
-  catatanVerif     String?
+  pencatatId          String?
+  tanggalCatat        DateTime?
+  tanggalUpload       DateTime?
+  isVerified          Boolean           @default(false)
+  verifiedAt          DateTime?
+  verifiedById        String?
+  catatanVerif        String?
   /// Setelah verified & closing -> link ke PembacaanMeter resmi.
-  pembacaanId      String?           @unique
-  createdAt        DateTime          @default(now())
-  blokTarifVerif   Int?
-  /// Pemakaian yang DITAGIHKAN, ditetapkan verifikator di V1. NULL = pakai
-  /// usulan otomatis dari aturan (minimum 5 m3 per Perdir, taksiran bulan
-  /// lalu untuk meter tak terbaca) — lihat prisma/seed/lib/domain/tagihan.ts.
-  ///
-  /// Ada karena aturannya memang keputusan verifikator, bukan rumus buta:
-  /// di data 202605 sekitar 1,4% baris memakai angka yang tidak mengikuti
-  /// pola mana pun. Tanpa kolom ini, verifikator tidak punya tempat untuk
-  /// menuliskan keputusannya dan terpaksa memalsukan stand meter supaya
-  /// angka tagihnya keluar benar — merusak jejak pembacaan yang asli.
+  pembacaanId         String?           @unique
+  createdAt           DateTime          @default(now())
+  blokTarifVerif      Int?
+  /// M³ hasil verifikasi yang dipilih verifikator, terpisah dari hitungan
+  /// riil. UI mengusulkan selisih matematis dan menerima koreksi manual
+  /// sesuai kebijakan; NULL pada data lama mempertahankan nilai impor.
   pemakaianTagihVerif Int?
   /// Meter tujuan + blok tarif dipilih saat V1 (yang paling dekat ke
   /// lapangan), lalu dipakai V3 untuk membuat PembacaanMeter resmi.
-  meterVerifId     String?
-  /// "ST akhir revisi" — koreksi stand akhir oleh verifikator V1.
-  /// standAkhir (angka catat petugas) TIDAK ditimpa lagi: angka catat dan
-  /// angka revisi tampil berdampingan di tabel verifikasi.
-  standAkhirRevisi Int?
+  meterVerifId        String?
+  /// "ST akhir revisi" — hasil stand akhir yang dipilih verifikator.
+  /// standAkhir (angka catat petugas) TIDAK ditimpa lagi: hasil dan angka
+  /// catat tampil pada kolom terpisah di tabel verifikasi.
+  standAkhirRevisi    Int?
+  /// Angka terakhir pada meter lama saat penggantian (kondisi MB).
+  standAngkatLama     Int?
+  /// Angka awal meter baru saat dipasang (kondisi MB).
+  standAwalMeterBaru  Int?
   /// ── Verifikasi berjenjang V1→V2→V3 (spesifikasi:
   /// features/dashboard/components/verifikasi/tabel.md). V1 Supervisor
   /// memeriksa & mengoreksi angka, V2 Manager memvalidasi, V3 Senior
@@ -257,52 +255,52 @@ model LaporanHarianPetugas {
   /// penanda hasil akhir (V3 mengisinya; reject mengisi verifiedAt tanpa
   /// isVerified = DITOLAK) supaya baris hasil sistem lama dan filter
   /// statusVerif tetap terbaca tanpa backfill data.
-  verif1At         DateTime?
-  verif1ById       String?
-  verif2At         DateTime?
-  verif2ById       String?
-  verif3At         DateTime?
-  verif3ById       String?
-  fotoRumahUrl     String?
-  fotoSegelUrl     String?
+  verif1At            DateTime?
+  verif1ById          String?
+  verif2At            DateTime?
+  verif2ById          String?
+  verif3At            DateTime?
+  verif3ById          String?
+  fotoRumahUrl        String?
+  fotoSegelUrl        String?
   /// Tiga foto bukti dari aplikasi petugas (Flutter): stand meter, segel,
   /// dan rumah/persil. Nullable — data sistem lama tidak berfoto, dan
   /// petugas bisa gagal mengunggah sebagian. UI panel verifikasi
   /// menampilkannya sebagai tab (fotoStandUrl fallback ke
   /// pembacaan.fotoBukti untuk baris yang sudah resmi).
-  fotoStandUrl     String?
+  fotoStandUrl        String?
   /// Video pembacaan meter (upload_video di Aurora legacy) — bukti gerak
   /// untuk kasus sengketa stand. Nullable: hanya direkam bila petugas
   /// menganggap perlu.
-  videoUrl         String?
+  videoUrl            String?
   /// ── Jejak GPS saat catat (bill_longlatcatat + marginMeter di Aurora):
   /// posisi petugas ketika menyimpan, dan jaraknya (meter, dibulatkan) ke
   /// koordinat pelanggan. Bukti kehadiran di lokasi — jarak besar = indikasi
   /// catat dari jauh ("stand tempel"), sinyal buat verifikator V1.
   /// jarakMeter DIHITUNG SERVER dari latCatat/longCatat vs titik pelanggan,
   /// tidak pernah diterima dari client.
-  latCatat         Float?
-  longCatat        Float?
-  jarakMeter       Int?
+  latCatat            Float?
+  longCatat           Float?
+  jarakMeter          Int?
   /// Kondisi segel meter yang DITEMUKAN petugas di lapangan (bill_issegel):
   /// true = tersegel. Nullable = petugas tidak memeriksa/melaporkan.
-  isSegel          Boolean?
+  isSegel             Boolean?
   /// Usulan koreksi data pelanggan dari lapangan (bill_perubahan di
   /// Aurora): teks bebas ("nama di persil beda", "rumah sudah dibongkar").
   /// Ditindaklanjuti admin secara manual — bukan perubahan otomatis.
-  usulanPerubahan  String?
+  usulanPerubahan     String?
   /// Usulan nomor urut kunjungan baru untuk pelanggan ini
   /// (bill_reqnourutbaru di Aurora) — admin memutuskan penerapannya ke
   /// Pelanggan.noUrutRute saat closing, tidak otomatis.
-  usulanNoUrut     Int?
-  meterVerif       Meter?            @relation("LaporanMeterVerif", fields: [meterVerifId], references: [id])
-  pelanggan        Pelanggan?        @relation(fields: [pelangganId], references: [id])
-  pembacaan        PembacaanMeter?   @relation(fields: [pembacaanId], references: [id])
-  pencatat         Pencatat?         @relation(fields: [pencatatId], references: [id])
-  verif1By         User?             @relation("LaporanVerif1", fields: [verif1ById], references: [id])
-  verif2By         User?             @relation("LaporanVerif2", fields: [verif2ById], references: [id])
-  verif3By         User?             @relation("LaporanVerif3", fields: [verif3ById], references: [id])
-  verifiedBy       User?             @relation("LaporanVerifikator", fields: [verifiedById], references: [id])
+  usulanNoUrut        Int?
+  meterVerif          Meter?            @relation("LaporanMeterVerif", fields: [meterVerifId], references: [id])
+  pelanggan           Pelanggan?        @relation(fields: [pelangganId], references: [id])
+  pembacaan           PembacaanMeter?   @relation(fields: [pembacaanId], references: [id])
+  pencatat            Pencatat?         @relation(fields: [pencatatId], references: [id])
+  verif1By            User?             @relation("LaporanVerif1", fields: [verif1ById], references: [id])
+  verif2By            User?             @relation("LaporanVerif2", fields: [verif2ById], references: [id])
+  verif3By            User?             @relation("LaporanVerif3", fields: [verif3ById], references: [id])
+  verifiedBy          User?             @relation("LaporanVerifikator", fields: [verifiedById], references: [id])
 
   @@unique([nomorLangganan, periode])
   @@index([nomorLangganan])
@@ -348,7 +346,7 @@ model LaporanMandiri {
 }
 
 model MutasiPelanggan {
-  id              String                   @id @default(cuid())
+  id              String                                @id @default(cuid())
   pelangganId     String
   jenis           JenisMutasi
   periode         Int
@@ -366,10 +364,10 @@ model MutasiPelanggan {
   prosesOlehId    String?
   updaterKode     String?
   catatan         String?
-  createdAt       DateTime                 @default(now())
-  updatedAt       DateTime                 @updatedAt
-  pelanggan       Pelanggan                @relation(fields: [pelangganId], references: [id])
-  prosesOleh      User?                    @relation("MutasiProsesOleh", fields: [prosesOlehId], references: [id])
+  createdAt       DateTime                              @default(now())
+  updatedAt       DateTime                              @updatedAt
+  pelanggan       Pelanggan                             @relation(fields: [pelangganId], references: [id])
+  prosesOleh      User?                                 @relation("MutasiProsesOleh", fields: [prosesOlehId], references: [id])
 
   @@unique([pelangganId, periode, jenis])
   @@index([pelangganId])
@@ -380,7 +378,7 @@ model MutasiPelanggan {
 }
 
 model Pemutusan {
-  id                  String                   @id @default(cuid())
+  id                  String                                @id @default(cuid())
   /// FK ke Pelanggan OPSIONAL. Alasan: 219 "Eks Pelanggan" dari survei
   /// geojson PW5 2026 adalah histori cabut LAMA (1994-2025) yang nolg-nya
   /// kerap TIDAK ADA di tabel Pelanggan (di luar jendela data CSV utama:
@@ -422,7 +420,7 @@ model Pemutusan {
   /// tapi karena tak ada baris Pelanggan sama sekali, sebelumnya baris ini
   /// cuma dilewati diam-diam tanpa jejak). Tiga yang terakhir sama-sama
   /// "terkonfirmasi cabut, jenis pasti belum diketahui" -> jenis = LAINNYA.
-  sumberData          String                   @default("RNOMOR_CSV")
+  sumberData          String                                @default("RNOMOR_CSV")
   /// Kunci idempoten untuk baris bersumber r-nomor.csv (dihitung deterministik
   /// di seed script, mis. `RNOMOR:{periode}:{jenis}:{nomorSurat ?? nomorSPT}`).
   /// WAJIB ada — @@unique([pelangganId, periode, nomorSurat]) di bawah TIDAK
@@ -432,14 +430,14 @@ model Pemutusan {
   /// re-import bisa diam-diam membuat baris SPT duplikat tanpa kolom ini.
   /// Untuk baris bersumber survei geojson, pakai `kodeSurvei` di bawah,
   /// bukan kolom ini.
-  sumberKey           String?                  @unique
+  sumberKey           String?                               @unique
   /// Kode unik submission survei (field "Response Code" di mWater,
   /// terverifikasi unik di seluruh 1.875 baris dataset). HANYA dipakai
   /// sebagai kunci idempoten saat re-import — bukan field bisnis.
   /// @@unique([pelangganId, periode, nomorSurat]) di bawah TIDAK cukup
   /// untuk dedup baris survei karena nomorSurat & kadang pelangganId
   /// keduanya null (Postgres menganggap NULL selalu "berbeda").
-  kodeSurvei          String?                  @unique
+  kodeSurvei          String?                               @unique
   /// Titik GPS lokasi rumah eks-pelanggan saat diverifikasi petugas di
   /// lapangan.
   koordinatVerifikasi Unsupported("geometry(Point, 4326)")?
@@ -450,12 +448,12 @@ model Pemutusan {
   catatanSurveiAsli   String?
   prosesOlehId        String?
   catatan             String?
-  createdAt           DateTime                 @default(now())
-  updatedAt           DateTime                 @updatedAt
-  kecamatan           Kecamatan?               @relation(fields: [kecamatanId], references: [id])
-  kelurahan           Kelurahan?               @relation(fields: [kelurahanId], references: [id])
-  pelanggan           Pelanggan?               @relation(fields: [pelangganId], references: [id])
-  prosesOleh          User?                    @relation("PemutusanProsesOleh", fields: [prosesOlehId], references: [id])
+  createdAt           DateTime                              @default(now())
+  updatedAt           DateTime                              @updatedAt
+  kecamatan           Kecamatan?                            @relation(fields: [kecamatanId], references: [id])
+  kelurahan           Kelurahan?                            @relation(fields: [kelurahanId], references: [id])
+  pelanggan           Pelanggan?                            @relation(fields: [pelangganId], references: [id])
+  prosesOleh          User?                                 @relation("PemutusanProsesOleh", fields: [prosesOlehId], references: [id])
 
   @@unique([pelangganId, periode, nomorSurat])
   @@index([pelangganId])
@@ -471,20 +469,20 @@ model Pemutusan {
 }
 
 model PotensiPelanggan {
-  id          String                   @id @default(cuid())
+  id          String                                @id @default(cuid())
   alamat      String
   koordinat   Unsupported("geometry(Point, 4326)")?
-  status      StatusPotensi            @default(PROSPEK)
+  status      StatusPotensi                         @default(PROSPEK)
   kategori    String?
   catatan     String?
-  kodeSurvei  String?                  @unique
+  kodeSurvei  String?                               @unique
   petugasId   String?
   ruteId      String?
   kelurahanId String?
-  createdAt   DateTime                 @default(now())
-  updatedAt   DateTime                 @updatedAt
-  kelurahan   Kelurahan?               @relation(fields: [kelurahanId], references: [id])
-  rute        Rute?                    @relation(fields: [ruteId], references: [id])
+  createdAt   DateTime                              @default(now())
+  updatedAt   DateTime                              @updatedAt
+  kelurahan   Kelurahan?                            @relation(fields: [kelurahanId], references: [id])
+  rute        Rute?                                 @relation(fields: [ruteId], references: [id])
 
   @@index([koordinat], map: "potensi_koordinat_gist_idx", type: Gist)
   @@index([ruteId])
@@ -772,7 +770,7 @@ enum StatusDaftarCatat {
 /// diselesaikan. Kolom `ditugaskanKe` akan mengundang target yang justru
 /// memindahkan perhatian dari hasil ke kesibukan.
 model KunjunganAnomali {
-  id             String              @id @default(cuid())
+  id             String                                @id @default(cuid())
   pelangganId    String
   /// Periode saat kunjungan dilakukan (thbl, mis. 202607) — dipakai untuk
   /// mengukur tren anomali per bulan.
@@ -808,11 +806,11 @@ model KunjunganAnomali {
   /// Titik lokasi saat kunjungan, bukti bahwa petugas benar-benar datang.
   koordinat      Unsupported("geometry(Point, 4326)")?
   catatan        String?
-  dikunjungiAt   DateTime            @default(now())
-  createdAt      DateTime            @default(now())
-  updatedAt      DateTime            @updatedAt
-  pelanggan      Pelanggan           @relation(fields: [pelangganId], references: [id], onDelete: Cascade)
-  pencatat       Pencatat?           @relation(fields: [pencatatId], references: [id])
+  dikunjungiAt   DateTime                              @default(now())
+  createdAt      DateTime                              @default(now())
+  updatedAt      DateTime                              @updatedAt
+  pelanggan      Pelanggan                             @relation(fields: [pelangganId], references: [id], onDelete: Cascade)
+  pencatat       Pencatat?                             @relation(fields: [pencatatId], references: [id])
 
   /// Satu sambungan boleh dikunjungi berkali-kali lintas bulan (justru itu
   /// yang diharapkan bila kunjungan pertama gagal), tapi tidak dua kali

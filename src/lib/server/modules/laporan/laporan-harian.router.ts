@@ -34,10 +34,16 @@ import {
 import { periodeToDate, dateToPeriode } from "../../lib/periode"
 import { rentangTanggalWIB } from "../../lib/rentang-tanggal"
 import { simpanBerkas, BerkasTidakValidError } from "../../lib/storage"
+import { hitungPemakaianGantiMeter } from "@/lib/domain/perhitungan-meter"
 import { tentukanBlok } from "@/lib/domain/tagihan"
 import { recordAudit, auditMetaFromRequest } from "../../lib/audit"
 import JSZip from "jszip"
 import { verifikasiMassal } from "./verif-massal"
+import {
+  ambilPembacaanResmi,
+  denganSumberResmi,
+  simpanPembacaanResmi,
+} from "./pembacaan-resmi"
 
 export const laporanHarianRouter = new Hono()
 
@@ -113,6 +119,7 @@ const listQuerySchema = paginationQuerySchema.extend({
 /// membuka berkas ini — daripada diam-diam mengandalkan `include` gemuk.
 const PILIH_RINGKAS = {
   id: true,
+  pelangganId: true,
   nomorLangganan: true,
   namaPelanggan: true,
   alamatPelanggan: true,
@@ -120,6 +127,7 @@ const PILIH_RINGKAS = {
   standAwal: true,
   standAkhir: true,
   standAkhirRevisi: true,
+  pemakaianTagihVerif: true,
   pemakaian: true,
   pemakaianLalu: true,
   persentase: true,
@@ -132,6 +140,7 @@ const PILIH_RINGKAS = {
   usulanNoUrut: true,
   isVerified: true,
   verifiedAt: true,
+  pembacaanId: true,
   verif1At: true,
   verif2At: true,
   verif3At: true,
@@ -249,7 +258,22 @@ laporanHarianRouter.get(
       }),
       prisma.laporanHarianPetugas.count({ where }),
     ])
-    return paginated(c, data, buildMeta(total, query))
+    const pembacaanResmi = await ambilPembacaanResmi(
+      data.map((row) => ({ pelangganId: row.pelangganId, periode: row.periode })),
+    )
+    const petaPembacaan = new Map()
+    for (const row of pembacaanResmi) {
+      const kunci = `${row.meter.pelangganId}:${dateToPeriode(row.periode)}`
+      if (!petaPembacaan.has(kunci))
+        petaPembacaan.set(kunci, denganSumberResmi(row))
+    }
+    const dataDenganPembacaan = data.map((row) => ({
+      ...row,
+      pembacaan:
+        petaPembacaan.get(`${row.pelangganId}:${row.periode}`) ??
+        ("pembacaan" in row ? row.pembacaan : null),
+    }))
+    return paginated(c, dataDenganPembacaan, buildMeta(total, query))
   },
 )
 
@@ -1237,7 +1261,18 @@ laporanHarianRouter.get(
       },
     })
     if (!row) throw new NotFoundError("LaporanHarianPetugas")
-    return ok(c, row)
+    const pembacaan = row.pelangganId
+      ? await ambilPembacaanResmi([
+          { pelangganId: row.pelangganId, periode: row.periode },
+        ])
+      : []
+    return ok(c, {
+      ...row,
+      pembacaan: denganSumberResmi(
+        pembacaan.find((item) => item.meter.pelangganId === row.pelangganId) ??
+          row.pembacaan,
+      ),
+    })
   },
 )
 
@@ -1996,16 +2031,48 @@ const verif1Schema = z.object({
   /// TIDAK menimpa standAkhir (angka catat) — keduanya tampil berdampingan;
   /// V3 memakai revisi (bila ada) sebagai stand pembacaan resmi.
   standAkhirRevisi: z.coerce.number().int().min(0).nullable().optional(),
+  /// Stand angkat hanya dipakai untuk kondisi MB. standAwal laporan adalah
+  /// stand meter lama pada awal periode; angka awal meter baru dicatat
+  /// terpisah agar pemakaian gabungan dapat diaudit.
+  standAngkatLama: z.coerce.number().int().min(0).nullable().optional(),
+  standAwalMeterBaru: z.coerce.number().int().min(0).nullable().optional(),
   /// Koreksi keterangan/kondisi catat (DK, BMK/BMB, dst.) — stand revisi
   /// kumulatif kerap menuntut kondisi ikut dibenarkan. Ikut mengalir ke
   /// PembacaanMeter resmi saat V3 (V3 membaca laporan.kondisi).
   kondisi: z.enum(KondisiCatat).optional(),
-  /// Pemakaian yang DITAGIHKAN, bila verifikator menetapkannya sendiri.
-  /// Dikosongkan = pakai usulan otomatis dari aturan (minimum 5 m3 per
-  /// Perdir, taksiran bulan lalu untuk meter tak terbaca). Lihat
-  /// src/lib/domain/tagihan.ts dan catatan di atas endpoint V3.
+  /// M³ hasil verifikasi yang dipilih verifikator. Form memberi nilai awal
+  /// dari hitungan stand dan mengizinkan koreksi kebijakan secara manual.
+  /// Null hanya dipakai baris lama/klien lama yang belum mengirim nilai ini.
   pemakaianTagih: z.coerce.number().int().min(0).nullable().optional(),
 })
+
+function validasiStandAngkat(
+  kondisi: string,
+  standAngkatLama: number | null | undefined,
+  standAwalMeterBaru: number | null | undefined,
+) {
+  if (kondisi !== "MB") return null
+  if (standAngkatLama == null || standAwalMeterBaru == null) {
+    throw new BadRequestError(
+      "Kondisi MB memerlukan stand angkat meter lama dan stand awal meter baru.",
+    )
+  }
+  return { standAngkatLama, standAwalMeterBaru }
+}
+
+async function validasiMeterBaru(
+  pelangganId: string | null,
+  meterId: string | null | undefined,
+) {
+  if (!meterId) throw new BadRequestError("Meter baru belum dipilih.")
+  const meter = await prisma.meter.findUnique({ where: { id: meterId } })
+  if (!meter) throw new NotFoundError("Meter")
+  if (!pelangganId || meter.pelangganId !== pelangganId || !meter.isAktif) {
+    throw new BadRequestError(
+      "Kondisi MB harus menggunakan meter baru yang aktif milik pelanggan ini.",
+    )
+  }
+}
 
 laporanHarianRouter.patch(
   "/:id/verif1",
@@ -2029,6 +2096,20 @@ laporanHarianRouter.patch(
 
     const meter = await prisma.meter.findUnique({ where: { id: body.meterId } })
     if (!meter) throw new NotFoundError("Meter")
+    const kondisiEfektif = body.kondisi ?? laporan.kondisi
+    validasiStandAngkat(
+      kondisiEfektif,
+      body.standAngkatLama,
+      body.standAwalMeterBaru,
+    )
+    if (
+      kondisiEfektif === "MB" &&
+      (meter.pelangganId !== laporan.pelangganId || !meter.isAktif)
+    ) {
+      throw new BadRequestError(
+        "Kondisi MB harus menggunakan meter baru yang aktif milik pelanggan ini.",
+      )
+    }
 
     const row = await prisma.laporanHarianPetugas.update({
       where: { id },
@@ -2038,6 +2119,9 @@ laporanHarianRouter.patch(
         meterVerifId: body.meterId,
         blokTarifVerif: body.blokTarif,
         standAkhirRevisi: body.standAkhirRevisi,
+        standAngkatLama: kondisiEfektif === "MB" ? body.standAngkatLama : null,
+        standAwalMeterBaru:
+          kondisiEfektif === "MB" ? body.standAwalMeterBaru : null,
         pemakaianTagihVerif: body.pemakaianTagih,
         // undefined = kondisi tidak dikoreksi, nilai lama dipertahankan.
         kondisi: body.kondisi,
@@ -2075,6 +2159,8 @@ const catatanSchema = z.object({
   meterId: z.string().min(1).optional(),
   blokTarif: z.coerce.number().int().min(1).max(4).optional(),
   standAkhirRevisi: z.coerce.number().int().min(0).nullable().optional(),
+  standAngkatLama: z.coerce.number().int().min(0).nullable().optional(),
+  standAwalMeterBaru: z.coerce.number().int().min(0).nullable().optional(),
   pemakaianTagih: z.coerce.number().int().min(0).nullable().optional(),
   kondisi: z.enum(KondisiCatat).optional(),
 })
@@ -2090,6 +2176,10 @@ function koreksiDari(
   if (body.blokTarif !== undefined) data.blokTarifVerif = body.blokTarif
   if (body.standAkhirRevisi !== undefined)
     data.standAkhirRevisi = body.standAkhirRevisi
+  if (body.standAngkatLama !== undefined)
+    data.standAngkatLama = body.standAngkatLama
+  if (body.standAwalMeterBaru !== undefined)
+    data.standAwalMeterBaru = body.standAwalMeterBaru
   if (body.pemakaianTagih !== undefined)
     data.pemakaianTagihVerif = body.pemakaianTagih
   if (body.kondisi !== undefined) data.kondisi = body.kondisi
@@ -2119,6 +2209,21 @@ laporanHarianRouter.patch(
       )
 
     const body = c.req.valid("json")
+    const kondisiEfektif = body.kondisi ?? laporan.kondisi
+    const standAngkatLama =
+      body.standAngkatLama !== undefined
+        ? body.standAngkatLama
+        : laporan.standAngkatLama
+    const standAwalMeterBaru =
+      body.standAwalMeterBaru !== undefined
+        ? body.standAwalMeterBaru
+        : laporan.standAwalMeterBaru
+    validasiStandAngkat(kondisiEfektif, standAngkatLama, standAwalMeterBaru)
+    if (kondisiEfektif === "MB")
+      await validasiMeterBaru(
+        laporan.pelangganId,
+        body.meterId ?? laporan.meterVerifId,
+      )
     const row = await prisma.laporanHarianPetugas.update({
       where: { id },
       data: {
@@ -2137,20 +2242,11 @@ laporanHarianRouter.patch(
 /// V3 = final approval: satu-satunya tempat PembacaanMeter resmi dibuat.
 /// Stand resmi = standAkhirRevisi (bila V1 mengoreksi) atau standAkhir catat.
 ///
-/// PEMAKAIAN TAGIH ≠ SELISIH STAND. Versi awal endpoint ini memakai
-/// `standAkhir - standAwal` mentah sebagai `pemakaianM3`. Itu keliru dan
-/// dampaknya besar: di data periode 202605, pemakaian yang DITAGIHKAN
-/// berbeda dari selisih stand pada 10.160 dari 22.523 pelanggan (45%).
-/// Aturannya — pemakaian minimum 5 m3 menurut Peraturan Direksi, dan
-/// taksiran dari pemakaian bulan lalu bila meter tidak terbaca — hidup di
-/// src/lib/domain/tagihan.ts. Tanpa ini, tagihan pertama yang diterbitkan
-/// aplikasi akan berbeda dari Aurora untuk hampir separuh pelanggan.
-///
-/// Verifikator tetap pemegang keputusan: `pemakaianTagihVerif` yang diisi
-/// di V1 selalu menang atas usulan otomatis. Selisih apa pun terhadap
-/// pemakaian riil disimpan beserta ALASANNYA di PembacaanMeter, supaya
-/// pertanyaan "kenapa saya ditagih segini" punya jawaban yang bisa
-/// ditelusuri.
+/// M³ resmi ditetapkan melalui verifikasi: formulir mengusulkan selisih
+/// matematis (termasuk rumus gabungan untuk MB), lalu verifikator dapat
+/// mengubahnya sesuai kebijakan. Baris lama yang belum memiliki nilai
+/// verifikasi mempertahankan pemakaian impor. Pemakaian riil selalu dihitung
+/// terpisah dan setiap koreksi manual yang berbeda dicatat sebagai alasan.
 laporanHarianRouter.patch(
   "/:id/verif3",
   requireRole(...ROLE_GROUPS.SENIOR_UP),
@@ -2182,10 +2278,30 @@ laporanHarianRouter.patch(
       laporan.standAkhir
     const kondisiEfektif =
       (koreksi.kondisi as typeof laporan.kondisi | undefined) ?? laporan.kondisi
+    const standAngkatLama =
+      (koreksi.standAngkatLama as number | null | undefined) ??
+      laporan.standAngkatLama
+    const standAwalMeterBaru =
+      (koreksi.standAwalMeterBaru as number | null | undefined) ??
+      laporan.standAwalMeterBaru
+    const dataStandAngkat = validasiStandAngkat(
+      kondisiEfektif,
+      standAngkatLama,
+      standAwalMeterBaru,
+    )
+    if (kondisiEfektif === "MB")
+      await validasiMeterBaru(laporan.pelangganId, meterVerifId)
     const pemakaianTagihVerif =
       (koreksi.pemakaianTagih as number | null | undefined) ??
       laporan.pemakaianTagihVerif
-    const pemakaianRiil = Math.max(0, standAkhir - laporan.standAwal)
+    const pemakaianRiil =
+      dataStandAngkat
+        ? hitungPemakaianGantiMeter({
+            standAwalLama: laporan.standAwal,
+            ...dataStandAngkat,
+            standAkhirMeterBaru: standAkhir,
+          })
+        : Math.max(0, standAkhir - laporan.standAwal)
 
     // TIDAK ADA TAKSASI OTOMATIS.
     //
@@ -2203,18 +2319,22 @@ laporanHarianRouter.patch(
     // yang sama di verif-massal.ts.
     const pemakaianTagih = pemakaianTagihVerif ?? laporan.pemakaian
     const alasanTaksir =
-      pemakaianTagihVerif !== null && pemakaianTagihVerif !== undefined
+      pemakaianTagihVerif != null && pemakaianTagihVerif !== pemakaianRiil
         ? "OVERRIDE_MANUAL"
         : null
 
     const kini = new Date()
 
     const row = await prisma.$transaction(async (tx) => {
-      const pembacaan = await tx.pembacaanMeter.create({
+      const pembacaan = await simpanPembacaanResmi(tx, {
+        pelangganId: laporan.pelangganId,
+        meterId: meterVerifId,
+        periode: laporan.periode,
+        sumber: "PETUGAS",
+        laporanId: laporan.id,
         data: {
-          meterId: meterVerifId,
-          periode: periodeToDate(laporan.periode),
-          standLalu: laporan.standAwal,
+          standLalu:
+            dataStandAngkat?.standAwalMeterBaru ?? laporan.standAwal,
           standAkhir,
           pemakaianM3: pemakaianTagih,
           pemakaianRiil,
@@ -2423,6 +2543,26 @@ laporanHarianRouter.patch(
         return diperbarui
       })
       return ok(c, row)
+    }
+
+    if (laporan.isVerified) {
+      if (!bolehSenior)
+        throw new ForbiddenError(
+          "Membatalkan approve final (V3) memerlukan Senior Manager ke atas",
+        )
+      return ok(
+        c,
+        await prisma.laporanHarianPetugas.update({
+          where: { id },
+          data: {
+            verif3At: null,
+            verif3ById: null,
+            isVerified: false,
+            verifiedAt: null,
+            verifiedById: null,
+          },
+        }),
+      )
     }
 
     if (laporan.verif2At) {

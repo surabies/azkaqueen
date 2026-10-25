@@ -39,8 +39,8 @@ function KartuBaris({
       className={cn(
         "block w-full px-4 py-3.5 text-left transition-colors sm:px-5",
         terpilih
-          ? "bg-info-muted shadow-[inset_2px_0_0_0_var(--info)]"
-          : "hover:bg-accent",
+          ? "bg-table-accent"
+          : "hover:bg-table-accent",
         onRowClicked && "cursor-pointer"
       )}
       role={onRowClicked ? "button" : undefined}

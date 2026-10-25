@@ -1,34 +1,30 @@
 "use client";
 
 // features/dashboard/components/verifikasi/modal-lapangan.tsx — modal aksi
-// verifikasi berjenjang V1→V2→V3 (lihat tabel.md): foto
-// (bila ada) berdampingan dengan ST akhir revisi, meter tujuan, dan blok
-// tarif. V2/V3 hanya persetujuan (dialog konfirmasi di halaman), jadi
-// satu-satunya modal isian adalah V1 ini — plus mode "cek ulang" (tolak).
+// verifikasi berjenjang V1→V2→V3: foto (tab stand/segel/rumah) berdampingan
+// dengan isian koreksi. Ketiga ring memakai modal yang sama; V1 juga memilih
+// meter tujuan. Plus mode "cek ulang" (tolak).
 //
-// Meter tujuan dipilih manual di V1: `nomorMeter` di laporan bisa
-// duplikat/orphan (681 duplikat di data lapangan), jadi penentuan meter
-// yang benar adalah keputusan verifikator, bukan tebakan sistem (lihat
-// verif1Schema di server/modules/laporan/laporan-harian.router.ts).
-// Revisi TIDAK menimpa angka catat petugas — keduanya tampil berdampingan
-// di tabel (ST akhir catat vs ST akhir revisi); pembacaan resmi memakai
-// revisi saat V3 approve.
+// Meter tujuan dipilih manual: `nomorMeter` di laporan bisa duplikat/orphan,
+// jadi penentuan meter yang benar adalah keputusan verifikator. Revisi TIDAK
+// menimpa angka catat petugas — pembacaan resmi memakai revisi saat V3.
 //
-// Modal ini hanya dirender saat aksi diminta (dari menu klik kanan), jadi
-// state isian selalu mulai bersih di tiap pembukaan.
+// Modal hanya dirender saat aksi diminta, jadi state isian selalu mulai bersih.
 import * as React from "react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { NativeSelect } from "@/components/ui/native-select";
+import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { formatPeriode } from "@/features/public/lib/format";
+import { hitungPemakaianGantiMeter } from "@/lib/domain/perhitungan-meter";
 import { kirimJson, ApiError } from "../../lib/api-client";
 import { LABEL_KONDISI_CATAT } from "../../lib/label";
 import type { LaporanHarianDetail, MeterRingkas } from "./tipe";
 import { Bagian } from "./panel-bagian";
-import { DialogVerifikasi } from "./dialog-verifikasi";
+import { DialogVerifikasi, KELAS_KONTROL_MODAL, PilihSatu } from "./dialog-verifikasi";
 
 export function ModalLapangan({
   detail,
@@ -43,37 +39,74 @@ export function ModalLapangan({
   meters: MeterRingkas[];
   /** Prapilih dari panel: meter yang nomornya cocok, lalu meter aktif. */
   meterAwal: string;
-  /** Ring yang sedang dikerjakan. Ketiganya menerima koreksi yang sama —
-   *  V2/V3 bukan sekadar tanda tangan: kalau V1 salah memasukkan angka,
-   *  atasannya harus bisa MEMBETULKAN, bukan cuma meloloskan atau menolak
-   *  seluruh laporan sehingga petugas yang disuruh mengulang. */
+  /** Ring yang sedang dikerjakan. Ketiganya menerima koreksi yang sama. */
   ring: 1 | 2 | 3;
-  /** true = langsung mode cek ulang (dipicu aksi "Cek ulang" di menu). */
+  /** true = langsung mode cek ulang. */
   tolakAwal: boolean;
   onTutup: () => void;
   onSelesai: () => void;
 }) {
   const [meterId, setMeterId] = React.useState(meterAwal);
-  const [blokTarif, setBlokTarif] = React.useState(
-    String(detail.blokTarifVerif ?? 1),
-  );
-  const [revisi, setRevisi] = React.useState(
-    String(detail.standAkhirRevisi ?? detail.standAkhir),
-  );
+  const [blokTarif, setBlokTarif] = React.useState(String(detail.blokTarifVerif ?? 1));
+  const [revisi, setRevisi] = React.useState(String(detail.standAkhirRevisi ?? detail.standAkhir));
   const [kondisi, setKondisi] = React.useState(detail.kondisi);
+  const [standAngkatLama, setStandAngkatLama] = React.useState(
+    detail.standAngkatLama == null ? "" : String(detail.standAngkatLama),
+  );
+  const [standAwalMeterBaru, setStandAwalMeterBaru] = React.useState(
+    detail.standAwalMeterBaru == null ? "" : String(detail.standAwalMeterBaru),
+  );
+  const [pemakaianOverride, setPemakaianOverride] = React.useState(
+    detail.pemakaianTagihVerif == null ? "" : String(detail.pemakaianTagihVerif),
+  );
   const [catatan, setCatatan] = React.useState("");
   const [modeTolak, setModeTolak] = React.useState(tolakAwal);
   const [mengirim, setMengirim] = React.useState(false);
   const [galat, setGalat] = React.useState<string | null>(null);
 
   const revisiNum = Number(revisi);
-  const revisiSiap = revisi !== "" && Number.isFinite(revisiNum);
+  const revisiSiap = revisi !== "" && Number.isInteger(revisiNum) && revisiNum >= 0;
   const berubah = revisiSiap && revisiNum !== detail.standAkhir;
-  const pemakaian = revisiSiap
-    ? Math.max(0, revisiNum - detail.standAwal)
-    : null;
+  const meterBaru = kondisi === "MB";
+  const standAngkatNum = Number(standAngkatLama);
+  const standAwalBaruNum = Number(standAwalMeterBaru);
+  const standAngkatSiap =
+    standAngkatLama !== "" && Number.isInteger(standAngkatNum) && standAngkatNum >= 0;
+  const standAwalBaruSiap =
+    standAwalMeterBaru !== "" && Number.isInteger(standAwalBaruNum) && standAwalBaruNum >= 0;
+  const hitunganM3 =
+    revisiSiap && (meterBaru ? standAngkatSiap && standAwalBaruSiap : true)
+      ? meterBaru
+        ? hitungPemakaianGantiMeter({
+            standAwalLama: detail.standAwal,
+            standAngkatLama: standAngkatNum,
+            standAwalMeterBaru: standAwalBaruNum,
+            standAkhirMeterBaru: revisiNum,
+          })
+        : Math.max(0, revisiNum - detail.standAwal)
+      : null;
+  const overrideNum = Number(pemakaianOverride);
+  const pemakaianTerpilih =
+    pemakaianOverride === ""
+      ? hitunganM3
+      : Number.isInteger(overrideNum) && overrideNum >= 0
+        ? overrideNum
+        : null;
 
   async function jalankan(aksi: "verif" | "reject") {
+    if (
+      aksi === "verif" &&
+      (!revisiSiap ||
+        pemakaianTerpilih === null ||
+        (meterBaru && (!standAngkatSiap || !standAwalBaruSiap)))
+    ) {
+      setGalat(
+        meterBaru
+          ? "Lengkapi stand akhir, stand angkat meter lama, stand awal meter baru, dan M³ terpakai."
+          : "Stand akhir dan M³ terpakai harus berupa bilangan bulat nonnegatif.",
+      );
+      return;
+    }
     setMengirim(true);
     setGalat(null);
     try {
@@ -82,9 +115,11 @@ export function ModalLapangan({
           meterId,
           blokTarif: Number(blokTarif),
           catatanVerif: catatan.trim() || undefined,
-          // Revisi hanya dikirim bila benar-benar beda dari angka catat —
-          // angka sama bukan koreksi, kolom revisi di tabel tetap kosong.
+          // Revisi hanya dikirim bila benar-benar beda dari angka catat.
           standAkhirRevisi: berubah ? revisiNum : null,
+          standAngkatLama: meterBaru ? standAngkatNum : null,
+          standAwalMeterBaru: meterBaru ? standAwalBaruNum : null,
+          pemakaianTagih: pemakaianTerpilih,
           // Kondisi hanya dikirim bila dikoreksi — undefined = tidak diubah.
           kondisi: kondisi !== detail.kondisi ? kondisi : undefined,
         });
@@ -100,6 +135,61 @@ export function ModalLapangan({
       setMengirim(false);
     }
   }
+
+  const footer = (
+    <div className="flex flex-col gap-2">
+      {galat && (
+        <Alert variant="destructive" className="py-2">
+          <AlertDescription className="text-xs">{galat}</AlertDescription>
+        </Alert>
+      )}
+      {modeTolak ? (
+        <>
+          <Button
+            variant="destructive"
+            className="h-9 w-full"
+            disabled={mengirim || catatan.trim().length === 0}
+            onClick={() => jalankan("reject")}
+          >
+            {mengirim && <Spinner className="size-3.5" />} Kirim untuk cek ulang
+          </Button>
+          <Button
+            variant="ghost"
+            className="h-9 w-full"
+            disabled={mengirim}
+            onClick={() => setModeTolak(false)}
+          >
+            Batal
+          </Button>
+        </>
+      ) : (
+        <>
+          <Button
+            className="h-9 w-full"
+            disabled={
+              mengirim ||
+              !meterId ||
+              !revisiSiap ||
+              pemakaianTerpilih === null ||
+              (meterBaru && (!standAngkatSiap || !standAwalBaruSiap))
+            }
+            onClick={() => jalankan("verif")}
+          >
+            {mengirim && <Spinner className="size-3.5" />}
+            {berubah ? `Simpan koreksi & tandai V${ring}` : `Valid — tandai V${ring}`}
+          </Button>
+          <Button
+            variant="outline"
+            className="h-9 w-full"
+            disabled={mengirim}
+            onClick={() => setModeTolak(true)}
+          >
+            Cek ulang
+          </Button>
+        </>
+      )}
+    </div>
+  );
 
   return (
     <DialogVerifikasi
@@ -129,79 +219,119 @@ export function ModalLapangan({
           keteranganKosong: "Petugas tidak mengirim foto rumah/persil.",
         },
       ]}
+      footer={footer}
     >
-      <Bagian judul="ST akhir revisi">
+      <Bagian judul="Hasil ST akhir">
         <Input
           type="number"
           min={0}
           value={revisi}
           onChange={(e) => setRevisi(e.target.value)}
-          className="h-9 font-mono text-sm"
+          className={KELAS_KONTROL_MODAL}
           aria-label="Stand akhir revisi"
         />
-        <p className="text-[11px] text-muted-foreground">
+        <p className="text-center text-[11px] text-muted-foreground">
           {berubah
             ? `Revisi dari angka catat ${detail.standAkhir.toLocaleString("id-ID")} — angka catat tetap tersimpan.`
             : "Samakan dengan angka catat bila petugas benar; ubah bila salah input."}
         </p>
       </Bagian>
 
-      <div className="flex items-baseline justify-between gap-2 border border-border/70 bg-muted/30 px-2.5 py-2">
-        <span className="text-[9px] font-semibold tracking-widest text-muted-foreground uppercase">
-          Pakai (m³)
-        </span>
-        <span className="font-mono text-sm font-bold tabular-nums text-foreground">
-          {pemakaian?.toLocaleString("id-ID") ?? "—"}
-        </span>
-      </div>
+      {meterBaru && (
+        <Bagian judul="Stand angkat meter baru (MB)">
+          <p className="text-center text-[11px] text-muted-foreground">
+            Rumus: (stand angkat lama − {detail.standAwal.toLocaleString("id-ID")}) + (stand akhir baru − stand awal pemasangan baru).
+          </p>
+          <div className="grid gap-1.5">
+            <Label htmlFor="angkat-lama" className="text-[11px] font-normal text-muted-foreground">
+              Stand angkat meter lama
+            </Label>
+            <Input
+              id="angkat-lama"
+              type="number"
+              min={0}
+              step={1}
+              value={standAngkatLama}
+              onChange={(e) => setStandAngkatLama(e.target.value)}
+              className={KELAS_KONTROL_MODAL}
+            />
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="awal-baru" className="text-[11px] font-normal text-muted-foreground">
+              Stand awal pemasangan meter baru
+            </Label>
+            <Input
+              id="awal-baru"
+              type="number"
+              min={0}
+              step={1}
+              value={standAwalMeterBaru}
+              onChange={(e) => setStandAwalMeterBaru(e.target.value)}
+              className={KELAS_KONTROL_MODAL}
+            />
+          </div>
+        </Bagian>
+      )}
+
+      <Bagian judul="M³ tagihan">
+        <Input
+          type="number"
+          min={0}
+          step={1}
+          value={pemakaianOverride}
+          placeholder={hitunganM3?.toString() ?? "—"}
+          onChange={(e) => setPemakaianOverride(e.target.value)}
+          className={KELAS_KONTROL_MODAL}
+          aria-label="M³ tagihan"
+        />
+        <p className="text-center text-[11px] text-muted-foreground">
+          Hasil hitung dari ST awal dan akhir: {hitunganM3?.toLocaleString("id-ID") ?? "—"} m³. Nilai
+          ini menjadi M³ tagihan; ubah hanya bila ada koreksi kebijakan.
+        </p>
+      </Bagian>
 
       <Bagian judul="Meter tujuan">
-        <NativeSelect
+        <PilihSatu
+          ariaLabel="Meter tujuan"
           value={meterId}
-          onChange={(e) => setMeterId(e.currentTarget.value)}
-          className="h-8 text-xs"
-        >
-          {meters.length === 0 && (
-            <option value="">Pelanggan belum punya meter terdaftar</option>
-          )}
-          {meters.map((m) => (
-            <option key={m.id} value={m.id}>
-              {m.nomorMeter}
-              {m.merkKode ? ` · ${m.merkKode}` : ""}{" "}
-              {m.isAktif ? "(aktif)" : "(histori)"}
-            </option>
-          ))}
-        </NativeSelect>
+          onChange={setMeterId}
+          disabled={meters.length === 0}
+          placeholder="Pelanggan belum punya meter terdaftar"
+          opsi={meters.map((m) => ({
+            value: m.id,
+            label: `${m.nomorMeter}${m.merkKode ? ` · ${m.merkKode}` : ""} ${m.isAktif ? "(aktif)" : "(histori)"}`,
+            disabled: meterBaru && !m.isAktif,
+          }))}
+        />
       </Bagian>
 
       <Bagian judul="Blok tarif">
-        <NativeSelect
+        <PilihSatu
+          ariaLabel="Blok tarif"
           value={blokTarif}
-          onChange={(e) => setBlokTarif(e.currentTarget.value)}
-          className="h-8 text-xs"
-        >
-          {[1, 2, 3, 4].map((b) => (
-            <option key={b} value={b}>
-              Blok {b}
-            </option>
-          ))}
-        </NativeSelect>
+          onChange={setBlokTarif}
+          opsi={[1, 2, 3, 4].map((b) => ({ value: String(b), label: `Blok ${b}` }))}
+        />
       </Bagian>
 
       <Bagian judul="Keterangan catat">
-        <NativeSelect
+        <PilihSatu
+          ariaLabel="Keterangan catat"
           value={kondisi}
-          onChange={(e) => setKondisi(e.currentTarget.value)}
-          className="h-8 text-xs"
-        >
-          {Object.entries(LABEL_KONDISI_CATAT).map(([kode, nama]) => (
-            <option key={kode} value={kode}>
-              {nama}
-            </option>
-          ))}
-        </NativeSelect>
+          onChange={(nilai) => {
+            setKondisi(nilai);
+            if (nilai === "MB") {
+              const aktif = meters.find((m) => m.isAktif);
+              if (aktif) setMeterId(aktif.id);
+            }
+          }}
+          opsi={Object.entries(LABEL_KONDISI_CATAT).map(([kode, nama]) => ({
+            value: kode,
+            label: nama,
+          }))}
+        />
         {kondisi !== detail.kondisi && (
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-center text-[11px] text-muted-foreground">
             Dikoreksi dari “{LABEL_KONDISI_CATAT[detail.kondisi] ?? detail.kondisi}”.
           </p>
         )}
@@ -211,59 +341,15 @@ export function ModalLapangan({
         <Textarea
           value={catatan}
           onChange={(e) => setCatatan(e.target.value)}
-          rows={2}
-          className="text-xs"
+          rows={3}
+          className="text-sm"
           placeholder={
-            modeTolak
-              ? "Mis. angka stand tidak sesuai foto/riwayat"
-              : "Catatan verifikasi"
+            modeTolak ? "Mis. angka stand tidak sesuai foto/riwayat" : "Catatan verifikasi"
           }
         />
       </Bagian>
 
-      {galat && <p className="text-[11px] text-destructive">{galat}</p>}
-
-      <Separator className="mt-auto" />
-
-      {modeTolak ? (
-        <div className="flex flex-col gap-1.5">
-          <Button
-            variant="destructive"
-            className="h-9 w-full"
-            disabled={mengirim || catatan.trim().length === 0}
-            onClick={() => jalankan("reject")}
-          >
-            {mengirim && <Spinner className="size-3.5" />} Kirim untuk cek ulang
-          </Button>
-          <Button
-            variant="ghost"
-            className="h-8 w-full"
-            disabled={mengirim}
-            onClick={() => setModeTolak(false)}
-          >
-            Batal
-          </Button>
-        </div>
-      ) : (
-        <div className="flex flex-col gap-1.5">
-          <Button
-            className="h-9 w-full"
-            disabled={mengirim || !meterId || !revisiSiap}
-            onClick={() => jalankan("verif")}
-          >
-            {mengirim && <Spinner className="size-3.5" />}
-            {berubah ? `Simpan koreksi & tandai V${ring}` : `Valid — tandai V${ring}`}
-          </Button>
-          <Button
-            variant="outline"
-            className="h-8 w-full"
-            disabled={mengirim}
-            onClick={() => setModeTolak(true)}
-          >
-            Cek ulang
-          </Button>
-        </div>
-      )}
+      <Separator className="opacity-0" />
     </DialogVerifikasi>
   );
 }

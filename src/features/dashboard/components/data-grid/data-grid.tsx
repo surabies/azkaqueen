@@ -507,6 +507,12 @@ export function DataGrid({
                 ? "baris-terpilih"
                 : undefined
             }
+            getRowStyle={(p) =>
+              (p.data as { id?: string } | undefined)?.id ===
+              idTerpilihRef.current
+                ? { backgroundColor: "var(--table-accent)" }
+                : undefined
+            }
             overlayNoRowsTemplate='<span style="color: var(--muted-foreground); font-size: 13px">Tidak ada data untuk ditampilkan.</span>'
             suppressCellFocus
           />

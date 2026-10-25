@@ -124,13 +124,13 @@ model TwoFactor {
 /// ke akun lain saat perangkat dipakai bergantian — upsert-by-token menjaga
 /// satu baris per perangkat fisik.
 model PerangkatNotif {
-  id        String   @id @default(cuid())
-  userId    String
-  token     String   @unique
-  platform  String   @default("android")
-  createdAt DateTime @default(now())
+  id         String   @id @default(cuid())
+  userId     String
+  token      String   @unique
+  platform   String   @default("android")
+  createdAt  DateTime @default(now())
   lastSeenAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@map("perangkat_notif")

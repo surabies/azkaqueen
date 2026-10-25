@@ -56,19 +56,19 @@ model SubBagian {
 /// laporan (petugas tidak diketahui). Dipisah dari User karena riwayat
 /// pencatatan lama tidak selalu punya akun sistem.
 model Pencatat {
-  id             String                 @id @default(cuid())
+  id               String                 @id @default(cuid())
   /// Nama persis seperti di CSV setelah normalisasi (UPPER + TRIM).
   /// Ini yang dipakai sebagai lookup key saat import.
-  namaLapangan   String                 @unique
-  namaLengkap    String?
-  nip            String?
+  namaLapangan     String                 @unique
+  namaLengkap      String?
+  nip              String?
   /// Variasi penulisan lain yang merujuk ke orang yang sama.
   /// Disimpan sebagai string JSON array: ["iwan","IWAN SURYANA","iwan s"]
   /// Digunakan saat normalisasi data lama.
-  aliasLain      String?
+  aliasLain        String?
   /// Link ke akun User sistem. Nullable — pencatat lama boleh ada tanpa
   /// akun User.
-  userId         String?                @unique
+  userId           String?                @unique
   /// Jenis pekerjaan lapangan yang dipegang orang ini. Perannya di sistem
   /// TETAP `PELAKSANA` — yang berbeda bukan kewenangannya, melainkan
   /// penugasan yang ia terima. Menambah peran baru di enum Role akan
@@ -80,21 +80,21 @@ model Pencatat {
   /// sendiri mana yang didatangi — tidak ada yang menugaskan per alamat.
   /// Keberhasilannya diukur dari TURUNNYA jumlah anomali dari bulan ke
   /// bulan, bukan dari jumlah kunjungan yang diselesaikan.
-  jenisTugas     JenisTugasPencatat     @default(PENCATAT_METER)
-  isAktif        Boolean                @default(true)
-  createdAt      DateTime               @default(now())
-  updatedAt      DateTime               @updatedAt
-  daftarCatat    DaftarCatat[]
-  laporanHarian  LaporanHarianPetugas[]
-  pembacaanMeter PembacaanMeter[]
+  jenisTugas       JenisTugasPencatat     @default(PENCATAT_METER)
+  isAktif          Boolean                @default(true)
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+  daftarCatat      DaftarCatat[]
+  laporanHarian    LaporanHarianPetugas[]
+  pembacaanMeter   PembacaanMeter[]
   kunjunganAnomali KunjunganAnomali[]
   /// Rute Baca Meter (RBM) yang dipegang pencatat ini — many-to-many berurut
   /// lewat PenugasanRute (satu pencatat banyak rute; satu rute boleh dibagi
   /// >1 pencatat untuk pembagian beban/pengganti cuti). Diatur di dashboard
   /// web (halaman Pemetaan Rute) dan dibaca mobile `GET /laporan-harian/rute-saya`.
   /// Menggantikan kolom `ruteId` tunggal yang lama.
-  penugasanRute  PenugasanRute[]
-  user           User?                  @relation(fields: [userId], references: [id])
+  penugasanRute    PenugasanRute[]
+  user             User?                  @relation(fields: [userId], references: [id])
 
   @@index([namaLapangan])
   @@index([jenisTugas])

@@ -1,31 +1,41 @@
 "use client"
 
 // features/dashboard/components/verifikasi/tabel-verifikasi.tsx — tabel
-// khusus layar verifikasi.
+// khusus layar verifikasi (kotak centang + aksi massal, pewarnaan per ring,
+// ribuan baris, kolom beku, navigasi papan ketik).
 //
-// KENAPA BUKAN DataGrid BERSAMA. Halaman ini butuh lima hal yang tidak
-// dimiliki halaman lain: kotak centang + aksi massal, pewarnaan per ring,
-// 5.000 baris sekaligus, kolom beku, dan navigasi papan ketik. Menambahkan
-// semuanya ke DataGrid bersama berarti mempertaruhkan belasan halaman lain
-// demi satu halaman.
+// URUTAN KOLOM mengikuti alur kerja verifikator, dari kiri ke kanan:
+//   1. SIAPA        No. Pel · Nama                      (No. Pel beku)
+//   2. ANGKA DIUJI  ST Awal · ST Akhir · Pakai · Lalu · Dev %
+//                   — yang dibandingkan mata: stand catat, pemakaian, dan
+//                   penyimpangan dari bulan lalu, berdampingan.
+//   3. KONDISI      Kondisi catat (menjelaskan angka yang janggal)
+//   4. HASIL        ST Resmi · Tagihan (terisi setelah diverifikasi)
+//   5. KONTEKS      Rute · Petugas · Tgl Catat
+//   6. REFERENSI    Alamat (lebar, jarang menentukan keputusan) · Status
 //
-// GULIR MENDATAR — sumber bug yang lama tak terlihat. Versi pertama memakai
-// `w-full` pada <table>. Itu memerintahkan tabel MUAT ke lebar wadah, jadi
-// 15 kolom saling menghimpit sampai tak terbaca dan gulir mendatar tidak
-// pernah muncul — gejalanya persis "kolom bergeser / terpotong tepi
-// halaman". Yang benar `w-max min-w-full`: tumbuh mengikuti isi, tapi tidak
-// pernah lebih sempit dari wadahnya. Seluruh rantai induk juga wajib
-// `min-w-0`, kalau tidak flexbox menolak menyusut dan luberannya dipotong
-// diam-diam alih-alih memunculkan scrollbar.
+// PENAMAAN HEADER ringkas, mengikuti header tabel.md dan istilah PDAM;
+// nama panjangnya ada di tooltip (atribut title) tiap header.
 //
-// KOLOM BEKU. Ceklis dan nomor langganan dipatok kiri: menggulir ke kolom
-// `%` tanpa ini membuat orang kehilangan jejak baris siapa yang dilihat.
+// GULIR MENDATAR: `w-max min-w-full` (tumbuh mengikuti isi, tidak pernah lebih
+// sempit dari wadah) dan seluruh rantai induk wajib `min-w-0`.
+//
+// KOLOM RING dua mode: "berjenjang" (Petugas) = chip kecil berwarna V1/V2/V3;
+// "tunggal" (Pelanggan) = satu ikon penanda status.
 
 import * as React from "react"
-import { Check } from "lucide-react"
+import {
+  Alert02Icon,
+  CancelCircleIcon,
+  CheckmarkCircle02Icon,
+  Clock01Icon,
+  Tick02Icon,
+} from "@hugeicons/core-free-icons"
+import { HugeiconsIcon } from "@hugeicons/react"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { LABEL_KONDISI_CATAT } from "../../lib/label"
-import { GAYA_TAHAP, GAYA_BELUM_DIBACA, TITIK_RING, gayaAnomali, tahapDari, type Tahap } from "./warna-ring"
+import { GAYA_TAHAP, GAYA_BELUM_DIBACA, gayaAnomali, tahapDari, type Tahap } from "./warna-ring"
 
 export interface BarisVerifikasi {
   id: string
@@ -37,7 +47,12 @@ export interface BarisVerifikasi {
   standAkhir?: number | null
   standAkhirRevisi?: number | null
   pemakaian?: number | null
+  pemakaianTagihVerif?: number | null
   pemakaianLalu?: number | null
+  pembacaan?: {
+    standAkhir: number
+    pemakaianM3: number
+  } | null
   persentase?: number | null
   kondisi?: string | null
   tanggalCatat?: string | null
@@ -56,6 +71,7 @@ export interface BarisVerifikasi {
 }
 
 export type Kerapatan = "padat" | "normal"
+export type ModeRing = "berjenjang" | "tunggal"
 
 const angka = (n: number | null | undefined) =>
   n === null || n === undefined ? "—" : n.toLocaleString("id-ID")
@@ -74,40 +90,69 @@ function Lencana({ kelas, anak }: { kelas: string; anak: React.ReactNode }) {
   )
 }
 
-/// Warna titik ring berasal dari warna-ring.ts (V1 amber, V2 biru, V3 hijau).
+/// Jumlah ring yang sudah dilewati tiap tahap — menggerakkan batang mini.
+const RING_LOLOS: Record<Tahap, number> = { MENUNGGU: 0, V1: 1, V2: 2, V3: 3, DITOLAK: 0 }
+const TEKS_CHIP: Record<Tahap, string> = { MENUNGGU: "—", V1: "V1", V2: "V2", V3: "V3", DITOLAK: "Cek" }
 
-function TitikRing({ tahap }: { tahap: Tahap }) {
-  const lolos = (r: 1 | 2 | 3) =>
-    tahap === "V3" || (tahap === "V2" && r <= 2) || (tahap === "V1" && r === 1)
+function ChipRing({ tahap }: { tahap: Tahap }) {
+  const gaya = GAYA_TAHAP[tahap]
+  const lolos = RING_LOLOS[tahap]
   return (
-    <span className="inline-flex items-center gap-1" aria-label={`Tahap ${GAYA_TAHAP[tahap].label}`}>
-      {([1, 2, 3] as const).map((r) => (
-        <span
-          key={r}
-          aria-hidden
-          title={`V${r}`}
-          className={`size-2.5 rounded-full ${
-            lolos(r)
-              ? TITIK_RING[r]
-              : tahap === "DITOLAK"
-                ? "bg-red-500 dark:bg-red-400"
-                : "ring-muted-foreground/30 bg-transparent ring-1 ring-inset"
-          }`}
-        />
-      ))}
+    <span
+      className={`inline-flex h-6 items-center gap-1.5 rounded-md px-1.5 text-[11px] font-semibold whitespace-nowrap ${gaya.lencana}`}
+      aria-label={`Tahap ${gaya.label}`}
+    >
+      <span className="flex items-center gap-0.5" aria-hidden>
+        {([1, 2, 3] as const).map((r) => (
+          <span
+            key={r}
+            className={`h-3 w-1 rounded-full ${r <= lolos ? gaya.titik : "bg-current opacity-20"}`}
+          />
+        ))}
+      </span>
+      {tahap === "V3" && <HugeiconsIcon icon={Tick02Icon} strokeWidth={2.5} className="size-3" aria-hidden />}
+      {tahap === "DITOLAK" && <HugeiconsIcon icon={Alert02Icon} strokeWidth={2} className="size-3" aria-hidden />}
+      {TEKS_CHIP[tahap]}
     </span>
   )
 }
 
+const IKON_TUNGGAL = {
+  MENUNGGU: Clock01Icon,
+  V1: Clock01Icon,
+  V2: Clock01Icon,
+  V3: CheckmarkCircle02Icon,
+  DITOLAK: CancelCircleIcon,
+} as const
+const LABEL_TUNGGAL: Record<Tahap, string> = {
+  MENUNGGU: "Menunggu verifikasi",
+  V1: "Menunggu verifikasi",
+  V2: "Menunggu verifikasi",
+  V3: "Sudah terverifikasi",
+  DITOLAK: "Ditolak / cek ulang",
+}
+
+function IkonRingTunggal({ tahap }: { tahap: Tahap }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span
+          className={`inline-grid size-6 place-items-center rounded-md ${GAYA_TAHAP[tahap].lencana}`}
+          aria-label={LABEL_TUNGGAL[tahap]}
+        >
+          <HugeiconsIcon icon={IKON_TUNGGAL[tahap]} strokeWidth={2} className="size-3.5" aria-hidden />
+        </span>
+      </TooltipTrigger>
+      <TooltipContent>{LABEL_TUNGGAL[tahap]}</TooltipContent>
+    </Tooltip>
+  )
+}
+
 /// Lebar kolom beku — dipakai header DAN badan supaya `left` keduanya sama.
-/// Ditulis sebagai konstanta karena salah 1px di sini membuat kolom kedua
-/// menindih yang pertama saat digulir.
+/// Salah 1px di sini membuat kolom kedua menindih yang pertama saat digulir.
 const L_CEKLIS = 40
-const L_RING = 64
-const L_NOMOR = 160
-/// Offset kiri tiap kolom beku, dijumlahkan sekali di sini. Menghitungnya
-/// ulang di tiap tempat adalah cara paling mudah membuat kolom saling
-/// menindih saat digulir.
+const L_RING = 92
+const L_NOMOR = 132
 const X_RING = L_CEKLIS
 const X_NOMOR = L_CEKLIS + L_RING
 
@@ -121,6 +166,7 @@ export function TabelVerifikasi({
   onKlikKanan,
   ambangAnomali,
   modeBelumDibaca = false,
+  modeRing = "berjenjang",
   memuat,
   kerapatan = "normal",
   pesanKosong,
@@ -134,24 +180,23 @@ export function TabelVerifikasi({
   onKlikKanan: (row: BarisVerifikasi, posisi: { x: number; y: number }) => void
   ambangAnomali: number
   modeBelumDibaca?: boolean
+  /** "tunggal" = laporan mandiri (satu ring): ikon penanda, bukan chip V1–V3. */
+  modeRing?: ModeRing
   memuat: boolean
   kerapatan?: Kerapatan
-  /** Menggantikan teks keadaan-kosong bawaan (mis. petunjuk periode baru). */
+  /** Menggantikan teks keadaan-kosong bawaan. */
   pesanKosong?: React.ReactNode
 }) {
   const semuaTerpilih = rows.length > 0 && rows.every((r) => terpilih.has(r.id))
   const sebagianTerpilih = !semuaTerpilih && rows.some((r) => terpilih.has(r.id))
   const wadahRef = React.useRef<HTMLDivElement>(null)
 
-  // `[&_td]` (keturunan), BUKAN `[&>td]` (anak langsung). Kelas ini dipasang
-  // di <table>, sedangkan <td> adalah anak <tr> — dengan `>` aturannya tidak
-  // pernah kena satu sel pun, dan tombol Padat/Normal jadi terlihat rusak
-  // padahal state-nya berubah dengan benar.
-  const pad = kerapatan === "padat" ? "[&_td]:py-1 [&_th]:py-1.5" : "[&_td]:py-2.5 [&_th]:py-3"
+  // `[&_td]` (keturunan), BUKAN `[&>td]`: kelas dipasang di <table>, sedangkan
+  // <td> adalah anak <tr>.
+  const pad = kerapatan === "padat" ? "[&_td]:py-1 [&_th]:py-1.5" : "[&_td]:py-2.5 [&_th]:py-2.5"
   const tinggiBaris = kerapatan === "padat" ? "0 32px" : "0 44px"
 
-  // Baris aktif selalu ditarik ke dalam pandangan — tanpa ini navigasi
-  // panah "hilang" begitu melewati tepi bawah layar.
+  // Baris aktif selalu ditarik ke dalam pandangan.
   React.useEffect(() => {
     if (!idTerpilih || !wadahRef.current) return
     const el = wadahRef.current.querySelector<HTMLElement>(`[data-id="${idTerpilih}"]`)
@@ -163,14 +208,11 @@ export function TabelVerifikasi({
   return (
     <div
       ref={wadahRef}
-      // min-w-0 di sini WAJIB: tanpa itu induk flex menolak menyusut dan
-      // luberan tabel dipotong, bukan digulir.
       className="scrollbar-tipis border-border/70 relative h-full min-w-0 overflow-auto rounded-lg border"
     >
-      {/* w-max min-w-full = tumbuh mengikuti isi, minimal selebar wadah. */}
       <table className={`w-max min-w-full border-collapse text-sm ${pad}`}>
         <thead className="sticky top-0 z-20">
-          <tr className="text-muted-foreground bg-muted/95 supports-backdrop-filter:bg-muted/85 [&>th]:border-border/70 [&>th]:border-b [&>th]:px-3 [&>th]:text-left [&>th]:text-xs [&>th]:font-medium [&>th]:whitespace-nowrap [&>th]:backdrop-blur">
+          <tr className="text-muted-foreground bg-muted/95 supports-backdrop-filter:bg-muted/85 [&>th]:border-border/70 [&>th]:border-b [&>th]:px-3 [&>th]:text-left [&>th]:text-[11px] [&>th]:font-medium [&>th]:tracking-wide [&>th]:whitespace-nowrap [&>th]:backdrop-blur">
             <th className={thBeku} style={{ left: 0, width: L_CEKLIS, minWidth: L_CEKLIS }}>
               <Checkbox
                 checked={semuaTerpilih ? true : sebagianTerpilih ? "indeterminate" : false}
@@ -178,31 +220,34 @@ export function TabelVerifikasi({
                 aria-label="Pilih semua baris yang tampil"
               />
             </th>
-            <th className={thBeku} style={{ left: X_RING, width: L_RING, minWidth: L_RING }}>
+            <th className={thBeku} style={{ left: X_RING, width: L_RING, minWidth: L_RING }} title="Tahap verifikasi">
               Ring
             </th>
             <th
               className={`${thBeku} border-border/70 border-r`}
               style={{ left: X_NOMOR, width: L_NOMOR, minWidth: L_NOMOR }}
+              title="Nomor pelanggan (langganan)"
             >
-              No. langganan
+              No. Pel
             </th>
-            <th style={{ minWidth: 240 }}>Nama</th>
-            <th style={{ minWidth: 340 }}>Alamat</th>
+            <th style={{ minWidth: 220 }}>Nama</th>
             {!modeBelumDibaca && (
               <>
-                <th className="text-right" style={{ minWidth: 112 }}>St awal</th>
-                <th className="text-right" style={{ minWidth: 112 }}>St akhir</th>
-                <th className="text-right" style={{ minWidth: 84 }}>m³</th>
-                <th className="text-right" style={{ minWidth: 96 }}>m³ lalu</th>
-                <th className="text-right" style={{ minWidth: 88 }}>%</th>
-                <th style={{ minWidth: 168 }}>Kondisi</th>
-                <th style={{ minWidth: 104 }}>Catat</th>
+                <th className="text-right" style={{ minWidth: 88 }} title="Stand awal (angka meter bulan lalu)">ST Awal</th>
+                <th className="text-right" style={{ minWidth: 88 }} title="Stand akhir hasil catat petugas / laporan pelanggan">ST Akhir</th>
+                <th className="text-right" style={{ minWidth: 72 }} title="Pemakaian hasil catat (m³)">Pakai</th>
+                <th className="text-right" style={{ minWidth: 72 }} title="Pemakaian bulan lalu (m³)">Lalu</th>
+                <th className="text-right" style={{ minWidth: 84 }} title="Deviasi pemakaian terhadap bulan lalu">Dev %</th>
+                <th style={{ minWidth: 140 }} title="Keterangan kondisi saat dicatat">Kondisi</th>
+                <th className="text-right" style={{ minWidth: 96 }} title="Stand akhir resmi (setelah diverifikasi; * = dikoreksi)">ST Resmi</th>
+                <th className="text-right" style={{ minWidth: 88 }} title="Pemakaian yang ditagihkan (m³)">Tagihan</th>
               </>
             )}
-            <th style={{ minWidth: 112 }}>Rute</th>
-            <th style={{ minWidth: 148 }}>Petugas</th>
-            <th style={{ minWidth: 152 }}>Status</th>
+            <th style={{ minWidth: 84 }} title="Kode rute pembacaan">Rute</th>
+            <th style={{ minWidth: 130 }} title="Petugas pencatat">Petugas</th>
+            {!modeBelumDibaca && <th style={{ minWidth: 92 }} title="Tanggal catat">Tgl Catat</th>}
+            <th style={{ minWidth: 300 }}>Alamat</th>
+            <th style={{ minWidth: 132 }}>Status</th>
           </tr>
         </thead>
         <tbody>
@@ -215,20 +260,34 @@ export function TabelVerifikasi({
             const nomor = row.nomorLangganan ?? row.pelanggan?.nomorLangganan ?? "—"
             const nama = row.pelanggan?.nama ?? row.namaPelanggan ?? "—"
             const alamat = row.pelanggan?.alamat ?? row.alamatPelanggan ?? "—"
+            const hasilStandAkhir = row.pembacaan?.standAkhir ?? null
+            const hasilPemakaian = row.pembacaan?.pemakaianM3 ?? null
 
-            // Sel beku butuh latar SENDIRI — tanpa ini isi kolom lain
-            // terlihat menembus saat digulir. `bg-card` jadi dasar, warna
-            // tahap menumpang di atasnya persis seperti pada barisnya.
+            const labelStatus = modeBelumDibaca
+              ? gaya.label
+              : modeRing === "tunggal"
+                ? tahap === "V3"
+                  ? "Terverifikasi"
+                  : tahap === "DITOLAK"
+                    ? "Cek ulang"
+                    : "Menunggu"
+                : gaya.label
+
+            // Sel beku butuh latar SENDIRI supaya isi kolom lain tidak
+            // menembus saat digulir.
+            const latarBaris = aktif || dipilih ? "bg-table-accent" : gaya.baris
             const latarBeku = [
-              "bg-card sticky z-10",
+              aktif || dipilih ? "bg-table-accent" : "bg-card",
+              !aktif && !dipilih ? "group-hover:bg-table-accent" : "",
+              "sticky z-10",
               gaya.lapis,
-              dipilih ? "bg-primary/10 dark:bg-primary/20" : "",
             ].join(" ")
 
             return (
               <tr
                 key={row.id}
                 data-id={row.id}
+                aria-selected={aktif}
                 onClick={() => onKlikBaris(row)}
                 onContextMenu={(e) => {
                   e.preventDefault()
@@ -237,10 +296,9 @@ export function TabelVerifikasi({
                 style={{ contentVisibility: "auto", containIntrinsicSize: tinggiBaris }}
                 className={[
                   "cursor-pointer",
-                  gaya.baris,
-                  aktif ? "ring-primary/50 ring-1 ring-inset" : "",
-                  dipilih ? "bg-primary/10 dark:bg-primary/20" : "",
-                  "hover:bg-accent/60 dark:hover:bg-accent/30",
+                  "group",
+                  latarBaris,
+                  !aktif && !dipilih ? "hover:bg-table-accent" : "",
                   "[&>td]:border-border/40 [&>td]:border-b [&>td]:px-3 [&>td]:whitespace-nowrap",
                 ].join(" ")}
               >
@@ -258,24 +316,22 @@ export function TabelVerifikasi({
                     aria-label={`Pilih ${nomor}`}
                   />
                 </td>
-                <td className={latarBeku} style={{ left: X_RING }}>
-                  <TitikRing tahap={modeBelumDibaca ? "MENUNGGU" : tahap} />
+                <td className={latarBeku} style={{ left: X_RING, width: L_RING }}>
+                  {modeRing === "tunggal" ? (
+                    <IkonRingTunggal tahap={modeBelumDibaca ? "MENUNGGU" : tahap} />
+                  ) : (
+                    <ChipRing tahap={modeBelumDibaca ? "MENUNGGU" : tahap} />
+                  )}
                 </td>
                 <td className={`${latarBeku} border-border/70 border-r font-mono`} style={{ left: X_NOMOR }}>
                   {nomor}
                 </td>
-                <td className="max-w-72 truncate" title={nama}>{nama}</td>
-                <td className="text-muted-foreground max-w-96 truncate" title={alamat}>{alamat}</td>
+                <td className="max-w-60 truncate font-medium" title={nama}>{nama}</td>
                 {!modeBelumDibaca && (
                   <>
                     <td className="text-right tabular-nums">{angka(row.standAwal)}</td>
-                    <td className="text-right tabular-nums">
-                      {angka(row.standAkhirRevisi ?? row.standAkhir)}
-                      {row.standAkhirRevisi != null && row.standAkhirRevisi !== row.standAkhir && (
-                        <span className="ml-1 text-[10px] text-amber-600 dark:text-amber-400" title="Dikoreksi di V1">*</span>
-                      )}
-                    </td>
-                    <td className="text-right tabular-nums">{angka(row.pemakaian)}</td>
+                    <td className="text-right tabular-nums">{angka(row.standAkhir)}</td>
+                    <td className="text-right font-medium tabular-nums">{angka(row.pemakaian)}</td>
                     <td className="text-muted-foreground text-right tabular-nums">{angka(row.pemakaianLalu)}</td>
                     <td className="text-right tabular-nums">
                       {row.persentase === null || row.persentase === undefined ? (
@@ -289,12 +345,34 @@ export function TabelVerifikasi({
                     <td className="text-muted-foreground max-w-36 truncate">
                       {row.kondisi ? (LABEL_KONDISI_CATAT[row.kondisi] ?? row.kondisi) : "—"}
                     </td>
-                    <td className="text-muted-foreground tabular-nums">{tanggal(row.tanggalCatat)}</td>
+                    <td className="text-right tabular-nums">
+                      {angka(hasilStandAkhir)}
+                      {row.pembacaan &&
+                        row.standAkhirRevisi != null &&
+                        row.standAkhirRevisi !== row.standAkhir && (
+                          <span className="ml-1 text-[10px] text-amber-600 dark:text-amber-400" title="Dikoreksi saat verifikasi">*</span>
+                        )}
+                    </td>
+                    <td className="text-right tabular-nums">{angka(hasilPemakaian)}</td>
                   </>
                 )}
                 <td className="text-muted-foreground font-mono">{row.pelanggan?.rute?.kode ?? "—"}</td>
-                <td className="text-muted-foreground max-w-28 truncate">{row.pencatat?.namaLapangan ?? "—"}</td>
-                <td><Lencana kelas={gaya.lencana} anak={<>{tahap === "V3" && !modeBelumDibaca && <Check className="size-3" aria-hidden />}{gaya.label}</>} /></td>
+                <td className="text-muted-foreground max-w-32 truncate">{row.pencatat?.namaLapangan ?? "—"}</td>
+                {!modeBelumDibaca && <td className="text-muted-foreground tabular-nums">{tanggal(row.tanggalCatat)}</td>}
+                <td className="text-muted-foreground max-w-80 truncate" title={alamat}>{alamat}</td>
+                <td>
+                  <Lencana
+                    kelas={gaya.lencana}
+                    anak={
+                      <>
+                        {tahap === "V3" && !modeBelumDibaca && (
+                          <HugeiconsIcon icon={Tick02Icon} strokeWidth={2.5} className="size-3" aria-hidden />
+                        )}
+                        {labelStatus}
+                      </>
+                    }
+                  />
+                </td>
               </tr>
             )
           })}

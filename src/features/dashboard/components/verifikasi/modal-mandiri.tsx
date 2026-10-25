@@ -1,30 +1,32 @@
 "use client";
 
 // features/dashboard/components/verifikasi/modal-mandiri.tsx — modal aksi
-// verifikasi laporan mandiri: foto besar (zoom + geser) berdampingan dengan
-// kotak stand yang bisa dikoreksi, lalu verify/reject.
+// verifikasi laporan mandiri: foto besar (zoom, geser, putar) berdampingan
+// dengan kotak stand yang bisa dikoreksi, lalu verify/reject.
 //
 // Koreksi bukan aksi simpan tersendiri: verifikator membetulkan angkanya di
 // sini lalu menekan "Valid", dan satu permintaan verify itulah yang menulis
-// angka final — ke laporan sekaligus ke PembacaanMeter resmi, jadi tidak
-// pernah ada dua angka berbeda untuk satu laporan.
+// angka final — ke laporan sekaligus ke PembacaanMeter resmi.
 import * as React from "react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { formatPeriode } from "@/features/public/lib/format";
 import { kirimJson, ApiError } from "../../lib/api-client";
 import type { LaporanMandiriDetail } from "./tipe";
 import { Bagian } from "./panel-bagian";
-import { DialogVerifikasi } from "./dialog-verifikasi";
+import { DialogVerifikasi, KELAS_KONTROL_MODAL } from "./dialog-verifikasi";
 
 export function ModalMandiri({
   detail,
   meterId,
+  memuatMeter,
+  galatMeter,
   standLalu,
   blokTarif,
+  galatRiwayat,
   tolakAwal,
   onTutup,
   onSelesai,
@@ -32,35 +34,63 @@ export function ModalMandiri({
   detail: LaporanMandiriDetail;
   /** Meter aktif pelanggan — turunan, tidak dipilih verifikator. */
   meterId: string;
-  standLalu: number;
-  blokTarif: number;
-  /** true = langsung mode tolak (dipicu aksi "Tolak" di menu klik kanan). */
+  memuatMeter: boolean;
+  galatMeter: string | null;
+  standLalu: number | null;
+  blokTarif: number | null;
+  galatRiwayat: string | null;
+  /** true = langsung mode tolak. */
   tolakAwal: boolean;
   onTutup: () => void;
   onSelesai: () => void;
 }) {
   const [stand, setStand] = React.useState(String(detail.standDilaporkan));
+  const [pemakaianOverride, setPemakaianOverride] = React.useState("");
   const [alasan, setAlasan] = React.useState("");
   const [modeTolak, setModeTolak] = React.useState(tolakAwal);
   const [mengirim, setMengirim] = React.useState(false);
   const [galat, setGalat] = React.useState<string | null>(null);
 
   const standNum = Number(stand);
-  const standSiap = stand !== "" && Number.isFinite(standNum);
-  const standLaluSiap = Number.isFinite(standLalu);
+  const standSiap = stand !== "" && Number.isInteger(standNum) && standNum >= 0;
+  const standLaluSiap = standLalu !== null && Number.isFinite(standLalu);
+  const blokTarifSiap = blokTarif !== null && Number.isFinite(blokTarif);
   const pemakaian = standSiap && standLaluSiap ? Math.max(0, standNum - standLalu) : null;
+  const overrideNum = Number(pemakaianOverride);
+  const pemakaianTerpilih =
+    pemakaianOverride === ""
+      ? pemakaian
+      : Number.isInteger(overrideNum) && overrideNum >= 0
+        ? overrideNum
+        : null;
   const berubah = standSiap && standNum !== detail.standDilaporkan;
 
   async function jalankan(aksi: "verify" | "reject") {
+    if (
+      aksi === "verify" &&
+      (!meterId ||
+        !standSiap ||
+        pemakaianTerpilih === null ||
+        standLalu === null ||
+        blokTarif === null ||
+        !Number.isFinite(standLalu) ||
+        !Number.isFinite(blokTarif))
+    ) {
+      setGalat("Data meter dan riwayat stand belum siap untuk diverifikasi.");
+      return;
+    }
     setMengirim(true);
     setGalat(null);
     try {
       if (aksi === "verify") {
         await kirimJson(`/laporan-mandiri/${detail.id}/verify`, "PATCH", {
           meterId,
+          memuatMeter,
+          galatMeter,
           standLalu,
           blokTarif,
           standDilaporkan: standNum,
+          pemakaianM3: pemakaianTerpilih,
         });
       } else {
         await kirimJson(`/laporan-mandiri/${detail.id}/reject`, "PATCH", {
@@ -75,67 +105,15 @@ export function ModalMandiri({
     }
   }
 
-  return (
-    <DialogVerifikasi
-      buka
-      onBuka={(v) => !v && onTutup()}
-      judul={`Verifikasi stand — ${detail.pelanggan?.nama ?? detail.nomorLangganan}`}
-      subjudul={`${formatPeriode(detail.periode)} · dilaporkan ${detail.namaPelapor} · cocokkan angka pada foto dengan kotak stand.`}
-      fotoUrl={detail.fotoUrl}
-      fotoLabel={`Foto meter — ${formatPeriode(detail.periode)}`}
-    >
-      <Bagian judul="Stand meter">
-        <Input
-          type="number"
-          min={0}
-          value={stand}
-          onChange={(e) => setStand(e.target.value)}
-          className="h-9 font-mono text-sm"
-          aria-label="Stand meter"
-        />
-        <p className="text-[11px] text-muted-foreground">
-          {berubah
-            ? `Dikoreksi dari ${detail.standDilaporkan.toLocaleString("id-ID")}.`
-            : "Koreksi bila pelapor salah input."}
-        </p>
-      </Bagian>
-
-      <div className="flex items-baseline justify-between gap-2 border border-border/70 bg-muted/30 px-2.5 py-2">
-        <span className="text-[9px] font-semibold tracking-widest text-muted-foreground uppercase">
-          Pakai (m³)
-        </span>
-        <span className="font-mono text-sm font-bold tabular-nums text-foreground">
-          {pemakaian?.toLocaleString("id-ID") ?? "—"}
-        </span>
-      </div>
-
-      {/* Meter tujuan tidak dipilih manual, jadi ketiadaannya harus
-          dijelaskan — kalau tidak, tombol verifikasi cuma mati tanpa sebab. */}
-      {!meterId && (
-        <p className="text-[11px] text-amber-700 dark:text-amber-400">
-          Pelanggan ini belum punya meter terdaftar — verifikasi baru bisa
-          dijalankan setelah meternya didaftarkan.
-        </p>
+  const footer = (
+    <div className="flex flex-col gap-2">
+      {galat && (
+        <Alert variant="destructive" className="py-2">
+          <AlertDescription className="text-xs">{galat}</AlertDescription>
+        </Alert>
       )}
-
-      {modeTolak && (
-        <Bagian judul="Alasan penolakan (wajib, dikirim ke pelapor)">
-          <Textarea
-            value={alasan}
-            onChange={(e) => setAlasan(e.target.value)}
-            rows={3}
-            className="text-xs"
-            placeholder="Mis. foto buram / angka stand tidak terbaca"
-          />
-        </Bagian>
-      )}
-
-      {galat && <p className="text-[11px] text-destructive">{galat}</p>}
-
-      <Separator className="mt-auto" />
-
       {modeTolak ? (
-        <div className="flex flex-col gap-1.5">
+        <>
           <Button
             variant="destructive"
             className="h-9 w-full"
@@ -146,18 +124,25 @@ export function ModalMandiri({
           </Button>
           <Button
             variant="ghost"
-            className="h-8 w-full"
+            className="h-9 w-full"
             disabled={mengirim}
             onClick={() => setModeTolak(false)}
           >
             Batal
           </Button>
-        </div>
+        </>
       ) : (
-        <div className="flex flex-col gap-1.5">
+        <>
           <Button
             className="h-9 w-full"
-            disabled={mengirim || !meterId || !standSiap || !standLaluSiap}
+            disabled={
+              mengirim ||
+              !meterId ||
+              !standSiap ||
+              pemakaianTerpilih === null ||
+              !standLaluSiap ||
+              !blokTarifSiap
+            }
             onClick={() => jalankan("verify")}
           >
             {mengirim && <Spinner className="size-3.5" />}
@@ -165,13 +150,99 @@ export function ModalMandiri({
           </Button>
           <Button
             variant="outline"
-            className="h-8 w-full"
+            className="h-9 w-full"
             disabled={mengirim}
             onClick={() => setModeTolak(true)}
           >
             Tolak / minta foto ulang
           </Button>
-        </div>
+        </>
+      )}
+    </div>
+  );
+
+  return (
+    <DialogVerifikasi
+      buka
+      onBuka={(v) => !v && onTutup()}
+      judul={`Verifikasi stand — ${detail.pelanggan?.nama ?? detail.nomorLangganan}`}
+      subjudul={`${formatPeriode(detail.periode)} · dilaporkan ${detail.namaPelapor} · cocokkan angka pada foto dengan kotak stand.`}
+      fotoUrl={detail.fotoUrl}
+      fotoLabel={`Foto meter — ${formatPeriode(detail.periode)}`}
+      footer={footer}
+    >
+      <Bagian judul="ST akhir catat">
+        <Input
+          type="number"
+          min={0}
+          value={stand}
+          onChange={(e) => setStand(e.target.value)}
+          className={KELAS_KONTROL_MODAL}
+          aria-label="ST akhir catat"
+        />
+        <p className="text-center text-[11px] text-muted-foreground">
+          {berubah
+            ? `Dikoreksi dari ${detail.standDilaporkan.toLocaleString("id-ID")}.`
+            : "Koreksi bila pelapor salah input."}
+        </p>
+      </Bagian>
+
+      <Bagian judul="M³ tagihan">
+        <Input
+          type="number"
+          min={0}
+          step={1}
+          value={pemakaianOverride}
+          placeholder={pemakaian?.toString() ?? "—"}
+          onChange={(e) => setPemakaianOverride(e.target.value)}
+          className={KELAS_KONTROL_MODAL}
+          aria-label="M³ tagihan"
+        />
+        <p className="text-center text-[11px] text-muted-foreground">
+          Hasil hitung dari ST awal dan akhir: {pemakaian?.toLocaleString("id-ID") ?? "—"} m³. Nilai
+          ini menjadi M³ tagihan; ubah hanya bila ada koreksi kebijakan.
+        </p>
+      </Bagian>
+
+      {/* Meter tujuan tidak dipilih manual, jadi ketiadaannya harus
+          dijelaskan — kalau tidak, tombol verifikasi cuma mati tanpa sebab. */}
+      {memuatMeter && (
+        <p role="status" className="text-center text-[11px] text-muted-foreground">
+          Memuat meter pelanggan…
+        </p>
+      )}
+      {galatMeter && (
+        <p role="alert" className="text-center text-[11px] text-destructive">
+          {galatMeter}
+        </p>
+      )}
+      {!memuatMeter && !galatMeter && !meterId && (
+        <p className="text-center text-[11px] text-amber-700 dark:text-amber-400">
+          Pelanggan ini belum punya meter terdaftar — verifikasi baru bisa dijalankan setelah meternya
+          didaftarkan.
+        </p>
+      )}
+      {meterId && galatRiwayat && (
+        <p role="alert" className="text-center text-[11px] text-destructive">
+          {galatRiwayat}
+        </p>
+      )}
+      {meterId && !galatRiwayat && !standLaluSiap && (
+        <p role="status" className="text-center text-[11px] text-muted-foreground">
+          Memuat riwayat stand meter dan blok tarif…
+        </p>
+      )}
+
+      {modeTolak && (
+        <Bagian judul="Alasan penolakan (wajib, dikirim ke pelapor)">
+          <Textarea
+            value={alasan}
+            onChange={(e) => setAlasan(e.target.value)}
+            rows={3}
+            className="text-sm"
+            placeholder="Mis. foto buram / angka stand tidak terbaca"
+          />
+        </Bagian>
       )}
     </DialogVerifikasi>
   );

@@ -1,66 +1,110 @@
-// src/app/dashboard/page.tsx
-// Tugas: halaman Dashboard: kartu ringkasan (placeholder) + pintasan ke modul.
 import type { Metadata } from "next"
-import Link from "next/link"
-import { navGroups } from "@/config/navigation"
+import { Gauge, Receipt, TriangleAlert, Users, Wallet } from "lucide-react"
+import {
+  ambilRingkasan,
+  ambilTren,
+  ambilPerluTindakan,
+} from "@/features/dashboard/lib/queries"
 import { PageContainer } from "@/components/layout"
+import { StatCard } from "@/features/dashboard/components/stat-card"
+import { PerluTindakan } from "@/features/dashboard/components/dashboard/perlu-tindakan"
+import { TrenTagihan } from "@/features/dashboard/components/dashboard/tren-tagihan"
+import {
+  formatPeriode,
+  formatRupiah,
+  formatRupiahRingkas,
+} from "@/features/public/lib/format"
 
-export const metadata: Metadata = { title: "Dashboard · Tirtawening" }
+export const metadata: Metadata = { title: "Ringkasan" }
 
-// Nilai masih "—" karena belum terhubung ke data. Ganti saat API siap.
-const stats = [
-  "Pelanggan aktif",
-  "Rekening bulan ini",
-  "Gangguan terbuka",
-  "Pengaduan baru",
-]
-
-export default function DashboardPage() {
-  // Pintasan modul: semua grup kecuali Ringkasan dan Bantuan
-  const modules = navGroups.filter(
-    (group) => group.id !== "ringkasan" && group.id !== "bantuan",
-  )
+export default async function DashboardPage() {
+  // Paralel: tiga query independen, tidak perlu saling menunggu.
+  const [ringkasan, tren, tindakan] = await Promise.all([
+    ambilRingkasan(),
+    ambilTren(),
+    ambilPerluTindakan(),
+  ])
 
   return (
     <PageContainer
+      className="flex min-h-0 flex-1 flex-col"
       breadcrumbs={[
-        { label: "Ringkasan", href: "/dashboard" },
-        { label: "Dashboard" },
+        { label: "Pemetaan Rute", href: "/meter/pemetaan" },
+        { label: "Stand Konsumen" },
       ]}
     >
-      <section aria-label="Statistik">
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {stats.map((label) => (
-            <div key={label} className="rounded-lg border bg-card p-5">
-              <p className="text-sm text-muted-foreground">{label}</p>
-              <p className="mt-2 text-2xl font-medium">&mdash;</p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Belum terhubung ke data
-              </p>
+      <div className="flex flex-col gap-4 sm:gap-6">
+        {/* Header Halaman (Pengganti prop eyebrow, judul, deskripsi, dan aksi) */}
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Ringkasan Operasional
+            </p>
+            <h1 className="text-xl font-bold tracking-tight text-foreground">
+              Kondisi pelayanan hari ini
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              {ringkasan.periode
+                ? `Data penagihan terakhir: periode ${formatPeriode(ringkasan.periode)}.`
+                : "Belum ada data penagihan."}
+            </p>
+          </div>
+          {ringkasan.periode && (
+            <div>
+              <span className="border border-primary/40 bg-primary/10 px-2.5 py-1 font-mono text-[10px] font-semibold tracking-wide text-primary uppercase">
+                Periode · {formatPeriode(ringkasan.periode)}
+              </span>
             </div>
-          ))}
+          )}
         </div>
-      </section>
 
-      <section className="mt-12" aria-label="Modul">
-        <h2 className="text-lg font-medium tracking-tight">Modul</h2>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          {modules.map((group) => (
-            <Link
-              key={group.id}
-              href={group.items[0].href}
-              className="group rounded-lg border bg-card p-5 transition-colors hover:border-sky-400/60"
-            >
-              <p className="font-medium group-hover:text-sky-700 dark:group-hover:text-sky-300">
-                {group.title}
-              </p>
-              <p className="mt-1 line-clamp-2 text-sm/6 text-muted-foreground">
-                {group.items.map((item) => item.title).join(", ")}
-              </p>
-            </Link>
-          ))}
+        {/* Grid Kartu Statistik */}
+        <div className="grid grid-cols-2 gap-px overflow-hidden border border-border/70 bg-border/70 xl:grid-cols-4">
+          <StatCard
+            label="Pelanggan aktif"
+            nilai={ringkasan.pelanggan.aktif.toLocaleString("id-ID")}
+            keterangan={`${ringkasan.pelanggan.nonAktif.toLocaleString("id-ID")} non-aktif`}
+            icon={Users}
+          />
+          <StatCard
+            label={
+              ringkasan.periode
+                ? `Tagihan ${formatPeriode(ringkasan.periode)}`
+                : "Tagihan"
+            }
+            nilai={formatRupiahRingkas(ringkasan.tagihanPeriode.nilai)}
+            keterangan={`${ringkasan.tagihanPeriode.jumlah.toLocaleString("id-ID")} rekening · ${ringkasan.tagihanPeriode.pemakaianM3.toLocaleString("id-ID")} m³`}
+            judulLengkap={formatRupiah(ringkasan.tagihanPeriode.nilai)}
+            icon={Receipt}
+          />
+          <StatCard
+            label="Tunggakan"
+            nilai={formatRupiahRingkas(ringkasan.tunggakan.nilai)}
+            keterangan={`${ringkasan.tunggakan.jumlah.toLocaleString("id-ID")} rekening belum lunas`}
+            judulLengkap={formatRupiah(ringkasan.tunggakan.nilai)}
+            icon={Wallet}
+            nada={ringkasan.tunggakan.nilai > 0 ? "perhatian" : "netral"}
+          />
+          <StatCard
+            label="Pengaduan aktif"
+            nilai={ringkasan.pengaduan.belumSelesai.toLocaleString("id-ID")}
+            keterangan={
+              ringkasan.pengaduan.darurat > 0
+                ? `${ringkasan.pengaduan.darurat} berstatus darurat`
+                : "Tidak ada yang darurat"
+            }
+            icon={ringkasan.pengaduan.darurat > 0 ? TriangleAlert : Gauge}
+            nada={ringkasan.pengaduan.darurat > 0 ? "perhatian" : "netral"}
+          />
         </div>
-      </section>
+
+        <TrenTagihan data={tren} />
+
+        <PerluTindakan
+          pengaduan={tindakan.pengaduan}
+          laporanMandiri={tindakan.laporanMandiri}
+        />
+      </div>
     </PageContainer>
   )
 }

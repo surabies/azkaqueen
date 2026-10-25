@@ -1,23 +1,107 @@
 "use client"
 
 // features/dashboard/components/verifikasi/panel-bagian.tsx — potongan kecil
-// yang dipakai kedua panel verifikasi (lapangan & mandiri): micro-label
-// bagian, grid stand 3 kolom, badge status, dan empty state panel.
-import { type LucideIcon } from "lucide-react"
+// yang dipakai panel verifikasi (lapangan & mandiri) dan modalnya: judul
+// bagian, accordion seksi, baris informasi ala tabel, grid stand 3 kolom,
+// badge status, dan empty state panel.
+//
+// Perlu komponen shadcn accordion: `npx shadcn add accordion`.
+import * as React from "react"
+import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react"
 import { cn } from "@/lib/utils"
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
 import { GAYA_TAHAP } from "./warna-ring"
 
+/// Judul bagian untuk modal (bukan accordion).
 export function Bagian({ judul, children }: { judul: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <p className="text-xs font-medium text-muted-foreground">{judul}</p>
+      <p className="text-center text-xs font-medium text-muted-foreground">{judul}</p>
       {children}
     </div>
   )
 }
 
-/// Kelas kolom ditulis utuh, bukan dirangkai (`grid-cols-${n}`) — Tailwind
-/// memindai source secara statis, kelas hasil interpolasi tidak ikut ter-generate.
+/// Ingatan buka/tutup seksi selama sesi. Panel di-remount lewat `key` tiap
+/// ganti baris; tanpa ini seksi yang baru saja Anda tutup terbuka lagi di
+/// baris berikutnya. Modul-level Map cukup — tidak perlu persisten antar sesi.
+const INGATAN_SEKSI = new Map<string, string[]>()
+
+export function PanelAccordion({
+  kunci,
+  awal,
+  children,
+}: {
+  /** Kunci ingatan — panel Petugas dan Pelanggan memakai kunci yang sama. */
+  kunci: string
+  /** Seksi yang terbuka saat pertama kali. */
+  awal: string[]
+  children: React.ReactNode
+}) {
+  const [nilai, setNilai] = React.useState<string[]>(() => INGATAN_SEKSI.get(kunci) ?? awal)
+  return (
+    <Accordion
+      type="multiple"
+      value={nilai}
+      onValueChange={(v) => {
+        INGATAN_SEKSI.set(kunci, v)
+        setNilai(v)
+      }}
+      className="w-full"
+    >
+      {children}
+    </Accordion>
+  )
+}
+
+export function Seksi({
+  nilai,
+  judul,
+  children,
+}: {
+  nilai: string
+  judul: string
+  children: React.ReactNode
+}) {
+  return (
+    <AccordionItem value={nilai} className="border-border/70">
+      <AccordionTrigger className="py-2.5 text-xs font-medium hover:no-underline">
+        {judul}
+      </AccordionTrigger>
+      <AccordionContent className="flex flex-col gap-2 pb-3">{children}</AccordionContent>
+    </AccordionItem>
+  )
+}
+
+export interface BarisInfo {
+  label: string
+  nilai: React.ReactNode
+  mono?: boolean
+}
+
+/// Informasi ala tabel: kolom label tetap di kiri, nilai rata kiri di sebelahnya.
+/// Baris tanpa nilai (null/false) dilewati, jadi alamat kosong tidak menyisakan baris hampa.
+export function InfoBaris({ baris }: { baris: BarisInfo[] }) {
+  return (
+    <dl className="divide-y divide-border/70 overflow-hidden rounded-lg border border-border/70 text-xs">
+      {baris
+        .filter((b) => b.nilai !== null && b.nilai !== undefined && b.nilai !== false)
+        .map((b) => (
+          <div key={b.label} className="grid grid-cols-[4.5rem_minmax(0,1fr)] items-start gap-2 px-2.5 py-1.5">
+            <dt className="text-muted-foreground">{b.label}</dt>
+            <dd className={cn("min-w-0 warp-break-word text-foreground", b.mono && "font-mono")}>{b.nilai}</dd>
+          </div>
+        ))}
+    </dl>
+  )
+}
+
+/// Kelas kolom ditulis utuh, bukan dirangkai — Tailwind memindai source secara statis.
 const KOLOM_GRID: Record<number, string> = {
   1: "grid-cols-1",
   2: "grid-cols-2",
@@ -25,30 +109,46 @@ const KOLOM_GRID: Record<number, string> = {
   4: "grid-cols-4",
 }
 
-export interface SelStand {
-  label: string
-  nilai: number
+export type NadaStand = "netral" | "info" | "sukses"
+
+/// Aksen warna per sel: netral = nilai awal, biru = angka akhir, hijau = pemakaian.
+const NADA: Record<NadaStand, { kotak: string; nilai: string }> = {
+  netral: { kotak: "bg-muted/30", nilai: "text-foreground" },
+  info: { kotak: "bg-blue-500/[0.06]", nilai: "text-blue-700 dark:text-blue-400" },
+  sukses: { kotak: "bg-green-500/[0.06]", nilai: "text-green-700 dark:text-green-400" },
 }
 
-/// Murni penampil angka — panel detail tidak punya aksi; koreksi/verifikasi
-/// dipicu dari menu klik kanan pada baris tabel.
+export interface SelStand {
+  label: string
+  nilai: number | null
+  nada?: NadaStand
+}
+
+/// Murni penampil angka. Tiga sel (ST awal / ST akhir / Pakai) muat di panel tersempit.
 export function GridStand({ sel }: { sel: SelStand[] }) {
   return (
-    <div className={cn("grid gap-px border border-border/70 bg-border/70", KOLOM_GRID[sel.length] ?? "grid-cols-3")}>
-      {sel.map((s) => (
-        <div key={s.label} className="bg-muted/30 px-2.5 py-2" title={s.nilai.toLocaleString("id-ID")}>
-          <p className="text-[9px] font-semibold tracking-widest text-muted-foreground uppercase">{s.label}</p>
-          <p className="mt-0.5 truncate font-mono text-sm font-bold tabular-nums text-foreground">
-            {s.nilai.toLocaleString("id-ID")}
-          </p>
-        </div>
-      ))}
+    <div
+      className={cn(
+        "grid gap-px overflow-hidden rounded-lg border border-border/70 bg-border/70",
+        KOLOM_GRID[sel.length] ?? "grid-cols-3",
+      )}
+    >
+      {sel.map((s) => {
+        const nada = NADA[s.nada ?? "netral"]
+        return (
+          <div key={s.label} className={cn("min-w-0 px-1.5 py-2 text-center", nada.kotak)} title={s.nilai?.toLocaleString("id-ID")}>
+            <p className="truncate text-[9px] font-semibold tracking-widest text-muted-foreground uppercase">{s.label}</p>
+            <p className={cn("mt-0.5 truncate text-[13px] font-semibold tabular-nums", nada.nilai)}>
+              {s.nilai?.toLocaleString("id-ID") ?? "—"}
+            </p>
+          </div>
+        )
+      })}
     </div>
   )
 }
 
-/// Nada warna sama dengan selStatus di grids/sel.tsx supaya panel dan tabel
-/// membaca status dengan bahasa visual yang identik.
+/// Nada warna sama dengan tabel supaya panel dan tabel membaca status identik.
 const BADGE_STATUS: Record<string, { label: string; kelas: string }> = {
   MENUNGGU:     { label: "Menunggu",      kelas: GAYA_TAHAP.MENUNGGU.lencana },
   MENUNGGU_V1:  { label: "Menunggu V1",   kelas: GAYA_TAHAP.MENUNGGU.lencana },
@@ -63,16 +163,16 @@ const BADGE_STATUS: Record<string, { label: string; kelas: string }> = {
 export function BadgeStatusVerif({ status }: { status: string }) {
   const cfg = BADGE_STATUS[status] ?? { label: status, kelas: "border-border bg-muted text-muted-foreground" }
   return (
-    <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium", cfg.kelas)}>
+    <span className={cn("inline-block shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium", cfg.kelas)}>
       {cfg.label}
     </span>
   )
 }
 
-export function PanelKosong({ icon: Icon, pesan }: { icon: LucideIcon; pesan: string }) {
+export function PanelKosong({ icon, pesan }: { icon: IconSvgElement; pesan: string }) {
   return (
     <div className="flex flex-col items-center gap-2.5 px-6 py-14 text-center">
-      <Icon className="size-5 text-muted-foreground" />
+      <HugeiconsIcon icon={icon} strokeWidth={2} className="size-5 text-muted-foreground" aria-hidden />
       <p className="text-xs text-muted-foreground">{pesan}</p>
     </div>
   )

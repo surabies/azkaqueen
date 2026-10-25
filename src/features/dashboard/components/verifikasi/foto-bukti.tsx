@@ -3,30 +3,39 @@
 // features/dashboard/components/verifikasi/foto-bukti.tsx — lampiran foto
 // meter di panel verifikasi.
 //
-// Sejak 2026-07-19 frame-nya BERUKURAN TETAP lewat BingkaiFoto
-// (components/bingkai-foto.tsx): dulu tinggi preview mengikuti file foto
-// (max-h-72 object-contain) sehingga panel melar-menciut per laporan.
-// Mode "utuh" (object-contain berbingkai) dipertahankan — angka stand meter
-// harus terbaca tanpa membuka dialog; dialog zoom tetap ada untuk
-// memastikan digit.
-import { ImageOff } from "lucide-react"
-import { BingkaiFoto } from "@/components/bingkai-foto"
+// Frame SELALU potret 3:4 (BingkaiPotret) dan empty state memakai bentuk yang
+// sama, jadi panel tidak berubah tinggi ketika sebuah laporan tidak berfoto.
+// Klik foto membuka lightbox: zoom, putar, geser, Esc.
+import { ImageNotFound01Icon } from "@hugeicons/core-free-icons"
+import { HugeiconsIcon } from "@hugeicons/react"
+import { cn } from "@/lib/utils"
+import { BingkaiPotret, FotoZoom } from "./foto-viewer"
 
-// Re-export dari lokasi barunya — pemakai lama (tab-foto.tsx, modal
-// verifikasi V1) tidak perlu tahu komponennya pindah rumah.
-export { FotoZoom } from "@/components/bingkai-foto"
+// Pemakai lama (tab-foto.tsx, dialog-verifikasi.tsx) tetap mengimpor dari sini.
+export { FotoZoom }
 
-/// Empty state yang menjelaskan diri — bukan kotak kosong tanpa keterangan.
-/// Laporan petugas dari sistem lama memang tidak menyertakan foto, jadi ini
-/// jalur yang normal, bukan kegagalan.
-export function FotoKosong({ label, keterangan }: { label: string; keterangan?: string }) {
+/// Empty state yang menjelaskan diri. Laporan petugas dari sistem lama memang
+/// tidak menyertakan foto, jadi ini jalur normal, bukan kegagalan.
+/// `penuh` = mengisi tinggi wadah (modal); bawaan = frame potret 3:4 (panel).
+export function FotoKosong({
+  label,
+  keterangan,
+  penuh = false,
+}: {
+  label: string
+  keterangan?: string
+  penuh?: boolean
+}) {
   return (
-    <div className="flex items-center gap-2.5 border border-dashed border-border px-3 py-2.5">
-      <ImageOff className="size-4 shrink-0 text-muted-foreground" />
-      <div className="min-w-0">
-        <p className="text-xs font-medium text-foreground">{label}</p>
-        <p className="text-[11px] text-muted-foreground">{keterangan ?? "Belum ada foto yang diunggah."}</p>
-      </div>
+    <div
+      className={cn(
+        "flex w-full flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border bg-muted/20 px-4 text-center",
+        penuh ? "h-full min-h-64" : "aspect-[3/4]",
+      )}
+    >
+      <HugeiconsIcon icon={ImageNotFound01Icon} strokeWidth={2} className="size-5 text-muted-foreground" aria-hidden />
+      <p className="text-xs font-medium text-foreground">{label}</p>
+      <p className="text-[11px] text-muted-foreground">{keterangan ?? "Belum ada foto yang diunggah."}</p>
     </div>
   )
 }
@@ -45,8 +54,8 @@ export function FotoBukti({
 
   return (
     <div className="flex flex-col gap-1">
-      <BingkaiFoto src={url} alt={label} rasio="4/3" mode="utuh" />
-      <p className="text-center text-[11px] text-muted-foreground">Klik foto untuk perbesar & zoom</p>
+      <BingkaiPotret url={url} alt={label} />
+      <p className="text-center text-[11px] text-muted-foreground">Klik foto untuk perbesar, putar & zoom</p>
     </div>
   )
 }

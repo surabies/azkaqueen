@@ -1,32 +1,29 @@
 "use client";
 
 // features/dashboard/components/verifikasi/panel-mandiri.tsx — panel detail
-// halaman verifikasi laporan mandiri pelanggan (dari halaman publik
-// /lapor-meter, selalu berfoto).
+// halaman verifikasi laporan mandiri pelanggan. Bentuk, urutan seksi, dan
+// accordion-nya SAMA dengan panel-lapangan (kunci ingatan accordion dibagi).
 //
-// Panel ini MURNI PENAMPIL DETAIL — tidak ada kotak isian maupun tombol
-// aksi; satu-satunya interaksi adalah melihat peta dan memperbesar foto.
-// Aksi (verifikasi/koreksi, tolak, batalkan) dipicu dari MENU KLIK KANAN
-// pada baris tabel; halaman meneruskan pilihan lewat prop `aksi` dan panel
-// merender ModalMandiri begitu detailnya siap.
+// MURNI PENAMPIL DETAIL. Aksi (verifikasi/koreksi, tolak, batalkan) dipicu
+// dari MENU KLIK KANAN; halaman meneruskan pilihan lewat prop `aksi`.
 //
-// Meter tujuan, stand lalu, dan blok tarif tidak pernah ditampilkan:
-// ketiganya turunan mekanis (meter aktif pelanggan; stand lalu + blok tarif
-// dari pembacaan resmi terakhir meter itu). Tidak ada keputusan manusia di
-// sana, jadi menampilkannya cuma menambah bidang yang harus dilewati —
-// tetap dihitung diam-diam dan dikirim saat verify.
+// Meter tujuan, stand lalu, dan blok tarif tidak pernah ditampilkan: ketiganya
+// turunan mekanis, dihitung diam-diam dan dikirim saat verify.
 import * as React from "react";
-import { CheckCircle2, MousePointerClick } from "lucide-react";
-import { Separator } from "@/components/ui/separator";
+import { CheckmarkCircle02Icon, CursorPointer01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatPeriode, formatTanggal } from "@/features/public/lib/format";
 import { ambilSatu, ambilList, ApiError } from "../../lib/api-client";
-import type {
-  LaporanMandiriDetail,
-  MeterRingkas,
-  PembacaanRingkas,
-} from "./tipe";
-import { BadgeStatusVerif, Bagian, GridStand, PanelKosong } from "./panel-bagian";
+import type { LaporanMandiriDetail, MeterRingkas, PembacaanRingkas } from "./tipe";
+import {
+  BadgeStatusVerif,
+  GridStand,
+  InfoBaris,
+  PanelAccordion,
+  PanelKosong,
+  Seksi,
+} from "./panel-bagian";
 import { FotoBukti } from "./foto-bukti";
 import { FotoSebelumnya } from "./foto-sebelumnya";
 import { HistoriPemakaian } from "./histori-pemakaian";
@@ -49,39 +46,53 @@ export function PanelMandiri({
 }) {
   const [detail, setDetail] = React.useState<LaporanMandiriDetail | null>(null);
   const [galat, setGalat] = React.useState<string | null>(null);
-  // Pemicu muat ulang setelah aksi. State awal selalu bersih tiap ganti
-  // baris karena parent me-remount panel lewat `key` — tidak ada reset
-  // sinkron di effect (dilarang react-hooks/set-state-in-effect).
   const [muatKe, setMuatKe] = React.useState(0);
 
-  const [meterId, setMeterId] = React.useState("");
-  const [standLalu, setStandLalu] = React.useState("");
-  const [blokTarif, setBlokTarif] = React.useState("1");
+  const [dataMeter, setDataMeter] = React.useState<{
+    laporanId: string;
+    meterId: string;
+    galat?: string;
+  } | null>(null);
+  const [riwayatMeter, setRiwayatMeter] = React.useState<{
+    meterId: string;
+    standLalu: number;
+    blokTarif: number;
+  } | null>(null);
+  const [galatRiwayat, setGalatRiwayat] = React.useState<{
+    meterId: string;
+    pesan: string;
+  } | null>(null);
 
   React.useEffect(() => {
     if (!id) return;
     let batal = false;
     (async () => {
+      let detailDimuat = false;
       try {
-        const row = await ambilSatu<LaporanMandiriDetail>(
-          `/laporan-mandiri/${id}`,
-        );
+        const row = await ambilSatu<LaporanMandiriDetail>(`/laporan-mandiri/${id}`);
         if (batal) return;
         setDetail(row);
         setGalat(null);
+        detailDimuat = true;
         const { rows } = await ambilList<MeterRingkas>("/meter", {
           pelangganId: row.pelangganId,
           pageSize: 100,
         });
         if (batal) return;
-        setMeterId((rows.find((m) => m.isAktif) ?? rows[0])?.id ?? "");
+        setDataMeter({
+          laporanId: id,
+          meterId: (rows.find((m) => m.isAktif) ?? rows[0])?.id ?? "",
+        });
       } catch (err) {
-        if (!batal)
-          setGalat(
-            err instanceof ApiError
-              ? err.message
-              : "Gagal memuat detail laporan.",
-          );
+        if (batal) return;
+        const pesan =
+          err instanceof ApiError
+            ? err.message
+            : detailDimuat
+              ? "Gagal memuat meter pelanggan."
+              : "Gagal memuat detail laporan.";
+        if (detailDimuat) setDataMeter({ laporanId: id, meterId: "", galat: pesan });
+        else setGalat(pesan);
       }
     })();
     return () => {
@@ -89,134 +100,130 @@ export function PanelMandiri({
     };
   }, [id, muatKe]);
 
-  // Prefill stand lalu & blok tarif dari pembacaan resmi terakhir meter
-  // terpilih — berganti meter berarti berganti riwayat stand.
+  const dataMeterAktif = id && dataMeter?.laporanId === id ? dataMeter : null;
+  const meterId = dataMeterAktif?.meterId ?? "";
+  const galatMeter = dataMeterAktif?.galat ?? null;
+
+  // Prefill stand lalu & blok tarif dari pembacaan resmi terakhir meter terpilih.
   React.useEffect(() => {
     if (!meterId) return;
     let batal = false;
-    ambilList<PembacaanRingkas>("/pembacaan", { meterId, pageSize: 1 })
+    ambilList<PembacaanRingkas>("/pembacaan", {
+      meterId,
+      periodeSebelum: detail?.periode,
+      pageSize: 1,
+    })
       .then(({ rows }) => {
         if (batal) return;
-        setStandLalu(rows[0] ? String(rows[0].standAkhir) : "0");
-        setBlokTarif(rows[0] ? String(rows[0].blokTarif) : "1");
+        setRiwayatMeter({
+          meterId,
+          standLalu: rows[0]?.standAkhir ?? 0,
+          blokTarif: rows[0]?.blokTarif ?? 1,
+        });
+        setGalatRiwayat(null);
       })
-      .catch(() => {
-        if (!batal) setStandLalu("0");
+      .catch((err) => {
+        if (batal) return;
+        setGalatRiwayat({
+          meterId,
+          pesan: err instanceof ApiError ? err.message : "Gagal memuat riwayat pembacaan meter.",
+        });
       });
     return () => {
       batal = true;
     };
-  }, [meterId]);
+  }, [meterId, detail?.periode]);
 
   if (!id) {
     return (
       <PanelKosong
-        icon={MousePointerClick}
+        icon={CursorPointer01Icon}
         pesan="Klik baris untuk melihat detail; klik kanan baris untuk aksi verifikasi, tolak, atau batalkan."
       />
     );
   }
   if (!detail && !galat) {
     return (
-      <div className="flex flex-col gap-3 p-4">
-        <Skeleton className="h-5 w-3/4" />
-        <Skeleton className="h-4 w-1/2" />
-        <Skeleton className="h-24 w-full" />
-        <Skeleton className="h-36 w-full" />
+      <div className="flex flex-col gap-3 p-3">
+        <Skeleton className="h-8 w-full" />
+        <Skeleton className="h-28 w-full" />
+        <Skeleton className="h-8 w-full" />
+        <Skeleton className="h-8 w-full" />
       </div>
     );
   }
   if (!detail) {
-    return (
-      <p className="p-4 text-xs text-destructive">
-        {galat ?? "Detail tidak ditemukan."}
-      </p>
-    );
+    return <p className="p-4 text-center text-xs text-destructive">{galat ?? "Detail tidak ditemukan."}</p>;
   }
 
-  const standLaluNum = Number(standLalu);
-  const pemakaian =
-    standLalu !== "" && Number.isFinite(standLaluNum)
-      ? Math.max(0, detail.standDilaporkan - standLaluNum)
-      : null;
+  const riwayatAktif = meterId && riwayatMeter?.meterId === meterId ? riwayatMeter : null;
+  const galatRiwayatAktif = meterId && galatRiwayat?.meterId === meterId ? galatRiwayat.pesan : null;
+  const standAwal = detail.pembacaan?.standLalu ?? riwayatAktif?.standLalu ?? null;
+  const pemakaianCatat = standAwal === null ? null : Math.max(0, detail.standDilaporkan - standAwal);
   // Pagar kedua — menu klik kanan sudah menyaring status MENUNGGU.
   const bisaModal = detail.status === "MENUNGGU";
 
+  // Tiga angka yang sama persis dengan panel Petugas.
+  const stAkhir = detail.pembacaan?.standAkhir ?? detail.standDilaporkan;
+  const pakai = detail.pembacaan?.pemakaianM3 ?? pemakaianCatat;
+
   return (
-    <div className="flex flex-col gap-3.5 p-4">
-      <div>
-        <div className="flex items-start justify-between gap-2">
-          <p className="text-sm font-semibold text-foreground">
-            {detail.pelanggan?.nama ?? "—"}
-          </p>
-          <BadgeStatusVerif status={detail.status} />
-        </div>
-        <p className="mt-0.5 font-mono text-[11px] text-muted-foreground">
-          {detail.nomorLangganan}
-        </p>
-        <p className="mt-0.5 text-[11px] text-muted-foreground">
-          {formatPeriode(detail.periode)} · dilaporkan{" "}
-          {formatTanggal(detail.createdAt)}
-        </p>
-        {detail.pelanggan?.alamat && (
-          <p className="mt-1.5 text-xs text-muted-foreground">
-            {detail.pelanggan.alamat}
-          </p>
-        )}
-        <p className="mt-1.5 text-[11px] text-muted-foreground">
-          Pelapor: {detail.namaPelapor} · {detail.nomorPelapor}
-        </p>
-      </div>
+    <div className="flex flex-col gap-3 p-3">
+      <PanelAccordion kunci="panel-detail" awal={["info", "stand"]}>
+        <Seksi nilai="info" judul="Informasi pelanggan">
+          <InfoBaris
+            baris={[
+              { label: "Nama", nilai: detail.pelanggan?.nama ?? "—" },
+              { label: "No. Pel", nilai: detail.nomorLangganan, mono: true },
+              { label: "Periode", nilai: formatPeriode(detail.periode) },
+              { label: "Alamat", nilai: detail.pelanggan?.alamat },
+              { label: "Dilaporkan", nilai: formatTanggal(detail.createdAt) },
+              { label: "Pelapor", nilai: `${detail.namaPelapor} · ${detail.nomorPelapor}` },
+              { label: "Status", nilai: <BadgeStatusVerif status={detail.status} /> },
+            ]}
+          />
+        </Seksi>
 
-      <Separator />
+        <Seksi nilai="stand" judul="Stand meter">
+          <GridStand
+            sel={[
+              { label: "ST awal", nilai: standAwal },
+              { label: "ST akhir", nilai: stAkhir, nada: "info" },
+              { label: "Pakai", nilai: pakai, nada: "sukses" },
+            ]}
+          />
+          {detail.pembacaan?.sumberLaporan && (
+            <p className="text-[11px] text-muted-foreground">
+              Sumber hasil resmi: {detail.pembacaan.sumberLaporan === "PETUGAS" ? "Petugas" : "Konsumen"}
+            </p>
+          )}
+        </Seksi>
 
-      {/* Urutan panel mengikuti panel lapangan: detail → stand → histori
-          3 bulan → foto sebelumnya (pembanding) → foto periode berjalan →
-          lokasi. */}
-      <GridStand
-        sel={[
-          { label: "Stand meter", nilai: detail.standDilaporkan },
-          { label: "Pakai (m³)", nilai: pemakaian ?? 0 },
-        ]}
-      />
+        <Seksi nilai="histori" judul="Histori pemakaian (3 bulan)">
+          <HistoriPemakaian pelangganId={detail.pelangganId} />
+        </Seksi>
 
-      <Separator />
+        <Seksi nilai="foto-lalu" judul="Foto periode sebelumnya">
+          <FotoSebelumnya pelangganId={detail.pelangganId} periode={detail.periode} />
+        </Seksi>
 
-      <Bagian judul="Histori pencatatan (3 bulan terakhir)">
-        <HistoriPemakaian pelangganId={detail.pelangganId} />
-      </Bagian>
+        <Seksi nilai="foto" judul="Foto periode berjalan">
+          <FotoBukti url={detail.fotoUrl} label={`Foto meter — ${formatPeriode(detail.periode)}`} />
+        </Seksi>
 
-      <Bagian judul="Foto periode sebelumnya (pembanding)">
-        <FotoSebelumnya
-          pelangganId={detail.pelangganId}
-          periode={detail.periode}
-        />
-      </Bagian>
-
-      <Bagian judul="Foto periode berjalan (bukti pelapor)">
-        <FotoBukti
-          url={detail.fotoUrl}
-          label={`Foto meter — ${formatPeriode(detail.periode)}`}
-        />
-      </Bagian>
-
-      <Bagian judul="Lokasi">
-        <PetaLokasi
-          lat={detail.pelanggan?.geoLat}
-          lng={detail.pelanggan?.geoLong}
-        />
-      </Bagian>
-
-      <Separator />
+        <Seksi nilai="lokasi" judul="Lokasi">
+          <PetaLokasi lat={detail.pelanggan?.geoLat} lng={detail.pelanggan?.geoLong} />
+        </Seksi>
+      </PanelAccordion>
 
       {(detail.status === "DIVERIFIKASI" || detail.status === "DIGUNAKAN") && (
         <p className="inline-flex items-start gap-1.5 text-[11px] text-emerald-700 dark:text-emerald-400">
-          <CheckCircle2 className="mt-0.5 size-3.5 shrink-0" />
-          Sudah menjadi pembacaan resmi
-          {detail.verifiedBy?.name
-            ? ` — diverifikasi ${detail.verifiedBy.name}`
-            : ""}
-          {detail.verifiedAt ? ` (${formatTanggal(detail.verifiedAt)})` : ""}.
+          <HugeiconsIcon icon={CheckmarkCircle02Icon} strokeWidth={2} className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+          <span>
+            Sudah menjadi pembacaan resmi
+            {detail.verifiedBy?.name ? ` — diverifikasi ${detail.verifiedBy.name}` : ""}
+            {detail.verifiedAt ? ` (${formatTanggal(detail.verifiedAt)})` : ""}.
+          </span>
         </p>
       )}
       {detail.status === "DITOLAK" && (
@@ -231,8 +238,11 @@ export function PanelMandiri({
         <ModalMandiri
           detail={detail}
           meterId={meterId}
-          standLalu={standLaluNum}
-          blokTarif={Number(blokTarif)}
+          memuatMeter={!dataMeterAktif}
+          galatMeter={galatMeter}
+          standLalu={riwayatAktif?.standLalu ?? null}
+          blokTarif={riwayatAktif?.blokTarif ?? null}
+          galatRiwayat={galatRiwayatAktif}
           tolakAwal={aksi === "tolak"}
           onTutup={onTutupAksi}
           onSelesai={() => {

@@ -17,7 +17,7 @@ export {
 /// Resep Geist: kepala kolom memakai kanvas (--background) sehingga sedikit
 /// berbeda dari badan tabel (--card); garis antar baris memakai
 /// --border-subtle (satu langkah lebih terang dari --border, khusus garis di
-/// DALAM panel); hover memakai --accent; baris terpilih memakai --info-muted.
+/// DALAM panel); hover dan baris terpilih memakai aksen tabel netral Geist.
 /// Garis vertikal antar kolom dimatikan, tinggi baris 42px, dan bingkai luar
 /// dilepas karena <section> pembungkus sudah punya bingkai sendiri.
 export const temaGrid = themeQuartz.withParams({
@@ -38,8 +38,8 @@ export const temaGrid = themeQuartz.withParams({
   rowHeight: 42,
   cellHorizontalPadding: 14,
   oddRowBackgroundColor: "transparent",
-  rowHoverColor: "var(--accent)",
-  selectedRowBackgroundColor: "var(--info-muted)",
+  rowHoverColor: "var(--table-accent)",
+  selectedRowBackgroundColor: "var(--table-accent)",
   browserColorScheme: "inherit",
 })
 
@@ -48,4 +48,4 @@ export const KELAS_AREA_GRID =
   "min-h-0 scrollbar-tipis " +
   "[&_.ag-header-cell-text]:text-xs [&_.ag-header-cell-text]:font-medium [&_.ag-header-cell-text]:tracking-normal [&_.ag-header-cell-text]:normal-case " +
   "[&_.ag-cell]:tabular-nums " +
-  "[&_.baris-terpilih]:bg-info-muted [&_.baris-terpilih]:shadow-[inset_2px_0_0_0_var(--info)] "
+  "[&_.baris-terpilih]:bg-table-accent "

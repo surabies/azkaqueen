@@ -209,7 +209,7 @@
   --brand: var(--gray-900);
   --brand-hover: #383838;
   /* Merek sebagai TEKS (tautan, tab aktif, ikon aksen) */
-  --brand-ink: oklch(0.21 0.006 285.885);
+   --brand-ink: oklch(0.5761 0.2508 258.23); /* ds-blue-700 — tautan, tab aktif */
 
   --border: var(--gray-200); /*        garis LUAR panel */
   --border-subtle: var(--gray-100); /* garis DI DALAM panel */
@@ -261,7 +261,7 @@
   --slate: #8f8f8f;
   --table-head: color-mix(in oklch, var(--slate) 6%, var(--card));
   --table-stripe: color-mix(in oklch, var(--slate) 3%, var(--card));
-  --table-accent: color-mix(in oklch, var(--slate) 32%, var(--card));
+  --table-accent: color-mix(in oklch, var(--chart-1) 9%, var(--card)); /* baris terpilih: biru tipis */
 
   /* Seri grafik: lima hue Geist langkah 700. Urutan slot TETAP dan mengikuti
      arti (1 biru, 2 amber, 3 hijau, 4 ungu, 5 teal). Merah sengaja tidak
@@ -375,7 +375,7 @@
 
   --brand: var(--gray-900); /* #ededed — primer DIBALIK di tema gelap */
   --brand-hover: #cccccc; /*  hsl(0 0% 80%), padanan Geist di tema gelap */
-  --brand-ink: var(--gray-900);
+  --brand-ink: var(--chart-1);
 
   --border: var(--gray-300);
   --border-subtle: var(--gray-200);
@@ -391,7 +391,7 @@
   --slate: #878787;
   --table-head: color-mix(in oklch, var(--slate) 9%, var(--card));
   --table-stripe: color-mix(in oklch, var(--slate) 4%, var(--card));
-  --table-accent: color-mix(in oklch, var(--slate) 40%, var(--card));
+  --table-accent: color-mix(in oklch, var(--chart-1) 16%, var(--card));
 
   --panel-shadow: 0px 1px 2px #00000029;
   --overlay-shadow:
@@ -474,6 +474,10 @@
     ::-webkit-scrollbar-thumb:hover {
       background-color: var(--scrollbar-thumb-hover);
     }
+  }
+  
+    ::selection {
+    background: color-mix(in oklch, var(--chart-1) 25%, transparent);
   }
 
   @media (pointer: coarse) {
