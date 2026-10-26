@@ -30,7 +30,7 @@ export function FotoKosong({
     <div
       className={cn(
         "flex w-full flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border bg-muted/20 px-4 text-center",
-        penuh ? "h-full min-h-64" : "aspect-[3/4]",
+        penuh ? "h-full min-h-64" : "aspect-3/4",
       )}
     >
       <HugeiconsIcon icon={ImageNotFound01Icon} strokeWidth={2} className="size-5 text-muted-foreground" aria-hidden />

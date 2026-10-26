@@ -7,20 +7,19 @@
 // URUTAN KOLOM mengikuti alur kerja verifikator, dari kiri ke kanan:
 //   1. SIAPA        No. Pel · Nama                      (No. Pel beku)
 //   2. ANGKA DIUJI  ST Awal · ST Akhir · Pakai · Lalu · Dev %
-//                   — yang dibandingkan mata: stand catat, pemakaian, dan
-//                   penyimpangan dari bulan lalu, berdampingan.
 //   3. KONDISI      Kondisi catat (menjelaskan angka yang janggal)
 //   4. HASIL        ST Resmi · Tagihan (terisi setelah diverifikasi)
 //   5. KONTEKS      Rute · Petugas · Tgl Catat
 //   6. REFERENSI    Alamat (lebar, jarang menentukan keputusan) · Status
 //
-// PENAMAAN HEADER ringkas, mengikuti header tabel.md dan istilah PDAM;
-// nama panjangnya ada di tooltip (atribut title) tiap header.
+// PENAMAAN HEADER ringkas, mengikuti header tabel.md dan istilah PDAM; nama
+// panjangnya ada di tooltip (atribut title) tiap header.
 //
 // GULIR MENDATAR: `w-max min-w-full` (tumbuh mengikuti isi, tidak pernah lebih
 // sempit dari wadah) dan seluruh rantai induk wajib `min-w-0`.
 //
-// KOLOM RING dua mode: "berjenjang" (Petugas) = chip kecil berwarna V1/V2/V3;
+// KOLOM RING dua mode: "berjenjang" (Petugas) = chip kecil berwarna V1/V2/V3 —
+// V3 diperlakukan SAMA dengan V1 dan V2 (tanpa ikon ceklis tambahan);
 // "tunggal" (Pelanggan) = satu ikon penanda status.
 
 import * as React from "react"
@@ -29,13 +28,12 @@ import {
   CancelCircleIcon,
   CheckmarkCircle02Icon,
   Clock01Icon,
-  Tick02Icon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { LABEL_KONDISI_CATAT } from "../../lib/label"
-import { GAYA_TAHAP, GAYA_BELUM_DIBACA, gayaAnomali, tahapDari, type Tahap } from "./warna-ring"
+import { GAYA_TAHAP, GAYA_BELUM_DIBACA, gayaAnomali, tahapDari, type Tahap } from "./types/warna-ring"
 
 export interface BarisVerifikasi {
   id: string
@@ -110,7 +108,6 @@ function ChipRing({ tahap }: { tahap: Tahap }) {
           />
         ))}
       </span>
-      {tahap === "V3" && <HugeiconsIcon icon={Tick02Icon} strokeWidth={2.5} className="size-3" aria-hidden />}
       {tahap === "DITOLAK" && <HugeiconsIcon icon={Alert02Icon} strokeWidth={2} className="size-3" aria-hidden />}
       {TEKS_CHIP[tahap]}
     </span>
@@ -361,17 +358,7 @@ export function TabelVerifikasi({
                 {!modeBelumDibaca && <td className="text-muted-foreground tabular-nums">{tanggal(row.tanggalCatat)}</td>}
                 <td className="text-muted-foreground max-w-80 truncate" title={alamat}>{alamat}</td>
                 <td>
-                  <Lencana
-                    kelas={gaya.lencana}
-                    anak={
-                      <>
-                        {tahap === "V3" && !modeBelumDibaca && (
-                          <HugeiconsIcon icon={Tick02Icon} strokeWidth={2.5} className="size-3" aria-hidden />
-                        )}
-                        {labelStatus}
-                      </>
-                    }
-                  />
+                  <Lencana kelas={gaya.lencana} anak={labelStatus} />
                 </td>
               </tr>
             )

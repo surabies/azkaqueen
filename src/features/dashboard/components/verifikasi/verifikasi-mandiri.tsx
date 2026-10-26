@@ -4,17 +4,20 @@
 // halaman verifikasi laporan meter mandiri pelanggan (master-detail),
 // kembaran verifikasi-lapangan untuk sumber data /laporan-mandiri.
 // Laporan mandiri tetap satu ring: verify langsung membuat pembacaan resmi.
-// SELURUH AKSI lewat MENU KLIK KANAN; panel detail (kanan) murni penampil.
+//
+// MENU KLIK KANAN memakai susunan yang sama dengan Petugas (menu-aksi.ts):
+//   Verifikasi    → modal verifikasi/koreksi stand (hanya status MENUNGGU)
+//   Unverifikasi  → batalkan verifikasi (status DIVERIFIKASI/DIGUNAKAN)
+//   Edit / CHN    → modal Koreksi Data Pembacaan   (BARU, tampilan saja)
+//   ADD           → modal Baca Manual              (BARU, tampilan saja)
+//   Kondisi Foto  → modal Kondisi Foto & Lapangan  (BARU, tampilan saja)
+//   BacaUlang     → modal tolak / minta foto ulang (status MENUNGGU)
+//   Batal Baca Ulang → kembalikan baris DITOLAK ke antrean
 //
 // BARIS YANG SUDAH DIVERIFIKASI TIDAK DIHAPUS dari tabel: ia berpindah status
 // ke DIGUNAKAN. Yang membuatnya tampak "hilang" hanyalah penyaring status yang
 // masih menempel — pilih "Sudah diverifikasi" (atau bersihkan saringan).
 import * as React from "react";
-import {
-  ArrowTurnBackwardIcon,
-  RotateLeft01Icon,
-  SecurityCheckIcon,
-} from "@hugeicons/core-free-icons";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,13 +35,32 @@ import {
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
 import { ambilSatu, kirimJson, ApiError } from "../../lib/api-client";
-import type { StatsVerifikasi } from "./tipe";
+import type { StatsVerifikasi } from "./types/tipe";
 import { RingkasanVerifikasi } from "./ringkasan-verifikasi";
-import { PanelTabelMandiri, type BarisMandiriTabel } from "./panel-tabel-mandiri";
-import { PanelMandiri, type AksiMandiri } from "./panel-mandiri";
+import { PanelTabelMandiri, type BarisMandiriTabel } from "./panel/panel-tabel-mandiri";
+import { PanelMandiri, type AksiMandiri } from "./panel/panel-mandiri";
 import { MenuKonteks, type AksiKonteks } from "./menu-konteks";
+import {
+  bangunMenuAksi,
+  type KeadaanMenu,
+  type KunciMenu,
+  type ProfilMenu,
+} from "./types/menu-aksi";
+import { ModalKoreksi, dataKoreksiDariBaris } from "./modal/modal-koreksi";
+import { ModalKondisiFoto } from "./modal/modal-kondisi-foto";
+import { ModalBacaManual } from "./modal/modal-baca-manual";
 
-export function VerifikasiMandiri({ bisaAksi }: { bisaAksi: boolean }) {
+/** Modal formulir baru (tampilan saja) yang sedang terbuka. */
+type ModalLain = { jenis: "edit" | "chn" | "add" | "foto"; baris: BarisMandiriTabel };
+
+export function VerifikasiMandiri({
+  bisaAksi,
+  profilMenu = "penilai",
+}: {
+  bisaAksi: boolean;
+  /** "chn" = menu CHN / Batal Baca Ulang / Unverifikasi mati. */
+  profilMenu?: ProfilMenu;
+}) {
   // undefined = belum init; diisi periode terbaru yang punya data.
   const [periode, setPeriode] = React.useState<number | null | undefined>(undefined);
   const [stats, setStats] = React.useState<StatsVerifikasi | null>(null);
@@ -52,6 +74,7 @@ export function VerifikasiMandiri({ bisaAksi }: { bisaAksi: boolean }) {
     baris: BarisMandiriTabel;
   } | null>(null);
   const [aksi, setAksi] = React.useState<AksiMandiri | null>(null);
+  const [modalLain, setModalLain] = React.useState<ModalLain | null>(null);
   const [konfirmasi, setKonfirmasi] = React.useState<{
     id: string;
     judul: string;
@@ -97,83 +120,96 @@ export function VerifikasiMandiri({ bisaAksi }: { bisaAksi: boolean }) {
     const id = baris.id;
     if (!id) return [];
     const nama = baris.pelanggan?.nama ?? baris.nomorLangganan ?? "";
-    const daftar: AksiKonteks[] = [];
+    const tanpaAkses = "Akun Anda tidak punya akses verifikasi";
+    const resmi = baris.status === "DIVERIFIKASI" || baris.status === "DIGUNAKAN";
 
-    if (baris.status === "MENUNGGU") {
-      daftar.push(
-        {
-          label: "Verifikasi / koreksi stand…",
-          icon: SecurityCheckIcon,
-          pemisah: true,
-          disabled: !bisaAksi,
-          keterangan: bisaAksi
+    const bukaKonfirmasi = (judul: string, deskripsi: string) => {
+      setMenu(null);
+      setGalatAksi(null);
+      setKonfirmasi({ id, judul, deskripsi });
+    };
+    const bukaModal = (jenis: ModalLain["jenis"]) => {
+      setMenu(null);
+      setModalLain({ jenis, baris });
+    };
+
+    const k: Record<KunciMenu, KeadaanMenu> = {
+      verifikasi: {
+        aktif: bisaAksi && baris.status === "MENUNGGU",
+        keterangan: !bisaAksi
+          ? tanpaAkses
+          : baris.status === "MENUNGGU"
             ? "Periksa foto, koreksi bila salah input, lalu jadikan resmi"
-            : "Akun Anda tidak punya akses verifikasi",
-          onPilih: () => {
-            setMenu(null);
-            setAksi("verify");
-          },
-        },
-        {
-          label: "Tolak / minta foto ulang…",
-          icon: RotateLeft01Icon,
-          disabled: !bisaAksi,
-          keterangan: bisaAksi ? undefined : "Akun Anda tidak punya akses verifikasi",
-          onPilih: () => {
-            setMenu(null);
-            setAksi("tolak");
-          },
-        },
-      );
-    }
-
-    if (baris.status === "DIVERIFIKASI" || baris.status === "DIGUNAKAN") {
-      daftar.push({
-        label: "Batalkan verifikasi",
-        icon: ArrowTurnBackwardIcon,
-        pemisah: true,
-        destruktif: true,
-        disabled: !bisaAksi,
-        keterangan: bisaAksi
-          ? "Pembacaan resmi dihapus; ditolak bila sudah dipakai tagihan"
-          : "Akun Anda tidak punya akses verifikasi",
+            : resmi
+              ? "Sudah resmi"
+              : "Perlu dikembalikan ke antrean dulu",
         onPilih: () => {
           setMenu(null);
-          setGalatAksi(null);
-          setKonfirmasi({
-            id,
-            judul: "Batalkan verifikasi?",
-            deskripsi: `Laporan ${nama} kembali ke status menunggu; PembacaanMeter resmi yang terbentuk ikut dihapus. Server menolak bila pembacaan sudah dipakai tagihan.`,
-          });
+          setAksi("verify");
         },
-      });
-    }
-    if (baris.status === "DITOLAK") {
-      daftar.push({
-        label: "Kembalikan ke antrean (batalkan tolak)",
-        icon: ArrowTurnBackwardIcon,
-        pemisah: true,
-        disabled: !bisaAksi,
-        keterangan: bisaAksi ? undefined : "Akun Anda tidak punya akses verifikasi",
+      },
+      unverifikasi: {
+        aktif: bisaAksi && resmi,
+        keterangan: !bisaAksi
+          ? tanpaAkses
+          : resmi
+            ? "Pembacaan resmi dihapus; ditolak bila sudah dipakai tagihan"
+            : "Belum ada verifikasi yang bisa dibatalkan",
+        onPilih: () =>
+          bukaKonfirmasi(
+            "Batalkan verifikasi?",
+            `Laporan ${nama} kembali ke status menunggu; PembacaanMeter resmi yang terbentuk ikut dihapus. Server menolak bila pembacaan sudah dipakai tagihan.`,
+          ),
+      },
+      edit: {
+        aktif: bisaAksi,
+        keterangan: bisaAksi ? undefined : tanpaAkses,
+        onPilih: () => bukaModal(profilMenu === "chn" ? "chn" : "edit"),
+      },
+      add: {
+        aktif: bisaAksi,
+        keterangan: bisaAksi ? undefined : tanpaAkses,
+        onPilih: () => bukaModal("add"),
+      },
+      kondisiFoto: {
+        aktif: bisaAksi,
+        keterangan: bisaAksi ? undefined : tanpaAkses,
+        onPilih: () => bukaModal("foto"),
+      },
+      bacaUlang: {
+        aktif: bisaAksi && baris.status === "MENUNGGU",
+        keterangan: !bisaAksi
+          ? tanpaAkses
+          : baris.status === "MENUNGGU"
+            ? "Minta pelapor mengirim foto ulang"
+            : undefined,
         onPilih: () => {
           setMenu(null);
-          setGalatAksi(null);
-          setKonfirmasi({
-            id,
-            judul: "Batalkan penolakan?",
-            deskripsi: `Alasan penolakan dihapus dan laporan ${nama} kembali ke antrean menunggu verifikasi.`,
-          });
+          setAksi("tolak");
         },
-      });
-    }
+      },
+      batalBacaUlang: {
+        aktif: bisaAksi && baris.status === "DITOLAK",
+        keterangan: !bisaAksi
+          ? tanpaAkses
+          : baris.status === "DITOLAK"
+            ? undefined
+            : "Laporan tidak sedang dibaca ulang",
+        onPilih: () =>
+          bukaKonfirmasi(
+            "Batalkan penolakan?",
+            `Alasan penolakan dihapus dan laporan ${nama} kembali ke antrean menunggu verifikasi.`,
+          ),
+      },
+    };
 
-    return daftar;
+    return bangunMenuAksi(profilMenu, k);
   }
 
   return (
-    // TATA LETAK KEMBAR verifikasi-lapangan: tabel KIRI-KANAN, panel detail
-    // di kiri terbuka di ukuran paling kecil (defaultSize = minSize) supaya
-    // tabel langsung mendapat lebar maksimal. Pemisah bisa ditarik untuk melebarkan.
+    // TATA LETAK KEMBAR verifikasi-lapangan: panel detail di kiri terbuka di
+    // ukuran paling kecil (defaultSize = minSize) supaya tabel langsung mendapat
+    // lebar maksimal. Pemisah bisa ditarik untuk melebarkan.
     <>
       <div className="h-[calc(100dvh-var(--navbar-h,3.5rem)-6.5rem)] min-h-96">
         <ResizablePanelGroup orientation="horizontal" className="h-full min-h-0 items-stretch">
@@ -240,6 +276,17 @@ export function VerifikasiMandiri({ bisaAksi }: { bisaAksi: boolean }) {
         />
       )}
 
+      {/* Modal formulir baru — tampilan saja, dirender hanya saat diminta. */}
+      {modalLain && (modalLain.jenis === "edit" || modalLain.jenis === "chn") && (
+        <ModalKoreksi data={dataKoreksiDariBaris(modalLain.baris)} onTutup={() => setModalLain(null)} />
+      )}
+      {modalLain?.jenis === "add" && (
+        <ModalBacaManual data={dataKoreksiDariBaris(modalLain.baris)} onTutup={() => setModalLain(null)} />
+      )}
+      {modalLain?.jenis === "foto" && (
+        <ModalKondisiFoto data={dataKoreksiDariBaris(modalLain.baris)} onTutup={() => setModalLain(null)} />
+      )}
+
       <AlertDialog
         open={konfirmasi !== null}
         onOpenChange={(buka) => {
@@ -254,6 +301,8 @@ export function VerifikasiMandiri({ bisaAksi }: { bisaAksi: boolean }) {
           {galatAksi && <p className="text-xs text-destructive">{galatAksi}</p>}
           <AlertDialogFooter>
             <AlertDialogCancel disabled={mengirim}>Batal</AlertDialogCancel>
+            {/* onClick tanpa auto-close: dialog baru ditutup setelah server
+                menjawab sukses; galat tampil di dalam dialog. */}
             <AlertDialogAction
               disabled={mengirim}
               onClick={(e) => {

@@ -24,7 +24,7 @@ export function PageContainer({
         className,
       )}
     >
-      <header className="mb-2 flex min-h-7 items-center justify-between gap-3 sm:mb-2.5">
+      <header className="mb-2 flex shrink-0 min-h-7 items-center justify-between gap-3 sm:mb-2.5">
         {breadcrumbs && breadcrumbs.length > 0 && (
           <nav aria-label="Breadcrumb" className="hidden shrink-0 sm:block">
             <ol className="flex flex-wrap items-center justify-start gap-1.5 text-sm/5 font-medium text-muted-foreground">

@@ -20,11 +20,11 @@ import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { formatPeriode } from "@/features/public/lib/format";
 import { hitungPemakaianGantiMeter } from "@/lib/domain/perhitungan-meter";
-import { kirimJson, ApiError } from "../../lib/api-client";
-import { LABEL_KONDISI_CATAT } from "../../lib/label";
-import type { LaporanHarianDetail, MeterRingkas } from "./tipe";
-import { Bagian } from "./panel-bagian";
-import { DialogVerifikasi, KELAS_KONTROL_MODAL, PilihSatu } from "./dialog-verifikasi";
+import { kirimJson, ApiError } from "../../../lib/api-client";
+import { LABEL_KONDISI_CATAT } from "../../../lib/label";
+import type { LaporanHarianDetail, MeterRingkas } from "../types/tipe";
+import { Bagian } from "../panel/panel-bagian";
+import { DialogVerifikasi, KELAS_KONTROL_MODAL, PilihSatu } from "../dialog-verifikasi";
 
 export function ModalLapangan({
   detail,

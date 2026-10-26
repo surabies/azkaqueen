@@ -257,6 +257,11 @@ export const navGroups: NavGroup[] = [
         description: "Rekap gangguan, perbaikan, produksi, dan distribusi air.",
       },
       {
+        title: "Pencatatan Meter",
+        href: "/laporan/pencatat",
+        description: "Rekap pencatatan setoran harian per petugas.",
+      },
+      {
         title: "Ekspor Data",
         href: "/laporan/ekspor",
         description:
@@ -301,6 +306,13 @@ export const navGroups: NavGroup[] = [
         href: "/admin/input-pbpk",
         description:
           "Input data pelanggan, meter, dan tagihan secara manual.",
+        keywords: ["manual", "input"],
+      },
+      {
+        title: "Import Backup",
+        href: "/admin/import-backup",
+        description:
+          "Impor data cadangan (backup) ke dalam sistem.",
         keywords: ["manual", "input"],
       },
       {

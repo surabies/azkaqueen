@@ -93,6 +93,7 @@ export function LaporanHarianGrid() {
       searchPlaceholder="Cari no. langganan / nama…"
       filters={filters}
       filterTanggal={{ paramDari: "tanggalDari", paramSampai: "tanggalSampai", label: "Tanggal catat" }}
+      toolbarModal
     />
   )
 }

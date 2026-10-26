@@ -1,8 +1,5 @@
 "use client"
 
-// features/dashboard/components/verifikasi/menu-konteks.tsx — menu aksi
-// klik kanan pada baris tabel verifikasi. DropdownMenu terkontrol yang
-// di-anchor ke titik kursor lewat trigger tak kasatmata.
 import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react"
 import {
   DropdownMenu,
@@ -17,11 +14,11 @@ export interface AksiKonteks {
   label: string
   icon?: IconSvgElement
   onPilih: () => void
-  /** Aksi tampil tapi tidak bisa dijalankan; `keterangan` menjelaskan kenapa. */
   disabled?: boolean
+  /** Dipakai sebagai tooltip native, tidak lagi baris kedua. */
   keterangan?: string
   destruktif?: boolean
-  /** Garis pemisah SEBELUM item ini. */
+  /** Garis pemisah sebelum item ini. */
   pemisah?: boolean
 }
 
@@ -31,9 +28,7 @@ export function MenuKonteks({
   aksi,
   onTutup,
 }: {
-  /** Koordinat viewport titik klik kanan; null = menu tertutup. */
   posisi: { x: number; y: number } | null
-  /** Identitas baris (mis. nomor langganan) di kepala menu. */
   judul?: string
   aksi: AksiKonteks[]
   onTutup: () => void
@@ -49,7 +44,7 @@ export function MenuKonteks({
           style={{ position: "fixed", left: posisi.x, top: posisi.y }}
         />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" side="bottom" sideOffset={2} className="w-64">
+      <DropdownMenuContent align="start" side="bottom" sideOffset={2} className="w-56">
         {judul && (
           <>
             <DropdownMenuLabel className="font-mono text-[11px] text-muted-foreground">
@@ -65,16 +60,13 @@ export function MenuKonteks({
               disabled={a.disabled}
               variant={a.destruktif ? "destructive" : "default"}
               onSelect={a.onPilih}
+              title={a.keterangan}
+              className="justify-between gap-3 py-1.5 text-[13px]"
             >
-              {a.icon && <HugeiconsIcon icon={a.icon} strokeWidth={2} className="size-3.5" aria-hidden />}
-              <span className="flex min-w-0 flex-col">
-                <span>{a.label}</span>
-                {a.keterangan && (
-                  <span className="text-[10px] leading-tight text-muted-foreground">
-                    {a.keterangan}
-                  </span>
-                )}
-              </span>
+              <span className="truncate">{a.label}</span>
+              {a.icon && (
+                <HugeiconsIcon icon={a.icon} strokeWidth={2} className="size-4 shrink-0" aria-hidden />
+              )}
             </DropdownMenuItem>
           </div>
         ))}

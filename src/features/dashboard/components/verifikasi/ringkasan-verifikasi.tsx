@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 import { NativeSelect } from "@/components/ui/native-select";
 import { formatPeriode } from "@/features/public/lib/format";
 import { StatCard } from "../stat-card";
-import type { StatsVerifikasi } from "./tipe";
+import type { StatsVerifikasi } from "./types/tipe";
 
 export function PilihPeriode({
   periodes,

@@ -5,13 +5,14 @@
 //
 // BARIS UTAMA hanya memuat yang dipakai tiap hari: cari, periode, tanggal.
 // Sisanya (status, petugas, rute, anomali) dilipat ke panel "Filters".
-// Saringan yang sedang aktif tetap kelihatan lewat angka di tombolnya.
+// BARU: tombol "Cari lanjutan" membuka modal Pencarian Data (filter custom
+// dengan kriteria bercentang) — angka di tombolnya = jumlah kriteria yang
+// terakhir diterapkan.
 //
 // Di ujung kanan: jumlah tampil, pilihan jumlah baris, lalu `aksiKanan`
-// (tombol tampilan: lipat kartu ringkasan & kerapatan) — satu kelompok, satu
-// baris, tidak ada baris tambahan yang memakan tinggi layar.
+// (tombol tampilan) — satu kelompok, satu baris.
 import * as React from "react"
-import { Alert02Icon, Cancel01Icon } from "@hugeicons/core-free-icons"
+import { Alert02Icon, Cancel01Icon, Search01Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -24,6 +25,7 @@ import { KotakCari } from "../data-grid/toolbar/kotak-cari"
 import { FilterPilihan } from "../data-grid/toolbar/filter-pilihan"
 import { PenyaringTanggal } from "../data-grid/toolbar/penyaring-tanggal"
 import { TombolFilterLanjutan } from "../data-grid/toolbar/tombol-filter-lanjutan"
+import { ModalPencarian, type KriteriaPencarian, type OpsiPencarian } from "./modal/modal-pencarian"
 
 export interface FilterVerifikasi {
   q: string
@@ -52,6 +54,8 @@ export function ToolbarVerifikasi({
   jumlahTampil, jumlahTotal, memuat,
   modeBelumDibaca = false, anomali = 0, ambang = 50,
   aksiKanan,
+  opsiPencarian,
+  onPencarianLanjutan,
 }: {
   filter: FilterVerifikasi
   onGanti: (f: FilterVerifikasi) => void
@@ -67,9 +71,15 @@ export function ToolbarVerifikasi({
   ambang?: number
   /** Dirender tepat di sebelah kanan pilihan jumlah baris. */
   aksiKanan?: React.ReactNode
+  /** Pilihan dropdown modal Pencarian Data (wilayah, zonasi, …) dari server. */
+  opsiPencarian?: OpsiPencarian
+  /** Dipanggil saat "Cari Data" ditekan. Belum diberikan = modal hanya tampilan. */
+  onPencarianLanjutan?: (kriteria: KriteriaPencarian, jumlah: number) => void
 }) {
   const [cari, setCari] = React.useState(filter.q)
   const [panelBuka, setPanelBuka] = React.useState(false)
+  const [pencarianBuka, setPencarianBuka] = React.useState(false)
+  const [kriteriaTerapan, setKriteriaTerapan] = React.useState(0)
 
   // Pencarian ditunda 350 ms — mengetik 11 digit nomor tidak boleh = 11 permintaan.
   React.useEffect(() => {
@@ -117,6 +127,26 @@ export function ToolbarVerifikasi({
           jumlah={jumlahLanjutan}
           onKlik={() => setPanelBuka((b) => !b)}
         />
+
+        {!modeBelumDibaca && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className={cn(KELAS_KONTROL, kriteriaTerapan > 0 && KELAS_KONTROL_AKTIF)}
+            onClick={() => setPencarianBuka(true)}
+            aria-haspopup="dialog"
+            title="Pencarian dengan kriteria bercentang (wilayah, zonasi, rentang pemakaian, status verifikasi, …)"
+          >
+            <HugeiconsIcon icon={Search01Icon} strokeWidth={2} className="size-3.5 text-muted-foreground" aria-hidden />
+            Cari lanjutan
+            {kriteriaTerapan > 0 && (
+              <span className="rounded-full bg-blue-500/15 px-1.5 text-[10px] font-medium text-blue-700 tabular-nums dark:text-blue-400">
+                {kriteriaTerapan}
+              </span>
+            )}
+          </Button>
+        )}
 
         <div className="ml-auto flex items-center gap-2">
           <span className="text-muted-foreground text-xs tabular-nums">
@@ -195,6 +225,19 @@ export function ToolbarVerifikasi({
             </Button>
           )}
         </div>
+      )}
+
+      {/* Dirender hanya saat dibuka — state isian selalu mulai bersih. */}
+      {pencarianBuka && (
+        <ModalPencarian
+          buka
+          onBuka={(b) => !b && setPencarianBuka(false)}
+          opsi={opsiPencarian}
+          onCari={(kriteria, jumlah) => {
+            setKriteriaTerapan(jumlah)
+            onPencarianLanjutan?.(kriteria, jumlah)
+          }}
+        />
       )}
     </div>
   )

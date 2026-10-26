@@ -2,7 +2,7 @@
 
 // features/dashboard/components/verifikasi/panel-mandiri.tsx — panel detail
 // halaman verifikasi laporan mandiri pelanggan. Bentuk, urutan seksi, dan
-// accordion-nya SAMA dengan panel-lapangan (kunci ingatan accordion dibagi).
+// ingatan buka/tutup seksinya SAMA dengan panel-lapangan.
 //
 // MURNI PENAMPIL DETAIL. Aksi (verifikasi/koreksi, tolak, batalkan) dipicu
 // dari MENU KLIK KANAN; halaman meneruskan pilihan lewat prop `aksi`.
@@ -10,25 +10,17 @@
 // Meter tujuan, stand lalu, dan blok tarif tidak pernah ditampilkan: ketiganya
 // turunan mekanis, dihitung diam-diam dan dikirim saat verify.
 import * as React from "react";
-import { CheckmarkCircle02Icon, CursorPointer01Icon } from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { CursorPointer01Icon } from "@hugeicons/core-free-icons";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatPeriode, formatTanggal } from "@/features/public/lib/format";
-import { ambilSatu, ambilList, ApiError } from "../../lib/api-client";
-import type { LaporanMandiriDetail, MeterRingkas, PembacaanRingkas } from "./tipe";
-import {
-  BadgeStatusVerif,
-  GridStand,
-  InfoBaris,
-  PanelAccordion,
-  PanelKosong,
-  Seksi,
-} from "./panel-bagian";
-import { FotoBukti } from "./foto-bukti";
-import { FotoSebelumnya } from "./foto-sebelumnya";
-import { HistoriPemakaian } from "./histori-pemakaian";
-import { PetaLokasi } from "./peta-lokasi";
-import { ModalMandiri } from "./modal-mandiri";
+import { ambilSatu, ambilList, ApiError } from "../../../lib/api-client";
+import type { LaporanMandiriDetail, MeterRingkas, PembacaanRingkas } from "../types/tipe";
+import { GridStand, InfoPelanggan, PanelKosong, Seksi } from "./panel-bagian";
+import { FotoBukti } from "../foto/foto-bukti";
+import { FotoSebelumnya } from "../foto/foto-sebelumnya";
+import { HistoriPemakaian } from "../histori-pemakaian";
+import { PetaLokasi } from "../peta-lokasi";
+import { ModalMandiri } from "../modal/modal-mandiri";
 
 export type AksiMandiri = "verify" | "tolak";
 
@@ -144,11 +136,11 @@ export function PanelMandiri({
   }
   if (!detail && !galat) {
     return (
-      <div className="flex flex-col gap-3 p-3">
-        <Skeleton className="h-8 w-full" />
+      <div className="flex flex-col gap-2 p-3">
         <Skeleton className="h-28 w-full" />
-        <Skeleton className="h-8 w-full" />
-        <Skeleton className="h-8 w-full" />
+        <Skeleton className="h-24 w-full" />
+        <Skeleton className="h-9 w-full" />
+        <Skeleton className="h-9 w-full" />
       </div>
     );
   }
@@ -168,62 +160,60 @@ export function PanelMandiri({
   const pakai = detail.pembacaan?.pemakaianM3 ?? pemakaianCatat;
 
   return (
-    <div className="flex flex-col gap-3 p-3">
-      <PanelAccordion kunci="panel-detail" awal={["info", "stand"]}>
-        <Seksi nilai="info" judul="Informasi pelanggan">
-          <InfoBaris
-            baris={[
-              { label: "Nama", nilai: detail.pelanggan?.nama ?? "—" },
-              { label: "No. Pel", nilai: detail.nomorLangganan, mono: true },
-              { label: "Periode", nilai: formatPeriode(detail.periode) },
-              { label: "Alamat", nilai: detail.pelanggan?.alamat },
-              { label: "Dilaporkan", nilai: formatTanggal(detail.createdAt) },
-              { label: "Pelapor", nilai: `${detail.namaPelapor} · ${detail.nomorPelapor}` },
-              { label: "Status", nilai: <BadgeStatusVerif status={detail.status} /> },
-            ]}
-          />
-        </Seksi>
+    <div className="flex min-w-0 flex-col gap-2 p-3">
+      <Seksi id="info" judul="Informasi pelanggan" awalBuka>
+        <InfoPelanggan
+          nama={detail.pelanggan?.nama ?? "—"}
+          status={detail.status}
+          nomor={detail.nomorLangganan}
+          alamat={detail.pelanggan?.alamat}
+        />
+      </Seksi>
 
-        <Seksi nilai="stand" judul="Stand meter">
-          <GridStand
-            sel={[
-              { label: "ST awal", nilai: standAwal },
-              { label: "ST akhir", nilai: stAkhir, nada: "info" },
-              { label: "Pakai", nilai: pakai, nada: "sukses" },
-            ]}
-          />
+      <Seksi id="stand" judul="Stand meter" awalBuka>
+        <GridStand
+          sel={[
+            { label: "ST awal", nilai: standAwal },
+            { label: "ST akhir", nilai: stAkhir, nada: "info" },
+            { label: "Pakai", nilai: pakai, nada: "sukses" },
+          ]}
+        />
+        <div className="flex flex-col gap-0.5 text-[11px] text-muted-foreground">
+          <span>
+            {formatPeriode(detail.periode)} · dilaporkan {formatTanggal(detail.createdAt)}
+          </span>
+          <span>
+            Pelapor: {detail.namaPelapor} · {detail.nomorPelapor}
+          </span>
           {detail.pembacaan?.sumberLaporan && (
-            <p className="text-[11px] text-muted-foreground">
+            <span>
               Sumber hasil resmi: {detail.pembacaan.sumberLaporan === "PETUGAS" ? "Petugas" : "Konsumen"}
-            </p>
+            </span>
           )}
-        </Seksi>
+        </div>
+      </Seksi>
 
-        <Seksi nilai="histori" judul="Histori pemakaian (3 bulan)">
-          <HistoriPemakaian pelangganId={detail.pelangganId} />
-        </Seksi>
+      <Seksi id="histori" judul="Histori pemakaian (3 bulan)">
+        <HistoriPemakaian pelangganId={detail.pelangganId} />
+      </Seksi>
 
-        <Seksi nilai="foto-lalu" judul="Foto periode sebelumnya">
-          <FotoSebelumnya pelangganId={detail.pelangganId} periode={detail.periode} />
-        </Seksi>
+      <Seksi id="foto-lalu" judul="Foto periode sebelumnya">
+        <FotoSebelumnya pelangganId={detail.pelangganId} periode={detail.periode} />
+      </Seksi>
 
-        <Seksi nilai="foto" judul="Foto periode berjalan">
-          <FotoBukti url={detail.fotoUrl} label={`Foto meter — ${formatPeriode(detail.periode)}`} />
-        </Seksi>
+      <Seksi id="foto" judul="Foto periode berjalan">
+        <FotoBukti url={detail.fotoUrl} label={`Foto meter — ${formatPeriode(detail.periode)}`} />
+      </Seksi>
 
-        <Seksi nilai="lokasi" judul="Lokasi">
-          <PetaLokasi lat={detail.pelanggan?.geoLat} lng={detail.pelanggan?.geoLong} />
-        </Seksi>
-      </PanelAccordion>
+      <Seksi id="lokasi" judul="Lokasi">
+        <PetaLokasi langsung lat={detail.pelanggan?.geoLat} lng={detail.pelanggan?.geoLong} />
+      </Seksi>
 
       {(detail.status === "DIVERIFIKASI" || detail.status === "DIGUNAKAN") && (
-        <p className="inline-flex items-start gap-1.5 text-[11px] text-emerald-700 dark:text-emerald-400">
-          <HugeiconsIcon icon={CheckmarkCircle02Icon} strokeWidth={2} className="mt-0.5 size-3.5 shrink-0" aria-hidden />
-          <span>
-            Sudah menjadi pembacaan resmi
-            {detail.verifiedBy?.name ? ` — diverifikasi ${detail.verifiedBy.name}` : ""}
-            {detail.verifiedAt ? ` (${formatTanggal(detail.verifiedAt)})` : ""}.
-          </span>
+        <p className="text-[11px] text-emerald-700 dark:text-emerald-400">
+          Sudah menjadi pembacaan resmi
+          {detail.verifiedBy?.name ? ` — diverifikasi ${detail.verifiedBy.name}` : ""}
+          {detail.verifiedAt ? ` (${formatTanggal(detail.verifiedAt)})` : ""}.
         </p>
       )}
       {detail.status === "DITOLAK" && (

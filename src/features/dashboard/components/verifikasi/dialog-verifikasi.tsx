@@ -25,8 +25,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { FotoKosong, FotoZoom } from "./foto-bukti"
-import { TabFoto, type ItemTabFoto } from "./tab-foto"
+import { FotoKosong, FotoZoom } from "./foto/foto-bukti"
+import { TabFoto, type ItemTabFoto } from "./foto/tab-foto"
 
 /// Satu kelas untuk SEMUA kontrol isian modal (Input, Select, Textarea-nya
 /// punya tinggi sendiri) — lebar penuh, tinggi sama, tidak ada yang panjang-pendek.

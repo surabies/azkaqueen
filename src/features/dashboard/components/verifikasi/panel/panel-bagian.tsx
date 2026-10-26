@@ -2,22 +2,20 @@
 
 // features/dashboard/components/verifikasi/panel-bagian.tsx — potongan kecil
 // yang dipakai panel verifikasi (lapangan & mandiri) dan modalnya: judul
-// bagian, accordion seksi, baris informasi ala tabel, grid stand 3 kolom,
-// badge status, dan empty state panel.
+// bagian (modal), seksi lipat (panel), kartu informasi pelanggan, grid stand
+// 3 kolom, badge status, dan empty state panel.
 //
-// Perlu komponen shadcn accordion: `npx shadcn add accordion`.
+// SEKSI LIPAT memakai Collapsible, bukan Accordion: tanpa animasi tinggi yang
+// diukur lewat JS, dan isi seksi yang tertutup TIDAK dirender — histori dan
+// foto pembanding baru mengambil data setelah seksinya dibuka.
 import * as React from "react"
+import { ArrowDown01Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react"
 import { cn } from "@/lib/utils"
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion"
-import { GAYA_TAHAP } from "./warna-ring"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { GAYA_TAHAP } from "../types/warna-ring"
 
-/// Judul bagian untuk modal (bukan accordion).
+/// Judul bagian untuk modal (bukan seksi lipat).
 export function Bagian({ judul, children }: { judul: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1.5">
@@ -27,77 +25,88 @@ export function Bagian({ judul, children }: { judul: string; children: React.Rea
   )
 }
 
-/// Ingatan buka/tutup seksi selama sesi. Panel di-remount lewat `key` tiap
-/// ganti baris; tanpa ini seksi yang baru saja Anda tutup terbuka lagi di
-/// baris berikutnya. Modul-level Map cukup — tidak perlu persisten antar sesi.
-const INGATAN_SEKSI = new Map<string, string[]>()
-
-export function PanelAccordion({
-  kunci,
-  awal,
-  children,
-}: {
-  /** Kunci ingatan — panel Petugas dan Pelanggan memakai kunci yang sama. */
-  kunci: string
-  /** Seksi yang terbuka saat pertama kali. */
-  awal: string[]
-  children: React.ReactNode
-}) {
-  const [nilai, setNilai] = React.useState<string[]>(() => INGATAN_SEKSI.get(kunci) ?? awal)
-  return (
-    <Accordion
-      type="multiple"
-      value={nilai}
-      onValueChange={(v) => {
-        INGATAN_SEKSI.set(kunci, v)
-        setNilai(v)
-      }}
-      className="w-full"
-    >
-      {children}
-    </Accordion>
-  )
-}
+/// Ingatan buka/tutup per seksi selama sesi. Panel di-remount lewat `key`
+/// tiap ganti baris; tanpa ini seksi yang baru Anda tutup terbuka lagi di
+/// baris berikutnya. Panel Petugas dan Pelanggan memakai id seksi yang sama,
+/// jadi pilihan Anda berlaku di keduanya.
+const INGATAN_SEKSI = new Map<string, boolean>()
 
 export function Seksi({
-  nilai,
+  id,
   judul,
+  awalBuka = false,
   children,
 }: {
-  nilai: string
+  id: string
   judul: string
+  /** Terbuka saat pertama kali, sebelum Anda mengubahnya. */
+  awalBuka?: boolean
   children: React.ReactNode
 }) {
+  const [buka, setBuka] = React.useState(() => INGATAN_SEKSI.get(id) ?? awalBuka)
+
   return (
-    <AccordionItem value={nilai} className="border-border/70">
-      <AccordionTrigger className="py-2.5 text-xs font-medium hover:no-underline">
+    <Collapsible
+      open={buka}
+      onOpenChange={(b) => {
+        INGATAN_SEKSI.set(id, b)
+        setBuka(b)
+      }}
+      className="min-w-0 overflow-hidden rounded-lg border border-border/70 bg-card"
+    >
+      <CollapsibleTrigger className="group flex w-full items-center justify-between gap-2 bg-muted/30 px-3 py-2 text-left text-xs font-medium text-foreground transition-colors hover:bg-accent data-[state=open]:border-b data-[state=open]:border-border/70">
         {judul}
-      </AccordionTrigger>
-      <AccordionContent className="flex flex-col gap-2 pb-3">{children}</AccordionContent>
-    </AccordionItem>
+        <HugeiconsIcon
+          icon={ArrowDown01Icon}
+          strokeWidth={2}
+          className="size-3.5 shrink-0 text-muted-foreground transition-transform group-data-[state=open]:rotate-180"
+          aria-hidden
+        />
+      </CollapsibleTrigger>
+      <CollapsibleContent className="min-w-0 p-3">
+        <div className="flex min-w-0 flex-col gap-2.5">{children}</div>
+      </CollapsibleContent>
+    </Collapsible>
   )
 }
 
-export interface BarisInfo {
-  label: string
-  nilai: React.ReactNode
-  mono?: boolean
-}
-
-/// Informasi ala tabel: kolom label tetap di kiri, nilai rata kiri di sebelahnya.
-/// Baris tanpa nilai (null/false) dilewati, jadi alamat kosong tidak menyisakan baris hampa.
-export function InfoBaris({ baris }: { baris: BarisInfo[] }) {
+/// Informasi pelanggan: nama + badge status di satu baris (seperti semula),
+/// lalu baris label–nilai ala tabel. Baris tanpa nilai dilewati.
+export function InfoPelanggan({
+  nama,
+  status,
+  nomor,
+  kondisi,
+  alamat,
+}: {
+  nama: string
+  status: string
+  nomor: string
+  kondisi?: string | null
+  alamat?: string | null
+}) {
+  const baris: { label: string; nilai: string | null | undefined; mono?: boolean }[] = [
+    { label: "No. Pel", nilai: nomor, mono: true },
+    { label: "Kondisi", nilai: kondisi },
+    { label: "Alamat", nilai: alamat },
+  ]
   return (
-    <dl className="divide-y divide-border/70 overflow-hidden rounded-lg border border-border/70 text-xs">
-      {baris
-        .filter((b) => b.nilai !== null && b.nilai !== undefined && b.nilai !== false)
-        .map((b) => (
-          <div key={b.label} className="grid grid-cols-[4.5rem_minmax(0,1fr)] items-start gap-2 px-2.5 py-1.5">
-            <dt className="text-muted-foreground">{b.label}</dt>
-            <dd className={cn("min-w-0 warp-break-word text-foreground", b.mono && "font-mono")}>{b.nilai}</dd>
-          </div>
-        ))}
-    </dl>
+    <div className="flex min-w-0 flex-col gap-2">
+      <div className="flex items-start justify-between gap-2">
+        <p className="min-w-0 text-sm leading-snug font-semibold wrap-break-word text-foreground">{nama}</p>
+        <BadgeStatusVerif status={status} />
+      </div>
+      <dl className="divide-y divide-border/60 border-t border-border/60 text-xs">
+        {baris
+          .filter((b) => b.nilai)
+          .map((b) => (
+            <div key={b.label} className="grid grid-cols-[4rem_minmax(0,1fr)] items-start gap-2 py-1.5">
+              <dt className="text-muted-foreground">{b.label}</dt>
+              <dd className={cn("min-w-0 wrap-break-word text-foreground", b.mono && "font-mono")}>{b.nilai}</dd>
+            </div>
+          ))}
+      </dl>
+    </div>
   )
 }
 
@@ -163,7 +172,7 @@ const BADGE_STATUS: Record<string, { label: string; kelas: string }> = {
 export function BadgeStatusVerif({ status }: { status: string }) {
   const cfg = BADGE_STATUS[status] ?? { label: status, kelas: "border-border bg-muted text-muted-foreground" }
   return (
-    <span className={cn("inline-block shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium", cfg.kelas)}>
+    <span className={cn("inline-block shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium whitespace-nowrap", cfg.kelas)}>
       {cfg.label}
     </span>
   )

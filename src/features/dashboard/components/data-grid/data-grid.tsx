@@ -46,7 +46,7 @@ import {
   type IDatasource,
 } from "ag-grid-community"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { RotateLeft01Icon } from "@hugeicons/core-free-icons"
+import { FilterHorizontalIcon, RotateLeft01Icon } from "@hugeicons/core-free-icons"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -69,6 +69,7 @@ import { PemilihUrut } from "./toolbar/pemilih-urut"
 import { PenyaringTanggal } from "./toolbar/penyaring-tanggal"
 import { TombolEkspor } from "./toolbar/tombol-ekspor"
 import { TombolFilterLanjutan } from "./toolbar/tombol-filter-lanjutan"
+import { ModalFilter, hitungFilterAktif } from "./toolbar/modal-filter"
 
 ModuleRegistry.registerModules([AllCommunityModule])
 
@@ -89,10 +90,12 @@ export function DataGrid({
   idTerpilih,
   refreshKey,
   toolbarActions,
-}: DataGridProps) {
+  toolbarModal = false,
+}: DataGridProps & { toolbarModal?: boolean }) {
   const mobil = useIsMobile()
   const idPanelFilter = React.useId()
   const apiRef = React.useRef<GridApi | null>(null)
+  const [filterBuka, setFilterBuka] = React.useState(false)
 
   // --- state penyaring ------------------------------------------------------
   const [cari, setCari] = React.useState(initialSearch)
@@ -256,6 +259,10 @@ export function DataGrid({
     }))
   }
 
+  function terapkanFilter(patch: Record<string, string>) {
+    setFilterNilai((lama) => ({ ...lama, ...patch }))
+  }
+
   function bersihkanSemuaFilter() {
     setCari("")
     setFilterNilai({})
@@ -295,6 +302,7 @@ export function DataGrid({
 
   const adaKontrolKiri = Boolean(searchParam) || advancedFilters.length > 0
   const adaPenyaringKanan = filters.length > 0 || Boolean(filterTanggal)
+  const jumlahFilter = hitungFilterAktif(filters, filterTanggal, filterNilai)
 
   return (
     // flex h-full flex-col: section ini HARUS mewarisi tinggi pasti dari
@@ -336,22 +344,51 @@ export function DataGrid({
           />
         )}
 
-        {filters.map((f) => (
-          <FilterPilihan
-            key={f.param}
-            filter={f}
-            nilai={filterNilai[f.param] ?? ""}
-            onUbah={(nilai) => gantiFilter(f.param, nilai)}
-          />
-        ))}
+        {toolbarModal ? (
+          adaPenyaringKanan && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="relative size-8 shrink-0 p-0"
+              onClick={() => setFilterBuka(true)}
+              aria-haspopup="dialog"
+              aria-label="Filter"
+              title="Filter"
+            >
+              <HugeiconsIcon
+                icon={FilterHorizontalIcon}
+                strokeWidth={2}
+                className="size-4"
+                aria-hidden
+              />
+              {jumlahFilter > 0 && (
+                <span className="absolute -right-1 -top-1 rounded-full bg-blue-600 px-1 text-[9px] leading-4 text-white tabular-nums">
+                  {jumlahFilter}
+                </span>
+              )}
+            </Button>
+          )
+        ) : (
+          <>
+            {filters.map((f) => (
+              <FilterPilihan
+                key={f.param}
+                filter={f}
+                nilai={filterNilai[f.param] ?? ""}
+                onUbah={(nilai) => gantiFilter(f.param, nilai)}
+              />
+            ))}
 
-        {filterTanggal && (
-          <PenyaringTanggal
-            label={filterTanggal.label}
-            dari={filterNilai[filterTanggal.paramDari] ?? ""}
-            sampai={filterNilai[filterTanggal.paramSampai] ?? ""}
-            onTerapkan={setRentang}
-          />
+            {filterTanggal && (
+              <PenyaringTanggal
+                label={filterTanggal.label}
+                dari={filterNilai[filterTanggal.paramDari] ?? ""}
+                sampai={filterNilai[filterTanggal.paramSampai] ?? ""}
+                onTerapkan={setRentang}
+              />
+            )}
+          </>
         )}
 
         {mobil && kolomUrut.length > 0 && (
@@ -418,6 +455,16 @@ export function DataGrid({
           {toolbarActions}
         </ToggleGroup>
       </div>
+
+      {toolbarModal && filterBuka && (
+        <ModalFilter
+          onBuka={setFilterBuka}
+          filters={filters}
+          filterTanggal={filterTanggal}
+          nilai={filterNilai}
+          onTerapkan={terapkanFilter}
+        />
+      )}
 
       {advancedFilters.length > 0 && filterLanjutan.terbuka && (
         <PanelFilterLanjutan

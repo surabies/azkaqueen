@@ -8,7 +8,7 @@
 import * as React from "react";
 import { formatBulanSingkat } from "@/features/public/lib/format";
 import { ambilList, ApiError } from "../../lib/api-client";
-import type { PembacaanRingkas } from "./tipe";
+import type { PembacaanRingkas } from "./types/tipe";
 
 /// Komponen ini dirender di dalam panel yang di-remount lewat `key` tiap
 /// ganti baris terpilih — state selalu mulai bersih, tidak perlu reset

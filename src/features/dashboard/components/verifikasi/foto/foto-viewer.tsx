@@ -244,7 +244,7 @@ export function BingkaiPotret({ url, alt }: { url: string; alt: string }) {
         type="button"
         onClick={() => setBuka(true)}
         aria-label={`Perbesar ${alt}`}
-        className="group relative block aspect-[3/4] w-full overflow-hidden rounded-lg border border-border bg-muted/40 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="group relative block aspect-3/4 w-full overflow-hidden rounded-lg border border-border bg-muted/40 outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         {gagal ? (
           <span className="flex size-full flex-col items-center justify-center gap-2">

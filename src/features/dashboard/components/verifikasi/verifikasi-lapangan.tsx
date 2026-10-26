@@ -2,21 +2,19 @@
 
 // features/dashboard/components/verifikasi/verifikasi-lapangan.tsx —
 // halaman verifikasi laporan petugas lapangan (master-detail): panel detail
-// murni penampil (kiri, terbuka di ukuran minimum) + kartu ringkasan dan
-// tabel laporan (kanan).
+// murni penampil (kiri) + kartu ringkasan dan tabel laporan (kanan).
 //
-// SELURUH AKSI lewat MENU KLIK KANAN pada baris: Verifikasi V1 (modal),
-// Validasi V2 dan Approve final V3, Cek ulang (modal alasan), dan Batalkan
-// tahap terakhir (unverify). Pembacaan resmi baru dibuat saat V3.
+// SELURUH AKSI lewat MENU KLIK KANAN (disusun menu-aksi.ts):
+//   Verifikasi    → modal ring berikutnya (V1/V2/V3 sesuai tahap baris)
+//   Unverifikasi  → batalkan SATU tahap terakhir (dialog konfirmasi)
+//   Edit / CHN    → modal Koreksi Data Pembacaan   (BARU, tampilan saja)
+//   ADD           → modal Baca Manual              (BARU, tampilan saja)
+//   Kondisi Foto  → modal Kondisi Foto & Lapangan  (BARU, tampilan saja)
+//   BacaUlang     → modal cek ulang (tolak)
+//   Batal Baca Ulang → kembalikan baris DITOLAK ke antrean
+// Pembacaan resmi baru dibuat saat V3 — lihat laporan-harian.router.ts.
 import * as React from "react";
-import {
-  ArrowTurnBackwardIcon,
-  FileVerifiedIcon,
-  RotateLeft01Icon,
-  SecurityCheckIcon,
-  TaskDone01Icon,
-  ViewOffIcon,
-} from "@hugeicons/core-free-icons";
+import { ViewOffIcon } from "@hugeicons/core-free-icons";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,13 +32,22 @@ import {
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
 import { ambilSatu, ambilList, kirimJson, ApiError } from "../../lib/api-client";
-import type { StatsVerifikasi, RingLaporanHarian } from "./tipe";
-import { tahapLaporanHarian } from "./tipe";
+import type { StatsVerifikasi, RingLaporanHarian } from "./types/tipe";
+import { tahapLaporanHarian } from "./types/tipe";
 import { RingkasanVerifikasi } from "./ringkasan-verifikasi";
-import { PanelTabel } from "./panel-tabel";
-import { PanelKosong } from "./panel-bagian";
-import { PanelLapangan, type AksiLapangan } from "./panel-lapangan";
+import { PanelTabel } from "./panel/panel-tabel";
+import { PanelKosong } from "./panel/panel-bagian";
+import { PanelLapangan, type AksiLapangan } from "./panel/panel-lapangan";
 import { MenuKonteks, type AksiKonteks } from "./menu-konteks";
+import {
+  bangunMenuAksi,
+  type KeadaanMenu,
+  type KunciMenu,
+  type ProfilMenu,
+} from "./types/menu-aksi";
+import { ModalKoreksi, dataKoreksiDariBaris } from "./modal/modal-koreksi";
+import { ModalKondisiFoto } from "./modal/modal-kondisi-foto";
+import { ModalBacaManual } from "./modal/modal-baca-manual";
 
 // Cermin ROLE_GROUPS (server/middleware/rbac.ts). Server tetap penjaga aslinya;
 // ini hanya menentukan item menu mana yang aktif.
@@ -48,12 +55,19 @@ const SUPERVISOR_UP = new Set(["SUPER_ADMIN", "DIREKSI", "SENIOR_MANAGER", "MANA
 const MANAGEMENT_UP = new Set(["SUPER_ADMIN", "DIREKSI", "SENIOR_MANAGER", "MANAGER"]);
 const SENIOR_UP = new Set(["SUPER_ADMIN", "DIREKSI", "SENIOR_MANAGER"]);
 
+// ISI role mana saja yang memakai menu profil "chn" (CHN, Batal Baca Ulang,
+// Unverifikasi mati). Dikosongkan sampai peran itu dipastikan — semua role
+// sementara memakai profil "penilai".
+const ROLE_CHN = new Set<string>([]);
+
 /** Bentuk baris grid /laporan-harian yang dibaca kolom & menu konteks. */
 type BarisLaporan = RingLaporanHarian & {
   id?: string;
   nomorLangganan?: string;
   namaPelanggan?: string | null;
   alamatPelanggan?: string | null;
+  periode?: number;
+  kondisi?: string | null;
   standAwal?: number;
   standAkhir?: number;
   standAkhirRevisi?: number | null;
@@ -79,10 +93,22 @@ type BarisLaporan = RingLaporanHarian & {
   verifiedBy?: { name: string | null } | null;
 };
 
+type Konfirmasi = {
+  endpoint: "verif2" | "verif3" | "unverify";
+  id: string;
+  judul: string;
+  deskripsi: string;
+  destruktif?: boolean;
+};
+
+/** Modal formulir baru (tampilan saja) yang sedang terbuka. */
+type ModalLain = { jenis: "edit" | "chn" | "add" | "foto"; baris: BarisLaporan };
+
 export function VerifikasiLapangan({ role }: { role: string }) {
   const bisaV1 = SUPERVISOR_UP.has(role);
   const bisaV2 = MANAGEMENT_UP.has(role);
   const bisaV3 = SENIOR_UP.has(role);
+  const profil: ProfilMenu = ROLE_CHN.has(role) ? "chn" : "penilai";
 
   // undefined = belum init (diisi periode terbaru yang punya data).
   // null = pengguna memilih "Semua periode".
@@ -101,13 +127,8 @@ export function VerifikasiLapangan({ role }: { role: string }) {
     baris: BarisLaporan;
   } | null>(null);
   const [aksi, setAksi] = React.useState<AksiLapangan | null>(null);
-  const [konfirmasi, setKonfirmasi] = React.useState<{
-    endpoint: "verif2" | "verif3" | "unverify";
-    id: string;
-    judul: string;
-    deskripsi: string;
-    destruktif?: boolean;
-  } | null>(null);
+  const [modalLain, setModalLain] = React.useState<ModalLain | null>(null);
+  const [konfirmasi, setKonfirmasi] = React.useState<Konfirmasi | null>(null);
   const [mengirim, setMengirim] = React.useState(false);
   const [galatAksi, setGalatAksi] = React.useState<string | null>(null);
 
@@ -170,142 +191,102 @@ export function VerifikasiLapangan({ role }: { role: string }) {
     }
   }
 
-  /// Item menu klik kanan sesuai tahap baris + role pengguna. Item yang belum
-  /// waktunya (mis. V2 sebelum V1) disembunyikan; item yang butuh role lebih
-  /// tinggi tampil disabled.
+  /// Keadaan tiap item menu menurut tahap baris + role. Susunan dan label
+  /// diurus bangunMenuAksi; di sini hanya: boleh/tidak, dan apa yang terjadi.
   function aksiMenu(baris: BarisLaporan): AksiKonteks[] {
     const id = baris.id;
     if (!id) return [];
     const tahap = tahapLaporanHarian(baris);
     const nama = baris.pelanggan?.nama ?? baris.namaPelanggan ?? baris.nomorLangganan ?? "";
-    const daftar: AksiKonteks[] = [];
 
-    if (tahap === "MENUNGGU_V1" || tahap === "DITOLAK") {
-      daftar.push({
-        label: "Verifikasi V1",
-        icon: SecurityCheckIcon,
-        pemisah: true,
-        disabled: !bisaV1 || !baris.pelanggan,
-        onPilih: () => {
-          setMenu(null);
-          setAksi("v1");
-        },
-      });
-    }
-    if (tahap === "MENUNGGU_V2") {
-      daftar.push({
-        label: "Verifikasi V2",
-        icon: TaskDone01Icon,
-        pemisah: true,
-        disabled: !bisaV2,
-        onPilih: () => {
-          setMenu(null);
-          setAksi("v2");
-        },
-      });
-    }
-    if (tahap === "MENUNGGU_V3") {
-      daftar.push({
-        label: "Verifikasi V3",
-        icon: FileVerifiedIcon,
-        pemisah: true,
-        disabled: !bisaV3,
-        onPilih: () => {
-          setMenu(null);
-          setAksi("v3");
-        },
-      });
-    }
+    const bukaKonfirmasi = (k: Omit<Konfirmasi, "id" | "endpoint">) => {
+      setMenu(null);
+      setGalatAksi(null);
+      setKonfirmasi({ id, endpoint: "unverify", ...k });
+    };
+    const bukaModal = (jenis: ModalLain["jenis"]) => {
+      setMenu(null);
+      setModalLain({ jenis, baris });
+    };
 
-    if (tahap !== "RESMI" && tahap !== "DITOLAK") {
-      daftar.push({
-        label: "Cek ulang",
-        icon: RotateLeft01Icon,
-        disabled: !bisaV1,
-        onPilih: () => {
-          setMenu(null);
-          setAksi("cekulang");
-        },
-      });
-    }
+    // Verifikasi = ring BERIKUTNYA yang belum terisi.
+    const ringBerikut: 1 | 2 | 3 | null =
+      tahap === "MENUNGGU_V1" || tahap === "DITOLAK" ? 1
+      : tahap === "MENUNGGU_V2" ? 2
+      : tahap === "MENUNGGU_V3" ? 3
+      : null;
+    const bolehRing =
+      ringBerikut === 1 ? bisaV1 && !!baris.pelanggan
+      : ringBerikut === 2 ? bisaV2
+      : ringBerikut === 3 ? bisaV3
+      : false;
 
-    // Unverifikasi: membatalkan SATU tahap terakhir.
-    if (tahap === "RESMI") {
-      daftar.push({
-        label: "Batalkan V3",
-        icon: ArrowTurnBackwardIcon,
-        pemisah: true,
-        destruktif: true,
-        disabled: !bisaV3,
-        onPilih: () => {
-          setMenu(null);
-          setGalatAksi(null);
-          setKonfirmasi({
-            endpoint: "unverify",
-            id,
-            destruktif: true,
+    // Unverifikasi = batalkan SATU tahap terakhir.
+    const unverif =
+      tahap === "RESMI"
+        ? {
+            nama: "Batalkan V3",
+            boleh: bisaV3,
             judul: "Batalkan approve final?",
             deskripsi: baris.pembacaanId
               ? `PembacaanMeter resmi milik ${nama} dihapus dan laporan kembali ke tahap menunggu V3. Server menolak bila pembacaan sudah dipakai tagihan.`
               : `Persetujuan V3 untuk laporan ${nama} dibatalkan. Hasil resmi yang kini berasal dari jalur lain tetap dipertahankan.`,
-          });
-        },
-      });
-    } else if (tahap === "MENUNGGU_V3") {
-      daftar.push({
-        label: "Batalkan V2",
-        icon: ArrowTurnBackwardIcon,
-        destruktif: true,
-        disabled: !bisaV2,
+          }
+        : tahap === "MENUNGGU_V3"
+          ? {
+              nama: "Batalkan V2",
+              boleh: bisaV2,
+              judul: "Batalkan V2?",
+              deskripsi: `Tanda validasi V2 pada laporan ${nama} dihapus; laporan kembali menunggu V2.`,
+            }
+          : tahap === "MENUNGGU_V2"
+            ? {
+                nama: "Batalkan V1",
+                boleh: bisaV1,
+                judul: "Batalkan V1?",
+                deskripsi: `Hasil pemeriksaan V1 pada laporan ${nama} (termasuk revisi stand dan pilihan meter) dihapus; laporan kembali menunggu V1.`,
+              }
+            : null;
+
+    const k: Record<KunciMenu, KeadaanMenu> = {
+      verifikasi: {
+        aktif: ringBerikut !== null && bolehRing,
+        keterangan: ringBerikut ? `Tahap V${ringBerikut}` : "Sudah resmi",
         onPilih: () => {
           setMenu(null);
-          setGalatAksi(null);
-          setKonfirmasi({
-            endpoint: "unverify",
-            id,
-            destruktif: true,
-            judul: "Batalkan V2?",
-            deskripsi: `Tanda validasi V2 pada laporan ${nama} dihapus; laporan kembali menunggu V2.`,
-          });
+          setAksi(ringBerikut === 2 ? "v2" : ringBerikut === 3 ? "v3" : "v1");
         },
-      });
-    } else if (tahap === "MENUNGGU_V2") {
-      daftar.push({
-        label: "Batalkan V1",
-        icon: ArrowTurnBackwardIcon,
-        destruktif: true,
-        disabled: !bisaV1,
+      },
+      unverifikasi: {
+        aktif: !!unverif && unverif.boleh,
+        keterangan: unverif?.nama ?? "Belum ada tahap yang bisa dibatalkan",
+        onPilih: () =>
+          unverif &&
+          bukaKonfirmasi({ judul: unverif.judul, deskripsi: unverif.deskripsi, destruktif: true }),
+      },
+      edit: { aktif: bisaV1, onPilih: () => bukaModal(profil === "chn" ? "chn" : "edit") },
+      add: { aktif: bisaV1, onPilih: () => bukaModal("add") },
+      kondisiFoto: { aktif: bisaV1, onPilih: () => bukaModal("foto") },
+      bacaUlang: {
+        aktif: bisaV1 && tahap !== "RESMI" && tahap !== "DITOLAK",
+        keterangan: tahap === "DITOLAK" ? "Sudah dikembalikan untuk cek ulang" : undefined,
         onPilih: () => {
           setMenu(null);
-          setGalatAksi(null);
-          setKonfirmasi({
-            endpoint: "unverify",
-            id,
-            destruktif: true,
-            judul: "Batalkan V1?",
-            deskripsi: `Hasil pemeriksaan V1 pada laporan ${nama} (termasuk revisi stand dan pilihan meter) dihapus; laporan kembali menunggu V1.`,
-          });
+          setAksi("cekulang");
         },
-      });
-    } else if (tahap === "DITOLAK") {
-      daftar.push({
-        label: "Kembalikan ke antrean (batalkan tolak)",
-        icon: ArrowTurnBackwardIcon,
-        disabled: !bisaV1,
-        onPilih: () => {
-          setMenu(null);
-          setGalatAksi(null);
-          setKonfirmasi({
-            endpoint: "unverify",
-            id,
+      },
+      batalBacaUlang: {
+        aktif: bisaV1 && tahap === "DITOLAK",
+        keterangan: tahap === "DITOLAK" ? undefined : "Baris tidak sedang dibaca ulang",
+        onPilih: () =>
+          bukaKonfirmasi({
             judul: "Batalkan penolakan?",
             deskripsi: `Catatan penolakan dihapus dan laporan ${nama} kembali ke antrean menunggu V1.`,
-          });
-        },
-      });
-    }
+          }),
+      },
+    };
 
-    return daftar;
+    return bangunMenuAksi(profil, k);
   }
 
   return (
@@ -398,6 +379,17 @@ export function VerifikasiLapangan({ role }: { role: string }) {
         />
       )}
 
+      {/* Modal formulir baru — tampilan saja, dirender hanya saat diminta. */}
+      {modalLain && (modalLain.jenis === "edit" || modalLain.jenis === "chn") && (
+        <ModalKoreksi data={dataKoreksiDariBaris(modalLain.baris)} onTutup={() => setModalLain(null)} />
+      )}
+      {modalLain?.jenis === "add" && (
+        <ModalBacaManual data={dataKoreksiDariBaris(modalLain.baris)} onTutup={() => setModalLain(null)} />
+      )}
+      {modalLain?.jenis === "foto" && (
+        <ModalKondisiFoto data={dataKoreksiDariBaris(modalLain.baris)} onTutup={() => setModalLain(null)} />
+      )}
+
       <AlertDialog
         open={konfirmasi !== null}
         onOpenChange={(buka) => {
@@ -412,6 +404,8 @@ export function VerifikasiLapangan({ role }: { role: string }) {
           {galatAksi && <p className="text-xs text-destructive">{galatAksi}</p>}
           <AlertDialogFooter>
             <AlertDialogCancel disabled={mengirim}>Batal</AlertDialogCancel>
+            {/* onClick tanpa auto-close: dialog baru ditutup setelah server
+                menjawab sukses; galat tampil di dalam dialog. */}
             <AlertDialogAction
               disabled={mengirim}
               onClick={(e) => {

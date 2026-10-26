@@ -7,8 +7,8 @@
 // bersebelahan tanpa membuka halaman lain.
 import * as React from "react";
 import { formatPeriode } from "@/features/public/lib/format";
-import { ambilList, ApiError } from "../../lib/api-client";
-import type { PembacaanRingkas } from "./tipe";
+import { ambilList, ApiError } from "@/features/dashboard/lib/api-client";
+import type { PembacaanRingkas } from "../types/tipe";
 import { FotoBukti, FotoKosong } from "./foto-bukti";
 
 function thblDariIso(iso: string): number {

@@ -7,8 +7,9 @@
 // dari MENU KLIK KANAN pada baris tabel; halaman meneruskannya lewat prop
 // `aksi`, dan panel merender ModalLapangan begitu detailnya siap.
 //
-// Isi panel berupa ACCORDION: tiap seksi bisa disembunyikan agar panel sempit
-// tetap ringkas. Seksi yang ditutup diingat saat berganti baris.
+// Isi panel berupa tumpukan SEKSI LIPAT (kartu). Informasi dan Stand terbuka
+// bawaan; histori, foto, ring, dan lokasi tertutup — dan baru mengambil data
+// saat dibuka.
 import * as React from "react";
 import {
   Alert02Icon,
@@ -18,24 +19,17 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatPeriode, formatTanggal } from "@/features/public/lib/format";
-import { ambilSatu, ambilList, ApiError } from "../../lib/api-client";
-import { LABEL_KONDISI_CATAT, label } from "../../lib/label";
-import type { LaporanHarianDetail, MeterRingkas } from "./tipe";
-import { tahapLaporanHarian, ringVerif } from "./tipe";
-import {
-  BadgeStatusVerif,
-  GridStand,
-  InfoBaris,
-  PanelAccordion,
-  PanelKosong,
-  Seksi,
-} from "./panel-bagian";
-import { FotoSebelumnya } from "./foto-sebelumnya";
-import { TabFoto } from "./tab-foto";
-import { HistoriPemakaian } from "./histori-pemakaian";
-import { PetaLokasi } from "./peta-lokasi";
-import { ModalLapangan } from "./modal-lapangan";
-import { TEKS_RING } from "./warna-ring";
+import { ambilSatu, ambilList, ApiError } from "../../../lib/api-client";
+import { LABEL_KONDISI_CATAT, label } from "../../../lib/label";
+import type { LaporanHarianDetail, MeterRingkas } from "../types/tipe";
+import { tahapLaporanHarian, ringVerif } from "../types/tipe";
+import { GridStand, InfoPelanggan, PanelKosong, Seksi } from "./panel-bagian";
+import { FotoSebelumnya } from "../foto/foto-sebelumnya";
+import { TabFoto } from "../foto/tab-foto";
+import { HistoriPemakaian } from "../histori-pemakaian";
+import { PetaLokasi } from "../peta-lokasi";
+import { ModalLapangan } from "../modal/modal-lapangan";
+import { TEKS_RING } from "../types/warna-ring";
 
 /// v2/v3 memakai modal yang SAMA dengan v1: koreksi yang boleh dilakukan
 /// ketiganya identik, dan dua formulir untuk satu pekerjaan selalu berujung
@@ -43,7 +37,7 @@ import { TEKS_RING } from "./warna-ring";
 export type AksiLapangan = "v1" | "v2" | "v3" | "cekulang";
 
 /// Baris progres ring V1/V2/V3 — penampil murni. Warna per ring SAMA dengan
-/// kolom Ring di tabel.
+/// kolom Ring di tabel, dan ketiganya diperlakukan setara.
 function ProgresRing({ detail }: { detail: LaporanHarianDetail }) {
   const ring = ringVerif(detail);
   const baris: { label: string; nama: string | null; tanggal?: string | null; warna: string }[] = [
@@ -52,9 +46,9 @@ function ProgresRing({ detail }: { detail: LaporanHarianDetail }) {
     { label: "V3 · Senior Manager", nama: ring.v3, tanggal: detail.verif3At, warna: TEKS_RING[3] },
   ];
   return (
-    <div className="flex flex-col divide-y divide-border/70 overflow-hidden rounded-lg border border-border/70">
+    <div className="flex flex-col divide-y divide-border/60">
       {baris.map((b) => (
-        <div key={b.label} className="flex items-center justify-between gap-2 px-2.5 py-1.5">
+        <div key={b.label} className="flex flex-col gap-0.5 py-1.5 first:pt-0 last:pb-0">
           <span className="text-[9px] font-semibold tracking-widest text-muted-foreground uppercase">
             {b.label}
           </span>
@@ -146,11 +140,11 @@ export function PanelLapangan({
   }
   if (!detail && !galat) {
     return (
-      <div className="flex flex-col gap-3 p-3">
-        <Skeleton className="h-8 w-full" />
+      <div className="flex flex-col gap-2 p-3">
         <Skeleton className="h-28 w-full" />
-        <Skeleton className="h-8 w-full" />
-        <Skeleton className="h-8 w-full" />
+        <Skeleton className="h-24 w-full" />
+        <Skeleton className="h-9 w-full" />
+        <Skeleton className="h-9 w-full" />
       </div>
     );
   }
@@ -179,117 +173,103 @@ export function PanelLapangan({
   const pakai = detail.pembacaan?.pemakaianM3 ?? detail.pemakaianTagihVerif ?? detail.pemakaian;
 
   return (
-    <div className="flex flex-col gap-3 p-3">
-      <PanelAccordion kunci="panel-detail" awal={["info", "stand"]}>
-        <Seksi nilai="info" judul="Informasi pelanggan">
-          <InfoBaris
-            baris={[
-              { label: "Nama", nilai: nama },
-              { label: "No. Pel", nilai: detail.nomorLangganan, mono: true },
-              { label: "Periode", nilai: formatPeriode(detail.periode) },
-              { label: "Kondisi", nilai: label(LABEL_KONDISI_CATAT, detail.kondisi) },
-              { label: "Alamat", nilai: alamat },
-              {
-                label: "Dicatat",
-                nilai: `${detail.pencatat?.namaLapangan ?? "Tidak diketahui"}${
-                  detail.tanggalCatat ? ` · ${formatTanggal(detail.tanggalCatat)}` : ""
-                }`,
-              },
-              {
-                label: "Deviasi",
-                nilai: (
-                  <span
-                    className={
-                      anomali ? "inline-flex items-center gap-1 font-medium text-destructive" : undefined
-                    }
-                  >
-                    {anomali && (
-                      <HugeiconsIcon icon={Alert02Icon} strokeWidth={2} className="size-3" aria-hidden />
-                    )}
-                    {detail.persentase != null
-                      ? `${detail.persentase > 0 ? "+" : ""}${detail.persentase}%`
-                      : "—"}
-                    {anomali ? ` (ambang ±${ambangAnomali}%)` : " dari bulan lalu"}
-                  </span>
-                ),
-              },
-              { label: "Status", nilai: <BadgeStatusVerif status={tahap} /> },
-            ]}
-          />
-          {!detail.pelanggan && (
-            <p className="text-[11px] text-amber-700 dark:text-amber-400">
-              Nomor langganan ini belum terhubung ke data pelanggan — verifikasi belum bisa dijalankan
-              sebelum pelanggannya ter-import.
-            </p>
-          )}
-        </Seksi>
+    <div className="flex min-w-0 flex-col gap-2 p-3">
+      <Seksi id="info" judul="Informasi pelanggan" awalBuka>
+        <InfoPelanggan
+          nama={nama}
+          status={tahap}
+          nomor={detail.nomorLangganan}
+          kondisi={label(LABEL_KONDISI_CATAT, detail.kondisi)}
+          alamat={alamat}
+        />
+        {!detail.pelanggan && (
+          <p className="text-[11px] text-amber-700 dark:text-amber-400">
+            Nomor langganan ini belum terhubung ke data pelanggan — verifikasi belum bisa dijalankan
+            sebelum pelanggannya ter-import.
+          </p>
+        )}
+      </Seksi>
 
-        <Seksi nilai="stand" judul="Stand meter">
-          <GridStand
-            sel={[
-              { label: "ST awal", nilai: detail.standAwal },
-              { label: "ST akhir", nilai: stAkhir, nada: "info" },
-              { label: "Pakai", nilai: pakai, nada: "sukses" },
-            ]}
-          />
+      <Seksi id="stand" judul="Stand meter" awalBuka>
+        <GridStand
+          sel={[
+            { label: "ST awal", nilai: detail.standAwal },
+            { label: "ST akhir", nilai: stAkhir, nada: "info" },
+            { label: "Pakai", nilai: pakai, nada: "sukses" },
+          ]}
+        />
+        <div className="flex flex-col gap-0.5 text-[11px] text-muted-foreground">
+          <span
+            className={
+              anomali ? "inline-flex items-center gap-1 font-medium text-destructive" : undefined
+            }
+          >
+            {anomali && <HugeiconsIcon icon={Alert02Icon} strokeWidth={2} className="size-3" aria-hidden />}
+            Deviasi{" "}
+            {detail.persentase != null
+              ? `${detail.persentase > 0 ? "+" : ""}${detail.persentase}%`
+              : "—"}
+            {anomali ? ` (ambang ±${ambangAnomali}%)` : " dari bulan lalu"}
+          </span>
+          <span>
+            {formatPeriode(detail.periode)} · {detail.pencatat?.namaLapangan ?? "Pencatat tidak diketahui"}
+            {detail.tanggalCatat ? ` · ${formatTanggal(detail.tanggalCatat)}` : ""}
+          </span>
           {detail.pembacaan?.sumberLaporan && (
-            <p className="text-[11px] text-muted-foreground">
+            <span>
               Sumber hasil resmi: {detail.pembacaan.sumberLaporan === "PETUGAS" ? "Petugas" : "Konsumen"}
-            </p>
+            </span>
           )}
-        </Seksi>
+        </div>
+      </Seksi>
 
-        <Seksi nilai="histori" judul="Histori pemakaian (3 bulan)">
-          <HistoriPemakaian pelangganId={detail.pelanggan?.id} />
-        </Seksi>
+      <Seksi id="histori" judul="Histori pemakaian (3 bulan)">
+        <HistoriPemakaian pelangganId={detail.pelanggan?.id} />
+      </Seksi>
 
-        <Seksi nilai="foto-lalu" judul="Foto periode sebelumnya">
-          <FotoSebelumnya pelangganId={detail.pelanggan?.id} periode={detail.periode} />
-        </Seksi>
+      <Seksi id="foto-lalu" judul="Foto periode sebelumnya">
+        <FotoSebelumnya pelangganId={detail.pelanggan?.id} periode={detail.periode} />
+      </Seksi>
 
-        <Seksi nilai="foto" judul="Foto periode berjalan">
-          <TabFoto
-            varian="panel"
-            item={[
-              {
-                kunci: "stand",
-                label: "Stand meter",
-                url: detail.fotoStandUrl ?? detail.pembacaan?.fotoBukti,
-                keteranganKosong: "Laporan petugas dari sistem lama tidak menyertakan foto.",
-              },
-              {
-                kunci: "segel",
-                label: "Segel",
-                url: detail.fotoSegelUrl,
-                keteranganKosong: "Petugas tidak mengirim foto segel.",
-              },
-              {
-                kunci: "rumah",
-                label: "Rumah",
-                url: detail.fotoRumahUrl,
-                keteranganKosong: "Petugas tidak mengirim foto rumah/persil.",
-              },
-            ]}
-          />
-        </Seksi>
+      <Seksi id="foto" judul="Foto periode berjalan">
+        <TabFoto
+          varian="panel"
+          item={[
+            {
+              kunci: "stand",
+              label: "Stand meter",
+              url: detail.fotoStandUrl ?? detail.pembacaan?.fotoBukti,
+              keteranganKosong: "Laporan petugas dari sistem lama tidak menyertakan foto.",
+            },
+            {
+              kunci: "segel",
+              label: "Segel",
+              url: detail.fotoSegelUrl,
+              keteranganKosong: "Petugas tidak mengirim foto segel.",
+            },
+            {
+              kunci: "rumah",
+              label: "Rumah",
+              url: detail.fotoRumahUrl,
+              keteranganKosong: "Petugas tidak mengirim foto rumah/persil.",
+            },
+          ]}
+        />
+      </Seksi>
 
-        <Seksi nilai="ring" judul="Verifikasi berjenjang">
-          <ProgresRing detail={detail} />
-        </Seksi>
+      <Seksi id="ring" judul="Verifikasi berjenjang">
+        <ProgresRing detail={detail} />
+      </Seksi>
 
-        <Seksi nilai="lokasi" judul="Lokasi">
-          <PetaLokasi lat={detail.pelanggan?.geoLat} lng={detail.pelanggan?.geoLong} />
-        </Seksi>
-      </PanelAccordion>
+      <Seksi id="lokasi" judul="Lokasi">
+        <PetaLokasi langsung lat={detail.pelanggan?.geoLat} lng={detail.pelanggan?.geoLong} />
+      </Seksi>
 
       {tahap === "RESMI" && (
-        <p className="inline-flex items-start gap-1.5 text-[11px] text-emerald-700 dark:text-emerald-400">
-          <HugeiconsIcon icon={CheckmarkCircle02Icon} strokeWidth={2} className="mt-0.5 size-3.5 shrink-0" aria-hidden />
-          <span>
-            Sudah menjadi pembacaan resmi
-            {detail.verifiedBy?.name ? ` — approve final ${detail.verifiedBy.name}` : ""}
-            {detail.verifiedAt ? ` (${formatTanggal(detail.verifiedAt)})` : ""}.
-          </span>
+        <p className="text-[11px] text-emerald-700 dark:text-emerald-400">
+          Sudah menjadi pembacaan resmi
+          {detail.verifiedBy?.name ? ` — approve final ${detail.verifiedBy.name}` : ""}
+          {detail.verifiedAt ? ` (${formatTanggal(detail.verifiedAt)})` : ""}.
         </p>
       )}
       {tahap === "DITOLAK" && (

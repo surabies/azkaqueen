@@ -14,10 +14,10 @@ import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { formatPeriode } from "@/features/public/lib/format";
-import { kirimJson, ApiError } from "../../lib/api-client";
-import type { LaporanMandiriDetail } from "./tipe";
-import { Bagian } from "./panel-bagian";
-import { DialogVerifikasi, KELAS_KONTROL_MODAL } from "./dialog-verifikasi";
+import { kirimJson, ApiError } from "../../../lib/api-client";
+import type { LaporanMandiriDetail } from "../types/tipe";
+import { Bagian } from "../panel/panel-bagian";
+import { DialogVerifikasi, KELAS_KONTROL_MODAL } from "../dialog-verifikasi";
 
 export function ModalMandiri({
   detail,
