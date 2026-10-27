@@ -8,7 +8,6 @@
 // Foto yang belum ada tetap punya tab-nya dengan empty state yang
 // menjelaskan diri — jadi verifikator tahu foto itu memang tidak dikirim,
 // bukan gagal termuat.
-import * as React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FotoBukti, FotoKosong, FotoZoom } from "./foto-bukti";
 

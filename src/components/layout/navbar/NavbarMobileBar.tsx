@@ -13,7 +13,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
-import { findActiveNav } from "@/config/navigation"
+import { findActiveNav, type NavItem, type NavGroup } from "@/config/navigation"
 import { MobileSidebar } from "../navigation/MobileSidebar"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Menu01Icon, ArrowRight01Icon } from "@hugeicons/core-free-icons"
@@ -29,6 +29,21 @@ export function NavbarMobileBar() {
   // Tahap 2: cari grup & menu aktif untuk breadcrumb
   const pathname = usePathname()
   const active = findActiveNav(pathname)
+
+  // Elemen pertama di grup (harus NavItem, karena semua pojok dimulai dari
+  // NavItem; `!= null` mengantisipasi grup kosong, `?.href` mengantisipasi
+  // grup yang isinya NavGroup utama (pascamodifikasi)).
+  // `active.group` bisa berupa varian { id, items } atau { title, children }.
+  let firstHref = "/dashboard"
+  if (active?.group != null) {
+    const groupEntries: (NavGroup | NavItem)[] = "items" in active.group
+      ? active.group.items
+      : active.group.children ?? []
+    const firstItem = groupEntries[0]
+    if (firstItem != null && "href" in firstItem) {
+      firstHref = (firstItem as NavItem).href
+    }
+  }
 
   return (
     <div className="flex h-14 items-center gap-4 border-t px-4 sm:px-6 lg:hidden">
@@ -48,13 +63,13 @@ export function NavbarMobileBar() {
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
-            <BreadcrumbLink
-              href={active?.group.items[0].href ?? "/dashboard"}
-              className="text-muted-foreground"
-            >
-              {active?.group.title ?? "Tirtawening"}
-            </BreadcrumbLink>
-          </BreadcrumbItem>
+                <BreadcrumbLink
+                  href={firstHref}
+                  className="text-muted-foreground"
+                >
+                  {active?.group.title ?? "Tirtawening"}
+                </BreadcrumbLink>
+              </BreadcrumbItem>
           <BreadcrumbSeparator>
             <HugeiconsIcon
               icon={ArrowRight01Icon}

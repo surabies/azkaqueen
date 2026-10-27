@@ -177,7 +177,7 @@ enum Role {
   ///
   /// Penempatannya wajib jelas — User.bagianId & User.subBagianId diisi
   /// (mis. SUB-PW5-CATER = Pencatatan Meter, Pelayanan Wilayah 5).
-  PELAKSANA
+  PELAYAN
   USER
 }
 
@@ -186,3 +186,4 @@ enum UserStatus {
   INACTIVE
   SUSPENDED
 }
+  PELAYAN

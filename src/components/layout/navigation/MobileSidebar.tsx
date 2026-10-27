@@ -53,7 +53,7 @@ export function MobileSidebar({
           : "pointer-events-none invisible opacity-0",
       )}
     >
-      <SidebarNav onNavigate={onClose} />
+      <SidebarNav />
     </div>
   )
 }

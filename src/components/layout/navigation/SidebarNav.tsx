@@ -1,64 +1,42 @@
 // components/layout/navigation/SidebarNav.tsx
-// Tugas: daftar menu sidebar (grup + item) dengan penanda halaman aktif.
-// Dipakai di sidebar desktop; sidebar mobile bisa memakainya juga lewat
-// `onNavigate` (untuk menutup menu setelah link diklik).
+// Sidebar drill-down bergaya Vercel untuk aplikasi pemerintahan.
+//
+//  Tampilan 1 (root)  : daftar grup/direktorat.
+//  Tampilan 2 (detail): klik grup -> daftar menu grup itu, header "<" untuk kembali.
+//
+// File ini hanya merakit. Isinya ada di folder ./sidebar:
+//   useSidebarDrilldown.ts  state & logika
+//   GroupList.tsx           tampilan 1
+//   GroupDetail.tsx         tampilan 2
+//   NavNodeRow.tsx          baris menu / folder
+//   SidebarRow.tsx          kotak ikon + teks baris grup
+//   icons.ts                pemetaan ikon (grup & menu)
+//   styles.ts               kelas Tailwind bersama
+//   utils.ts, types.ts, Slide.tsx
+
 "use client"
 
-import Link from "next/link"
-import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { allNavItems, navGroups } from "@/config/navigation"
+import { GroupDetail } from "./sidebar/GroupDetail"
+import { GroupList } from "./sidebar/GroupList"
+import { Slide } from "./sidebar/Slide"
+import { useSidebarDrilldown } from "./sidebar/useSidebarDrilldown"
 
-export function SidebarNav({
-  onNavigate,
-  className,
-}: {
-  onNavigate?: () => void
-  className?: string
-}) {
-  const pathname = usePathname()
-
-  // Item aktif = href terpanjang yang cocok, supaya "/pelanggan" tidak ikut
-  // menyala saat kita berada di "/pelanggan/mutasi".
-  const activeHref = allNavItems
-    .filter(
-      (item) => pathname === item.href || pathname.startsWith(item.href + "/"),
-    )
-    .sort((a, b) => b.href.length - a.href.length)[0]?.href
+export function SidebarNav({ className }: { className?: string }) {
+  const { active, activeGroupId, currentGroup, direction, openGroup, backToRoot } =
+    useSidebarDrilldown()
 
   return (
-    <nav aria-label="Menu utama" className={cn("space-y-8", className)}>
-      {navGroups.map((group) => (
-        <div key={group.id}>
-          <h2 className="mb-3 font-mono text-xs/6 font-medium tracking-widest text-muted-foreground uppercase">
-            {group.title}
-          </h2>
-
-          {/* Garis vertikal di kiri, item aktif menimpanya dengan warna sky */}
-          <ul className="border-l border-border">
-            {group.items.map((item) => {
-              const isActive = item.href === activeHref
-              return (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    onClick={onNavigate}
-                    aria-current={isActive ? "page" : undefined}
-                    className={cn(
-                      "-ml-px block border-l py-1.5 pl-4 text-sm/6 transition-colors",
-                      isActive
-                        ? "border-sky-500 font-medium text-sky-700 dark:border-sky-400 dark:text-sky-300"
-                        : "border-transparent text-muted-foreground hover:border-foreground/30 hover:text-foreground",
-                    )}
-                  >
-                    {item.title}
-                  </Link>
-                </li>
-              )
-            })}
-          </ul>
-        </div>
-      ))}
+    <nav aria-label="Menu utama" className={cn("overflow-hidden", className)}>
+      {currentGroup ? (
+        <Slide key={currentGroup.id} direction={direction}>
+          <GroupDetail group={currentGroup} active={active} onBack={backToRoot} />
+        </Slide>
+      ) : (
+        <Slide key="root" direction={direction}>
+          <GroupList activeGroupId={activeGroupId} onOpen={openGroup} />
+        </Slide>
+      )}
     </nav>
   )
 }
