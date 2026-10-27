@@ -3,7 +3,7 @@
 // sidebar tetap di kiri + pita garis miring kiri/kanan + garis & footer di bawah.
 // Navbar TIDAK dirender di sini (diasumsikan sudah ada di root layout).
 import type { ReactNode } from "react"
-import { PatternStrip, patternVars } from "./Pattern"
+import { PatternStrip } from "./Pattern"
 import { SidebarNav } from "../navigation/SidebarNav"
 import { cn } from "@/lib/utils"
 
@@ -16,7 +16,6 @@ export function DashboardShell({ children }: { children: ReactNode }) {
         // Kalau tinggi bar di navbar diubah, sesuaikan angka ini.
         "[--navbar-h:3.5rem] max-lg:[--navbar-h:7rem]",
         "[--sidebar-w:17.5rem]",
-        patternVars,
       )}
     >
       {/* Sidebar desktop: menempel di kiri, bisa di-scroll sendiri */}
@@ -30,7 +29,8 @@ export function DashboardShell({ children }: { children: ReactNode }) {
           <PatternStrip />
           <div className="flex min-w-0 flex-col">
             <main className="flex min-w-0 flex-1 flex-col">{children}</main>
-            <footer className="border-t border-border/60 px-3 py-4 text-xs/5 text-muted-foreground sm:px-5 sm:py-5 lg:px-8">
+            {/* Garis atas footer memakai warna yang sama dengan garis pita */}
+            <footer className="border-t border-t-(--pattern-fg) px-3 py-4 text-xs/5 text-muted-foreground sm:px-5 sm:py-5 lg:px-8">
               <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
                 <p className="font-medium tracking-wide text-foreground/75">
                   Perumda Tirtawening Kota Bandung

@@ -17,7 +17,7 @@ export default async function PemetaanPage() {
     <PageContainer
       className="flex min-h-0 flex-1 flex-col lg:h-[calc(100dvh-var(--navbar-h)-4rem)] lg:flex-none lg:overflow-hidden"
       breadcrumbs={[
-        { label: "Pencatat Meter", href: "/meter/pemetaan" },
+        { label: "Master", href: "/master/urut" },
         { label: "Pemetaan Rute" },
       ]}
     >

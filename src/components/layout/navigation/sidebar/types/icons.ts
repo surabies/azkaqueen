@@ -5,6 +5,9 @@
 import type { IconSvgElement } from "@hugeicons/react"
 import {
   Activity01Icon,
+  Analytics01Icon,
+  DashboardSquare01Icon,
+  File01Icon,
   AddSquareIcon,
   Alert01Icon,
   Alert02Icon,
@@ -182,4 +185,17 @@ export function getItemIcon(title: string, fallback: IconSvgElement): IconSvgEle
 
 export function getGroupIcon(groupId: string): IconSvgElement {
   return GROUP_ICONS[groupId] ?? FALLBACK_GROUP_ICON
+}
+
+// ----------------------------------------------------------------------------
+// IKON MENU UTAMA (Dashboard / Analytics / Report) — key = href di primaryNav
+// ----------------------------------------------------------------------------
+const PRIMARY_ICONS: Record<string, IconSvgElement> = {
+  "/dashboard": DashboardSquare01Icon,
+  "/analytics": Analytics01Icon,
+  "/report": File01Icon,
+}
+
+export function getPrimaryIcon(href: string): IconSvgElement {
+  return PRIMARY_ICONS[href] ?? FALLBACK_GROUP_ICON
 }

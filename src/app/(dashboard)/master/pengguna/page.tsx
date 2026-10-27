@@ -15,8 +15,8 @@ export default async function PenggunaPage() {
     <PageContainer
       className="flex min-h-0 flex-1 flex-col"
       breadcrumbs={[
-        { label: "Administrasi", href: "/admin" },
-        { label: "Data Pengguna" },
+        { label: "Master", href: "/master/pengguna" },
+        { label: "Pengguna" },
       ]}
     >
       <PenggunaClient idSaya={session?.user?.id ?? null} roleSaya={session?.user?.role ?? null} />

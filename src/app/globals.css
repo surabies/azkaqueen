@@ -286,6 +286,8 @@
      (gray-100 vs gray-200), persis Vercel. Sebelumnya hover memakai
      --sidebar-accent/60 sehingga nyaris sama dengan item aktif. */
   --sidebar-hover: var(--gray-100);
+  /* Warna garis pola miring & garis pita dashboard (Pattern.tsx). Sangat tipis. */
+  --pattern-fg: color-mix(in oklab, var(--foreground) 5%, transparent);
   --sidebar-border: var(--border);
   --sidebar-ring: var(--ring);
 
@@ -417,6 +419,7 @@
   --sidebar-accent: var(--gray-200);
   --sidebar-accent-foreground: var(--gray-900);
   --sidebar-hover: var(--gray-100);
+  --pattern-fg: color-mix(in oklab, var(--foreground) 8%, transparent);
   --sidebar-border: var(--border);
   --sidebar-ring: var(--ring);
 
@@ -549,4 +552,81 @@
   );
   background-size: 10px 10px;
   background-attachment: fixed;
+}
+
+/* ============================================================================
+   PERMUKAAN MELAYANG — kaca halus untuk menu, popover, select, hover-card
+   ============================================================================
+   Sasaran: dropdown & popover yang agak tembus pandang + blur tipis, garis tepi
+   transparan, highlight 1px di tepi atas, bayangan lembut. Terang & gelap
+   mengikuti token --popover / --foreground, jadi tidak perlu dua versi.
+
+   DITULIS DI LUAR `@layer` dengan sengaja: kelas bawaan shadcn (`bg-popover`,
+   `border`, `shadow-md`) ada di layer utilities. CSS tanpa layer selalu
+   menang atas CSS ber-layer, jadi komponen shadcn tidak perlu diedit.
+
+   Hanya untuk lapisan yang MELAYANG. Kartu, tabel, sidebar, dan dialog tetap
+   solid (keterbacaan data lebih penting, dan blur di banyak elemen berat di
+   PC kantor yang spesifikasinya rendah).
+
+   Mematikan blur cepat: ubah --glass-blur menjadi 0px.
+   Lebih halus: naikkan persen di --glass-bg (76% / 70%). Lebih terasa: turunkan.
+   Catatan: kaca hanya memperlihatkan apa yang ada DI BELAKANGNYA. Di atas
+   halaman putih polos di tema terang, efeknya memang nyaris tak terlihat.
+   ============================================================================ */
+:root {
+  --glass-blur: 16px;
+  --glass-bg: color-mix(in oklab, var(--popover) 76%, transparent);
+  --glass-edge: color-mix(in oklab, var(--foreground) 12%, transparent);
+  --glass-sheen: rgb(255 255 255 / 0.7);
+  --glass-shadow: 0 1px 2px rgb(0 0 0 / 0.04), 0 12px 32px -8px rgb(0 0 0 / 0.16);
+}
+
+.dark {
+  --glass-bg: color-mix(in oklab, var(--popover) 70%, transparent);
+  --glass-edge: color-mix(in oklab, var(--foreground) 12%, transparent);
+  --glass-sheen: rgb(255 255 255 / 0.06);
+  --glass-shadow: 0 1px 2px rgb(0 0 0 / 0.35), 0 16px 40px -8px rgb(0 0 0 / 0.6);
+}
+
+/* Tanpa dukungan blur, atau pengguna meminta transparansi dikurangi:
+   latar menjadi solid, tampilan tetap rapi. */
+@supports (not (backdrop-filter: blur(1px))) and (not (-webkit-backdrop-filter: blur(1px))) {
+  :root,
+  .dark {
+    --glass-bg: var(--popover);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  :root,
+  .dark {
+    --glass-bg: var(--popover);
+    --glass-blur: 0px;
+  }
+}
+
+/* `.surface-floating` = pasang manual di komponen buatan sendiri
+   (mis. SearchDialog) yang bukan bagian shadcn. */
+:is(
+  .surface-floating,
+  [data-slot="dropdown-menu-content"],
+  [data-slot="dropdown-menu-sub-content"],
+  [data-slot="context-menu-content"],
+  [data-slot="context-menu-sub-content"],
+  [data-slot="menubar-content"],
+  [data-slot="select-content"],
+  [data-slot="popover-content"],
+  [data-slot="hover-card-content"],
+  [data-slot="combobox-content"]
+) {
+  background-color: var(--glass-bg);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+  border: 1px solid var(--glass-edge);
+  /* inset = highlight tipis di tepi atas; sisanya bayangan jatuh. */
+  box-shadow: inset 0 1px 0 var(--glass-sheen), var(--glass-shadow);
+  /* Item yang disorot (hover/keyboard) memakai --accent. Dibuat translusen
+     hanya di dalam permukaan ini, jadi sorotannya ikut "kaca". */
+  --accent: color-mix(in oklab, var(--foreground) 8%, transparent);
 }

@@ -1,15 +1,15 @@
 // components/layout/navigation/sidebar/GroupDetail.tsx
-// Tampilan 2: isi satu grup, dengan header "< Nama Grup" untuk kembali.
+// Tampilan detail: baris "‹ Nama Grup" untuk kembali, lalu menu grup itu.
 
-import { ArrowLeft01Icon } from "@hugeicons/core-free-icons"
 import { cn } from "@/lib/utils"
+import { ArrowLeft01Icon } from "@hugeicons/core-free-icons"
 import type { NavGroup } from "@/config/navigation"
-import { getGroupIcon } from "./icons"
+import { getGroupIcon } from "./types/icons"
 import { NavNodeRow } from "./NavNodeRow"
-import { RowIconBox, RowText } from "./SidebarRow"
-import { FOCUS_RING, ROW_BASE } from "./styles"
-import type { ActiveInfo } from "./types"
-import { nodeKey } from "./utils"
+import { NavRowContent, RowSeparator } from "./NavRow"
+import { navRowClass } from "./types/styles"
+import type { ActiveInfo } from "./types/types"
+import { nodeKey } from "./types/utils"
 
 type Props = {
   group: NavGroup
@@ -24,20 +24,17 @@ export function GroupDetail({ group, active, onBack }: Props) {
         type="button"
         onClick={onBack}
         aria-label={`Kembali ke daftar menu dari ${group.title}`}
-        className={cn(
-          ROW_BASE,
-          "group/row h-11 gap-3 px-2 hover:bg-sidebar-hover",
-          FOCUS_RING,
-        )}
+        className={cn(navRowClass(false), "font-medium")}
       >
-        <RowIconBox
+        <NavRowContent
           icon={ArrowLeft01Icon}
           iconClassName="transition-transform duration-200 group-hover/row:-translate-x-0.5 motion-reduce:transition-none"
-        />
-        <RowText groupId={group.id} title={group.title} emphasized />
+        >
+          {group.title}
+        </NavRowContent>
       </button>
 
-      <div className="mx-2 my-2 h-px bg-sidebar-border" role="separator" />
+      <RowSeparator />
 
       <ul className="flex flex-col gap-0.5">
         {group.items.map((node, i) => (

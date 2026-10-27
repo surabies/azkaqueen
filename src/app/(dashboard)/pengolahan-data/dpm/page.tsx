@@ -12,7 +12,7 @@ export default function Page() {
     <PageContainer 
         className="flex min-h-0 flex-1 flex-col"
           breadcrumbs={[
-            { label: "Pencatatan Meter", href: "/meter" },
+            { label: "Pengolahan Data", href: "/pengolahan-data/" },
             { label: "Data Pembacaan Meter" },
           ]}
         >

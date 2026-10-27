@@ -3,7 +3,7 @@
 
 import * as React from "react"
 import { cn } from "@/lib/utils"
-import type { Direction } from "./types"
+import type { Direction } from "./types/types"
 
 /** Animasi geser tipis saat berganti tampilan (root <-> detail). */
 export function Slide({

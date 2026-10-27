@@ -1,33 +1,31 @@
 // components/layout/shell/Pattern.tsx
-// Tugas: pola garis miring ala dashboard Tailwind.
-// Diadaptasi dari sample Tailwind Play (pattern.html) agar jalan di Next.js.
+// Pola garis miring halus. Warna dari token --pattern-fg (globals.css),
+// jadi terang/gelap otomatis; tidak perlu patternVars lagi.
 import { cn } from "@/lib/utils"
 
-// Warna garis pola. Pasang di elemen paling luar (lihat DashboardShell),
-// lalu anak-anaknya bisa memakai `border-(--pattern-fg)` / `bg-(--pattern-fg)`.
-export const patternVars =
-  "[--pattern-fg:var(--color-gray-950)]/5 dark:[--pattern-fg:var(--color-white)]/10"
-
-// Pita bergaris miring di sisi kiri/kanan konten.
-// `bg-fixed` membuat garis tidak ikut bergeser saat halaman di-scroll.
-export function PatternStrip({ className }: { className?: string }) {
+// Tahap 1: pita di sisi kiri/kanan konten. `fade` memudarkan ke bawah.
+export function PatternStrip({
+  className,
+  fade = false,
+}: {
+  className?: string
+  fade?: boolean
+}) {
   return (
     <div
       aria-hidden="true"
       className={cn(
-        "border-x border-x-(--pattern-fg) bg-[image:repeating-linear-gradient(315deg,_var(--pattern-fg)_0,_var(--pattern-fg)_1px,_transparent_0,_transparent_50%)] bg-[size:10px_10px] bg-fixed",
+        "border-x border-x-(--pattern-fg) bg-[repeating-linear-gradient(315deg,var(--pattern-fg)_0,var(--pattern-fg)_1px,transparent_0,transparent_50%)] bg-size-[10px_10px] bg-fixed",
+        fade && "[mask-image:linear-gradient(to_bottom,black_55%,transparent)]",
         className,
       )}
     />
   )
 }
 
-// Garis horizontal tipis seirama dengan pola.
+// Tahap 2: garis horizontal tipis seirama dengan pola.
 export function PatternRule({ className }: { className?: string }) {
   return (
-    <div
-      aria-hidden="true"
-      className={cn("h-px w-full bg-(--pattern-fg)", className)}
-    />
+    <div aria-hidden="true" className={cn("h-px w-full bg-(--pattern-fg)", className)} />
   )
 }

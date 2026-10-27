@@ -1,21 +1,6 @@
 // components/layout/navigation/sidebar/utils.ts
 
-import {
-  flattenNavItems,
-  isNavFolder,
-  navGroups,
-  type NavItem,
-  type NavNode,
-} from "@/config/navigation"
-
-/** Jumlah halaman per grup — dihitung sekali saat modul dimuat, bukan tiap render. */
-const GROUP_COUNTS: Record<string, number> = Object.fromEntries(
-  navGroups.map((group) => [group.id, flattenNavItems(group.items).length]),
-)
-
-export function getGroupCount(groupId: string): number {
-  return GROUP_COUNTS[groupId] ?? 0
-}
+import { isNavFolder, type NavItem, type NavNode } from "@/config/navigation"
 
 /** Menu yang deskripsinya memuat kata "pending" ditandai badge "Segera". */
 export function isPending(item: NavItem): boolean {
@@ -25,4 +10,9 @@ export function isPending(item: NavItem): boolean {
 /** Key React yang stabil untuk daftar node (folder atau halaman). */
 export function nodeKey(node: NavNode, index: number): string {
   return `${index}-${isNavFolder(node) ? "folder" : node.href}-${node.title}`
+}
+
+/** Menu utama aktif bila URL sama persis atau berada di bawahnya. */
+export function isPrimaryActive(pathname: string, href: string): boolean {
+  return pathname === href || pathname.startsWith(`${href}/`)
 }

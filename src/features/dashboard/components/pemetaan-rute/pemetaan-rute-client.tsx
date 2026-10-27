@@ -115,7 +115,7 @@ export function PemetaanRuteClient({ bolehUbah }: { bolehUbah: boolean }) {
             onLepas={mintaLepas}
             onUrutPelanggan={(r) =>
               router.push(
-                `/meter/pemetaan/urutan/${encodeURIComponent(r.id)}?kode=${encodeURIComponent(r.kode)}`,
+                `/master/rute/urut/urutan/${encodeURIComponent(r.id)}?kode=${encodeURIComponent(r.kode)}`,
               )
             }
           />

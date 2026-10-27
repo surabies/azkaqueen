@@ -3,7 +3,6 @@
 import { NavbarBrand } from "./NavbarBrand"
 import { NavbarLinks } from "./NavbarLinks"
 import { NavbarPlus } from "./NavbarPlus"
-import { NavbarSearch } from "./NavbarSearch"
 import { NavbarMobileBar } from "./NavbarMobileBar"
 import { MobileMenu } from "./MobileMenu"
 import { UserMenu } from "./user-menu"
@@ -29,9 +28,6 @@ export function Navbar({
 
         {/* Kanan: isinya berbeda untuk mobile dan desktop */}
         <div className="flex items-center gap-1 lg:gap-6">
-          {/* Search: ikon di mobile, pill "Ctrl K" di desktop */}
-          <NavbarSearch />
-
           {/* MOBILE SAJA: ikon titik 3 -> membuka menu layar penuh */}
           <div className="lg:hidden">
             <MobileMenu />

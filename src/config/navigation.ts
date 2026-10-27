@@ -108,56 +108,50 @@ export const navGroups: NavGroup[] = [
     title: "Master",
     items: [
       {
-        title: "Kelainan",
-        href: "/admin/log",
-        description: "Daftar kelainan meter, anomali, dan kondisi menyimpang.",
-        keywords: ["kelainan", "anomali", "kerusakan"],
-      },
-      {
         title: "Otorisasi Menu",
-        href: "/admin",
+        href: "/master/otorisasi",
         description: "Pengelolaan otorisasi akses menu per role.",
         keywords: ["otorisasi", "menu", "hak akses"],
       },
       {
-        title: "User",
-        href: "/admin",
+        title: "Kelainan",
+        href: "/master/kelainan",
+        description: "Daftar kelainan meter, anomali, dan kondisi menyimpang.",
+        keywords: ["kelainan", "anomali", "kerusakan"],
+      },
+      {
+        title: "Pengguna",
+        href: "/master/pengguna",
         description: "Pengelolaan akun pengguna sistem.",
         keywords: ["user", "akun", "akun pengguna"],
       },
       {
         title: "Petugas",
-        href: "/admin",
+        href: "/master/petugas",
         description: "Pengelolaan data petugas cater lapangan.",
         keywords: ["petugas", "cater", "staff"],
       },
       {
-        title: "Pemetaan Petugas",
-        href: "/admin",
-        description: "Pemetaan lokasi dan jadwal petugas cater.",
-        keywords: ["pemetaan", "petugas", "cater", "lokasi"],
-      },
-      {
-        title: "Pengurutan Rute Petugas",
-        href: "/admin/rute/urut",
+        title: "Pemetaan Rute",
+        href: "/master/urut",
         description: "Menyusun urutan rute baca meter per petugas.",
         keywords: ["rute", "pengurutan", "petugas"],
       },
       {
         title: "Penggabungan Rute",
-        href: "/admin/rute/gabung",
+        href: "/master/gabung",
         description: "Menggabungkan rute baca meter.",
         keywords: ["rute", "penggabungan"],
       },
       {
         title: "Pindah Rute",
-        href: "/admin/rute/pindah",
+        href: "/master/pindah",
         description: "Pindah rute baca meter antar petugas.",
         keywords: ["rute", "pindah", "pindah rute"],
       },
       {
         title: "Pindah Rute Monitoring",
-        href: "/admin/rute/monitoring",
+        href: "/master/monitoring",
         description: "Monitoring aktivitas pindah rute.",
         keywords: ["monitoring", "rute"],
       },
@@ -168,10 +162,22 @@ export const navGroups: NavGroup[] = [
     title: "Pengolahan Data",
     items: [
       {
-        title: "Baca Meter Wilayah (CHN)",
-        href: "/meter",
+        title: "Daftar Pencatatan Meter",
+        href: "/pengolahan-data/dpm",
         description: "Pembacaan meter per wilayah layanan (CHN 1-6).",
         keywords: ["meter", "baca meter", "wilayah", "cater"],
+      },
+      {
+        title: "Baca Meter Petugas",
+        href: "/verifikasi/baca-petugas",
+        description: "Verifikasi pembacaan meter oleh petugas.",
+        keywords: ["verifikasi", "mandiri", "pembacaan meter"],
+      },
+      {
+        title: "Baca Meter Pelanggan",
+        href: "/verifikasi/baca-pelanggan",
+        description: "Verifikasi pembacaan meter oleh pelanggan mandiri.",
+        keywords: ["verifikasi", "mandiri", "pembacaan meter"],
       },
       {
         title: "Info Pelanggan",
@@ -221,24 +227,12 @@ export const navGroups: NavGroup[] = [
         description: "Verifikasi foto petugas pada peta.",
         keywords: ["foto", "petugas", "cek"],
       },
-      {
-        title: "Verifikasi Catat Mandiri",
-        href: "/verifikasi/baca-pelanggan",
-        description: "Verifikasi pembacaan meter oleh pelanggan mandiri.",
-        keywords: ["verifikasi", "mandiri", "pembacaan meter"],
-      },
     ],
   },
   {
     id: "peta",
     title: "Peta",
     items: [
-      {
-        title: "Pemetaan Pelanggan",
-        href: "/meter/pemetaan",
-        description: "Pemetaan lokasi pelanggan dan rute cater.",
-        keywords: ["peta", "pemetaan", "pelanggan", "rute"],
-      },
       {
         title: "Peta Wilayah",
         href: "/peta-wilayah",
@@ -687,14 +681,40 @@ export function findDuplicateHrefs(): string[] {
 // ----------------------------------------------------------------------------
 
 /**
+ * Menu utama di BAGIAN ATAS sidebar, di atas daftar grup/direktorat.
+ * Halaman dashboard utama = "/dashboard". Ubah `href` di sini bila rute
+ * Analytics / Report berbeda; ikonnya di sidebar/icons.ts (PRIMARY_ICONS).
+ */
+export const primaryNav: NavItem[] = [
+  {
+    title: "Dashboard",
+    href: "/dashboard",
+    description: "Ringkasan utama aplikasi.",
+    keywords: ["dashboard", "beranda", "ringkasan", "home"],
+  },
+  {
+    title: "Analytics",
+    href: "/analytics",
+    description: "Analisis dan grafik data.",
+    keywords: ["analytics", "analitik", "grafik", "statistik"],
+  },
+  {
+    title: "Report",
+    href: "/report",
+    description: "Laporan ringkas lintas direktorat.",
+    keywords: ["report", "laporan", "rekap"],
+  },
+]
+
+/**
  * Link di navbar desktop (teks kecil). Hanya level Direktorat, bukan seluruh
  * hirarki. `href` menunjuk halaman landing tiap Direktorat.
  */
 export const navbarLinks = [
-  { label: "Utama", href: "/dashboard" },
-  { label: "Teknik", href: "/meter" },
-  { label: "Pelayanan", href: "/pelanggan" },
-  { label: "Umum", href: "/laporan" },
+  { label: "Dashboard", href: "/dashboard" },
+  { label: "Pencatat", href: "/meter" },
+  { label: "Langganan", href: "/pelanggan" },
+  { label: "Zona", href: "/laporan" },
 ]
 
 /** Link menu layar penuh di mobile: sama dengan navbar + Bantuan. */
