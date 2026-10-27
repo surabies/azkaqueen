@@ -1,18 +1,14 @@
 // Satu PrismaClient untuk aplikasi. Cache global mencegah hot reload
 // development membuka pool koneksi baru pada setiap perubahan file.
-//
-// Client dihasilkan ke ../generated/client, di luar folder schema Prisma.
 import { PrismaClient } from "@generated";
 import { PrismaPg } from "@prisma/adapter-pg";
 
-// Keep type exports separate from runtime values so the CommonJS client can
-// be analyzed by the application bundler.
+// Export semua Type & Interface TypeScript dari Prisma
 export type * from "@generated";
-export { Prisma } from "@generated";
 
-// Runtime enum values must be listed explicitly; update this list when adding
-// an enum to the Prisma schema.
+// Export runtime objects & enum values secara eksplisit
 export {
+  Prisma,
   AksiPengaduan,
   AlasanTaksir,
   GolonganTarif,

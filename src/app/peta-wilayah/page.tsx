@@ -47,8 +47,10 @@ export default async function WilayahPage() {
   ]);
 
   return (
+    // Tinggi tidak lagi dihitung manual: layout fluid sudah membatasi ruang
+    // (layar - navbar - footer), jadi cukup mengisi ruang itu dengan flex-1.
     <PageContainer
-      className="flex h-[calc(100dvh-7rem-1px)] min-h-0 flex-col overflow-hidden pt-3 sm:pt-3 [&>header]:hidden sm:[&>header]:flex lg:h-[calc(100dvh-3.5rem-1px)]"
+      className="flex min-h-0 flex-1 flex-col overflow-hidden pt-3 sm:pt-3 [&>header]:hidden sm:[&>header]:flex"
       breadcrumbs={[
         { label: "Jaringan & Distribusi", href: "/peta-wilayah" },
         { label: "Peta Wilayah" },

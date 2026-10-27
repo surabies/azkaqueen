@@ -1,49 +1,71 @@
 // components/layout/shell/DashboardShell.tsx
-// Tugas: kerangka halaman dashboard ala dokumentasi Tailwind:
-// sidebar tetap di kiri + pita garis miring kiri/kanan + garis & footer di bawah.
-// Navbar TIDAK dirender di sini (diasumsikan sudah ada di root layout).
+// Kerangka halaman dashboard: sidebar tetap di kiri, pita garis miring kiri/kanan,
+// konten utama, lalu footer. Navbar TIDAK dirender di sini (ada di root layout).
 import type { ReactNode } from "react"
-import { PatternStrip } from "./Pattern"
-import { SidebarNav } from "../navigation/SidebarNav"
-import { cn } from "@/lib/utils"
 
-export function DashboardShell({ children }: { children: ReactNode }) {
+import { cn } from "@/lib/utils"
+import { SidebarNav } from "../navigation/SidebarNav"
+import { DashboardFooter, type DashboardFooterProps } from "./DashboardFooter"
+import { PatternStrip } from "./Pattern"
+
+export const MAIN_CONTENT_ID = "konten-utama"
+
+type DashboardShellProps = {
+  children: ReactNode
+  footer: DashboardFooterProps
+}
+
+export function DashboardShell({ children, footer }: DashboardShellProps) {
   return (
     <div
       className={cn(
         "relative min-h-dvh bg-background pt-(--navbar-h)",
         // Tinggi navbar. Mobile = bar utama (h-14) + NavbarMobileBar (h-14) = 7rem.
-        // Kalau tinggi bar di navbar diubah, sesuaikan angka ini.
+        // Jika tinggi bar di navbar berubah, sesuaikan angka ini.
         "[--navbar-h:3.5rem] max-lg:[--navbar-h:7rem]",
         "[--sidebar-w:17.5rem]",
       )}
     >
-      {/* Sidebar desktop: menempel di kiri, bisa di-scroll sendiri */}
-      <aside className="fixed top-(--navbar-h) bottom-0 left-0 hidden w-(--sidebar-w) overflow-y-auto overscroll-contain px-6 py-8 lg:block">
+      {/* Lompat ke konten: muncul hanya saat menerima fokus keyboard */}
+      <a
+        href={`#${MAIN_CONTENT_ID}`}
+        className={cn(
+          "sr-only focus-visible:not-sr-only",
+          "focus-visible:fixed focus-visible:top-2 focus-visible:left-2 focus-visible:z-50",
+          "focus-visible:rounded-md focus-visible:bg-background focus-visible:px-3 focus-visible:py-2",
+          "focus-visible:text-sm focus-visible:font-medium focus-visible:shadow-md",
+          "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+        )}
+      >
+        Lewati ke konten utama
+      </a>
+
+      {/* Sidebar desktop: menempel di kiri dan di-scroll sendiri.
+          SidebarNav merender <nav aria-label="Menu utama">. */}
+      <aside
+        aria-label="Navigasi modul"
+        className="fixed top-(--navbar-h) bottom-0 left-0 hidden w-(--sidebar-w) overflow-y-auto overscroll-contain px-6 py-8 lg:block"
+      >
         <SidebarNav />
       </aside>
 
       <div className="flex min-h-[calc(100dvh-var(--navbar-h))] flex-col lg:pl-(--sidebar-w)">
         {/* Pita garis miring | konten | pita garis miring */}
         <div className="grid flex-1 grid-cols-[1rem_minmax(0,1fr)_1rem] sm:grid-cols-[2.5rem_minmax(0,1fr)_2.5rem]">
-          <PatternStrip />
+          <PatternStrip aria-hidden="true" />
+
           <div className="flex min-w-0 flex-col">
-            <main className="flex min-w-0 flex-1 flex-col">{children}</main>
-            {/* Garis atas footer memakai warna yang sama dengan garis pita */}
-            <footer className="border-t border-t-(--pattern-fg) px-3 py-4 text-xs/5 text-muted-foreground sm:px-5 sm:py-5 lg:px-8">
-              <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-                <p className="font-medium tracking-wide text-foreground/75">
-                  Perumda Tirtawening Kota Bandung
-                </p>
-                <p className="flex items-center gap-2">
-                  <span>Sistem Informasi Terintegrasi</span>
-                  <span aria-hidden="true" className="size-1 rounded-full bg-border" />
-                  <span>&copy; {new Date().getFullYear()}</span>
-                </p>
-              </div>
-            </footer>
+            <main
+              id={MAIN_CONTENT_ID}
+              tabIndex={-1}
+              className="flex min-w-0 flex-1 flex-col focus:outline-none"
+            >
+              {children}
+            </main>
+            <DashboardFooter {...footer} />
           </div>
-          <PatternStrip />
+
+          {/* <PatternStrip aria-hidden="true" /> */}
         </div>
       </div>
     </div>

@@ -13,7 +13,7 @@ export { SearchDialog } from "./search/SearchDialog"
 export { Highlight } from "./search/Highlight"
 
 export { DashboardShell } from "./shell/DashboardShell"
-export { PatternRule, PatternStrip, patternVars } from "./shell/Pattern"
+export { PatternRule, PatternStrip } from "./shell/Pattern"
 
 export { PageContainer } from "./page/PageContainer"
 export type { Crumb } from "./page/PageContainer"

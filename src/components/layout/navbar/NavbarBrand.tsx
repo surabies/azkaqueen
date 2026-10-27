@@ -19,7 +19,7 @@ export function NavbarBrand() {
     <div className="flex items-center gap-3">
       <Link href="/dashboard" className="flex items-center gap-2">
         <Image src={BRAND.logo} alt="LOGO" width={32} height={32} priority unoptimized className="size-8 object-contain" />
-        <span className="text-lg font-semibold">Tirtawening</span>
+        <span className="text-lg font-semibold">Surabiedev</span>
       </Link>
 
       <DropdownMenu>

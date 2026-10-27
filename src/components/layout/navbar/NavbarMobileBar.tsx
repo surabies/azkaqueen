@@ -36,10 +36,8 @@ export function NavbarMobileBar() {
   // `active.group` bisa berupa varian { id, items } atau { title, children }.
   let firstHref = "/dashboard"
   if (active?.group != null) {
-    const groupEntries: (NavGroup | NavItem)[] = "items" in active.group
-      ? active.group.items
-      : active.group.children ?? []
-    const firstItem = groupEntries[0]
+    const items = active.group.items
+    const firstItem = items[0]
     if (firstItem != null && "href" in firstItem) {
       firstHref = (firstItem as NavItem).href
     }
