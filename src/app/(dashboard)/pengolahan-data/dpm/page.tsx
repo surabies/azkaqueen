@@ -10,7 +10,7 @@ export default function InfoPembacaanPage() {
       penuh
       className="flex min-h-0 flex-1 flex-col"
       breadcrumbs={[
-        { label: "Pembacaan Meter", href: "/pengolahan-data/dpm" },
+        { label: "Pengolahan Data", href: "/pengolahan-data/dpm" },
         { label: "Data Pembacaan Meter" },
       ]}
     >

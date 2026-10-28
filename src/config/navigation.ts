@@ -163,15 +163,9 @@ export const navGroups: NavGroup[] = [
     items: [
       {
         title: "Daftar Pencatatan Meter",
-        href: "/pengolahan-data/dpm",
+        href: "/verifikasi/baca-petugas",
         description: "Pembacaan meter per wilayah layanan (CHN 1-6).",
         keywords: ["meter", "baca meter", "wilayah", "cater"],
-      },
-      {
-        title: "Baca Meter Petugas",
-        href: "/verifikasi/baca-petugas",
-        description: "Verifikasi pembacaan meter oleh petugas.",
-        keywords: ["verifikasi", "mandiri", "pembacaan meter"],
       },
       {
         title: "Baca Meter Pelanggan",
@@ -186,7 +180,7 @@ export const navGroups: NavGroup[] = [
         keywords: ["pelanggan", "info", "data pelanggan"],
       },
       {
-        title: "Mutasi PB-PK",
+        title: "Mutasi PBPK",
         href: "/pelanggan/mutasi",
         description: "Mutasi pembayaran dan pemasangan baru.",
         keywords: ["mutasi", "pembayaran", "pemasangan"],
@@ -242,8 +236,8 @@ export const navGroups: NavGroup[] = [
     ],
   },
   {
-    id: "progress",
-    title: "Progress",
+    id: "progres",
+    title: "Progres",
     items: [
       {
         title: "Grafik Pelanggan",
@@ -252,16 +246,16 @@ export const navGroups: NavGroup[] = [
         keywords: ["grafik", "pelanggan", "perkembangan"],
       },
       {
-        title: "Progress per Wilayah",
+        title: "Progres per Wilayah",
         href: "/laporan/progres-wilayah",
         description: "Tingkat pencatatan harian per wilayah.",
-        keywords: ["progress", "wilayah", "cater"],
+        keywords: ["progres", "wilayah", "cater"],
       },
       {
-        title: "Progress per Cater",
-        href: "/laporan/progres-cater",
+        title: "Progres Pencatat",
+        href: "/progres/pencatat",
         description: "Tingkat pencatatan harian per petugas.",
-        keywords: ["progress", "cater", "petugas"],
+        keywords: ["progres", "pencatat", "petugas"],
       },
       {
         title: "Presentase Koreksi",

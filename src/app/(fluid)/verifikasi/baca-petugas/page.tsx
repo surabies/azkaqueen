@@ -15,7 +15,7 @@ export default async function VerifikasiLapanganPage() {
   className="flex min-h-0 flex-1 flex-col"
       breadcrumbs={[
         { label: "Pengolahan Data", href: "/pengolahan-data/dpm" },
-        { label: "Pembacaan Petugas" },
+        { label: "Daftar Pencatatan Meter" },
       ]}
     >
     <VerifikasiLapangan role={session?.user?.role ?? ""} />
