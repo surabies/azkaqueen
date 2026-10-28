@@ -18,8 +18,19 @@ export function NavbarBrand() {
   return (
     <div className="flex items-center gap-3">
       <Link href="/dashboard" className="flex items-center gap-2">
-        <Image src={BRAND.logo} alt="LOGO" width={32} height={32} priority unoptimized className="size-8 object-contain" />
-        <span className="text-lg font-semibold">Surabiedev</span>
+        {/* alt kosong: logo hanya dekorasi, nama tautan sudah dibaca dari teks di sebelahnya */}
+        <Image
+          src={BRAND.logo}
+          alt=""
+          width={32}
+          height={32}
+          priority
+          unoptimized
+          className="size-8 object-contain"
+        />
+        <span className="text-lg font-semibold">
+          Wiska.<span className="text-blue-500">Dev</span>
+        </span>
       </Link>
 
       <DropdownMenu>
