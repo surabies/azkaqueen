@@ -6,6 +6,15 @@
 //   <StatCard>  satu sel angka. Tidak punya border sendiri (garis dari StatGrid),
 //               jadi tetap cocok juga di kerangka lama `grid gap-px bg-border/70`.
 //
+// PALET PER HALAMAN: warna latar, garis, label, dan ikon dibaca dari variabel
+// `--stat-*` dengan cadangan ke token global (`--card`, `--border`, ...).
+//   - Tanpa `varian` (atau tanpa `data-stat` di pembungkus) tampilannya SAMA
+//     seperti sebelumnya, jadi halaman yang belum memilih tidak berubah.
+//   - <StatGrid varian="geist"> memasang `data-stat="geist"`; nilainya
+//     didefinisikan di globals.css (blok "Kartu statistik") dan hanya berlaku
+//     di dalam grid itu. Kerangka lama (mis. ringkasan-verifikasi.tsx) cukup
+//     menaruh `data-stat="geist"` di elemen pembungkusnya.
+//
 // Prinsip tampilan: warna HANYA untuk status. Ikon selalu netral; status
 // ditandai titik kecil di samping label (+ bilah progres dan, untuk `perhatian`,
 // angka merah). Angka memakai `num-display` dari globals.css (KPI: bobot 500,
@@ -48,22 +57,38 @@ const KOLOM = {
   4: "grid-cols-2 lg:grid-cols-4",
 } as const
 
+/** Palet kartu. `bawaan` = token global; nama lain harus ada di globals.css. */
+export type VarianStat = "bawaan" | "geist"
+
 export function StatGrid({
   children,
   kolom = 4,
+  varian = "bawaan",
   className,
 }: {
   children: React.ReactNode
   kolom?: keyof typeof KOLOM
+  varian?: VarianStat
   className?: string
 }) {
   return (
-    <div className={cn("overflow-hidden rounded-lg border bg-card", className)}>
+    <div
+      data-stat={varian === "bawaan" ? undefined : varian}
+      className={cn(
+        "overflow-hidden rounded-lg border border-[var(--stat-border,var(--border))] bg-[var(--stat-bg,var(--card))]",
+        className
+      )}
+    >
       {/* Tiap sel menggambar garis atas & kiri sendiri (`*:border-t *:border-l`).
           -mt-px / -ml-px menggeser grid 1px sehingga garis baris & kolom
           pertama tersembunyi di balik bingkai: tidak ada garis ganda, dan
           jumlah sel ganjil tidak meninggalkan kotak abu-abu kosong. */}
-      <div className={cn("-mt-px -ml-px grid *:border-t *:border-l *:border-border", KOLOM[kolom])}>
+      <div
+        className={cn(
+          "-mt-px -ml-px grid *:border-t *:border-l *:border-[var(--stat-border,var(--border))]",
+          KOLOM[kolom]
+        )}
+      >
         {children}
       </div>
     </div>
@@ -98,10 +123,10 @@ export function StatCard({
   const persen = progres === undefined ? undefined : Math.min(100, Math.max(0, progres))
 
   return (
-    <div className="bg-card relative flex flex-col gap-2 px-4 py-4 sm:px-5">
+    <div className="relative flex flex-col gap-2 bg-[var(--stat-bg,var(--card))] px-4 py-4 sm:px-5">
       {/* Baris atas: [titik status] label ........ ikon netral */}
       <div className="flex items-center justify-between gap-3">
-        <p className="text-muted-foreground flex min-w-0 items-center gap-2 text-xs font-medium">
+        <p className="flex min-w-0 items-center gap-2 text-xs font-medium text-[var(--stat-label,var(--muted-foreground))]">
           {n.titik && (
             <>
               <span aria-hidden className={cn("size-1.5 shrink-0 rounded-full", n.titik)} />
@@ -111,7 +136,7 @@ export function StatCard({
           )}
           <span className="truncate">{label}</span>
         </p>
-        <Ikon icon={icon} className="text-muted-foreground/70 size-4 shrink-0" />
+        <Ikon icon={icon} className="size-4 shrink-0 text-[var(--stat-icon,color-mix(in_oklab,var(--muted-foreground)_70%,transparent))]" />
       </div>
 
       {/* Angka + keterangan */}
@@ -122,7 +147,9 @@ export function StatCard({
         >
           {nilai}
         </p>
-        {keterangan && <p className="text-muted-foreground mt-0.5 truncate text-xs">{keterangan}</p>}
+        {keterangan && (
+          <p className="mt-0.5 truncate text-xs text-[var(--stat-label,var(--muted-foreground))]">{keterangan}</p>
+        )}
       </div>
 
       {persen !== undefined && (

@@ -24,7 +24,7 @@ export function Panel({
     // Padding menyusut satu tingkat di ponsel — 20px kiri-kanan memakan 11%
     // lebar layar 360px sebelum satu huruf pun tergambar.
     <section className="border border-border/70 bg-card">
-      <div className="flex items-start justify-between gap-3 border-b border-border/70 px-4 py-3 sm:px-5">
+      <div className="flex items-start justify-between gap-3 border-b border-border/70 px-2 py-3 sm:px-5">
         <div className="min-w-0">
           <h2 className="text-[10px] font-semibold tracking-widest text-muted-foreground uppercase">{label}</h2>
           {deskripsi && <p className="mt-1 text-xs text-muted-foreground">{deskripsi}</p>}

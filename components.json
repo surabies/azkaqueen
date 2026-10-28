@@ -24,6 +24,7 @@
   "registries": {
     "@efferd": "https://efferd.com/r/{name}.json",
     "@cult-ui": "https://cult-ui.com/r/{name}.json",
-    "@23rd": "https://23rd.dev/r/{name}.json"
+    "@23rd": "https://23rd.dev/r/{name}.json",
+    "@evilcharts": "https://evilcharts.com/r/{name}.json"
   }
 }

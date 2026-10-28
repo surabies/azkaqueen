@@ -12,7 +12,7 @@ export function KartuGrafik({
   return (
     <section
       aria-label="Grafik pemakaian"
-      className="flex min-w-0 flex-col gap-4 rounded-lg border border-border bg-card p-4"
+      className="flex min-w-0 flex-col gap-4 rounded-lg border border-border bg-card p-4 shadow-panel"
     >
       <h2 className="text-sm font-semibold">
         Pemakaian per periode{" "}

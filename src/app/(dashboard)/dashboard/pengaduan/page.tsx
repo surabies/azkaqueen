@@ -16,8 +16,7 @@ export default async function PengaduanPage({
     <PageContainer
       className="flex min-h-0 flex-1 flex-col"
       breadcrumbs={[
-        { label: "Data Pelanggan", href: "/pelanggan" },
-        { label: "Pengaduan" },
+        { label: "Pengaduan", href: "/pengaduan" },
       ]}
     >
       <PapanPengaduan initialQ={typeof q === "string" ? q : ""} />

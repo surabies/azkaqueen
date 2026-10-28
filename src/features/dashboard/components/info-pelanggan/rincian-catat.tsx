@@ -19,7 +19,7 @@ export function RincianCatat({
   return (
     <section
       aria-label="Rincian pencatatan"
-      className="flex min-w-0 flex-col gap-1 rounded-lg border border-border bg-card p-4"
+      className="flex min-w-0 flex-col gap-1 rounded-lg border border-border bg-card p-4 shadow-panel"
     >
       <h2 className="mb-1 text-sm font-semibold">Rincian pencatatan</h2>
       <DaftarInfo>

@@ -59,26 +59,26 @@ export function TrenTagihan({ data }: { data: Titik[] }) {
         {satu && (
           <div className="flex flex-wrap gap-x-10 gap-y-4">
             <div>
-              <p className="text-[10px] font-semibold tracking-widest text-muted-foreground uppercase">
+              <p className="label-micro text-muted-foreground">
                 Nilai tagihan
               </p>
-              <p className="mt-1 font-mono text-lg font-bold tabular-nums">
+              <p className="num-display mt-1 text-lg">
                 Rp {satu.nilai.toLocaleString("id-ID")}
               </p>
             </div>
             <div>
-              <p className="text-[10px] font-semibold tracking-widest text-muted-foreground uppercase">
+              <p className="label-micro text-muted-foreground">
                 Jumlah rekening
               </p>
-              <p className="mt-1 font-mono text-lg font-bold tabular-nums">
+              <p className="num-display mt-1 text-lg">
                 {satu.jumlahTagihan.toLocaleString("id-ID")}
               </p>
             </div>
             <div>
-              <p className="text-[10px] font-semibold tracking-widest text-muted-foreground uppercase">
+              <p className="label-micro text-muted-foreground">
                 Total pemakaian
               </p>
-              <p className="mt-1 font-mono text-lg font-bold tabular-nums">
+              <p className="num-display mt-1 text-lg">
                 {satu.pemakaianM3.toLocaleString("id-ID")}{" "}
                 <span className="font-sans text-sm font-normal text-muted-foreground">
                   m³

@@ -1,9 +1,11 @@
 "use client"
 
 // Perakit halaman Info Pelanggan, tata letak SAMA dengan lembar PDF:
-// pita judul gelap (berisi bilah pencarian) → identitas → stand & pemakaian
+// pita judul (berisi bilah pencarian) → identitas → stand & pemakaian
 // → grafik + rincian → foto lapangan → lokasi. Halaman ini tanpa navbar,
 // jadi pita judul membawa tombol Kembali.
+// Pita judul: biru (chart-1) di tema terang, kartu gelap di tema gelap.
+// Semua warna memakai token dari globals.css.
 // Keadaan pencarian disimpan di URL (?no=...&periode=...) sehingga hasil bisa
 // di-bookmark dan ditautkan dari halaman lain (mis. baris tabel DPM).
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
@@ -21,6 +23,14 @@ import { TombolCetak } from "./tombol-cetak"
 import { useInfoPelanggan } from "./use-info-pelanggan"
 
 const HALAMAN_ASAL = "/pengolahan-data/pelanggan"
+
+// Tombol Cetak di atas pita biru (terang). `!` dipakai karena globals.css
+// punya aturan hover tombol outline tanpa layer yang akan menimpa utilitas.
+const KELAS_TOMBOL_CETAK =
+  "border-info-foreground/30 bg-info-foreground/10 text-info-foreground " +
+  "hover:bg-info-foreground/20! hover:text-info-foreground " +
+  "dark:border-border dark:bg-transparent dark:text-foreground " +
+  "dark:hover:bg-hover! dark:hover:text-foreground"
 
 export function InfoPelangganView() {
   const router = useRouter()
@@ -44,15 +54,15 @@ export function InfoPelangganView() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-background">
-      {/* Pita judul — warna tetap, sama dengan PDF */}
-      <header className="shrink-0 bg-slate-900 text-white">
+      {/* Pita judul: biru di terang, kartu gelap di gelap */}
+      <header className="shrink-0 border-b border-chart-1 bg-chart-1 text-info-foreground dark:border-border dark:bg-card dark:text-foreground">
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6 sm:px-6">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <button
                 type="button"
                 onClick={kembali}
-                className="-ml-1 mb-3 inline-flex items-center gap-1 rounded px-1 py-0.5 text-xs text-slate-300 transition-colors hover:text-white focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:outline-none"
+                className="-ml-1 mb-3 inline-flex items-center gap-1 rounded px-1 py-0.5 text-xs text-info-foreground/80 transition-colors hover:text-info-foreground focus-visible:ring-2 focus-visible:ring-info-foreground/60 focus-visible:outline-none dark:text-muted-foreground dark:hover:text-foreground dark:focus-visible:ring-ring"
               >
                 <svg
                   viewBox="0 0 24 24"
@@ -68,10 +78,10 @@ export function InfoPelangganView() {
                 </svg>
                 Kembali
               </button>
-              <p className="text-xs text-slate-300">
+              <p className="text-xs text-info-foreground/80 dark:text-muted-foreground">
                 Tirtawening · Laporan pencatatan meter
               </p>
-              <h1 className="mt-1.5 text-3xl leading-none font-semibold tracking-tight sm:text-4xl">
+              <h1 className="mt-1.5 text-3xl leading-none font-semibold tracking-heading-32 sm:text-4xl">
                 Info Pelanggan
               </h1>
             </div>
@@ -85,7 +95,7 @@ export function InfoPelangganView() {
                   judulDokumen={`Info Pelanggan ${data.pelanggan.nomorLangganan}${
                     data.catat?.periode ? ` ${data.catat.periode}` : ""
                   }`}
-                  className="border-white/25 bg-white/10 text-white hover:bg-white/20 hover:text-white"
+                  className={KELAS_TOMBOL_CETAK}
                 />
               </div>
             )}
@@ -96,7 +106,6 @@ export function InfoPelangganView() {
             periode={periode}
             memuat={status === "memuat"}
             onCari={cari}
-            gelap
           />
         </div>
       </header>
@@ -128,7 +137,8 @@ export function InfoPelangganView() {
             <ProfilPelanggan pelanggan={data.pelanggan} />
             <PanelPembacaan catat={data.catat} riwayat={data.riwayat} />
             {data.catat && (
-              <div className="grid items-start gap-3 lg:grid-cols-2">
+              // Tanpa items-start: kedua kartu otomatis sama tinggi.
+              <div className="grid gap-3 lg:grid-cols-2">
                 <KartuGrafik catat={data.catat} riwayat={data.riwayat} />
                 <RincianCatat catat={data.catat} lokasi={data.lokasi} />
               </div>

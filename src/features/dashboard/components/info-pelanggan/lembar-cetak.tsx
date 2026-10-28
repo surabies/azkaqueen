@@ -1,15 +1,18 @@
 "use client"
 
-// Lembar cetak/PDF A4 bergaya laporan modern: pita judul gelap, identitas
-// pelanggan, roda angka stand, kartu pemakaian beraksen biru, grafik periode,
-// rincian, lalu foto lapangan. Semua data fungsional lama tetap ada (info,
-// catat, riwayat, foto) ditambah koordinat lokasi sebagai pengganti peta.
+// Lembar cetak/PDF A4 bergaya laporan modern: pita judul, identitas
+// pelanggan, roda angka stand, kartu pemakaian, grafik periode, rincian, lalu
+// foto lapangan. Semua data fungsional lama tetap ada ditambah koordinat
+// lokasi sebagai pengganti peta.
 //
 // Di layar lembar ini tersembunyi. Saat mencetak, SEMUA isi halaman lain
 // disembunyikan dan hanya lembar ini yang tampil — lewat portal ke <body>
-// supaya tidak terpengaruh overflow/tinggi layout. Margin @page dibuat 0
-// (sekaligus menghilangkan header/footer bawaan Chrome); jarak tepi diatur
-// oleh padding lembar. Warna memakai palet tetap (bukan token tema) agar
+// supaya tidak terpengaruh overflow/tinggi layout. Aturan cetak (@page,
+// display, print-color-adjust) ada di globals.css.
+//
+// TIDAK ADA warna hardcode di sini. Kelas `.lembar-cetak` di globals.css ikut
+// memakai blok palet TERANG (`:root, .lembar-cetak`), sehingga semua token
+// (bg-card, bg-primary, bg-info, ...) selalu terang di dalam lembar ini dan
 // hasil cetak sama di mode terang maupun gelap.
 import * as React from "react"
 import { flushSync, createPortal } from "react-dom"
@@ -26,33 +29,18 @@ import {
 import { bandingkan } from "./panel-pembacaan"
 import type { InfoPelanggan } from "./tipe"
 
-const CSS_CETAK = `
-.lembar-cetak { display: none; }
-@media print {
-  @page { size: A4 portrait; margin: 0; }
-  html, body { margin: 0 !important; background: #fff !important; }
-  body > *:not(.lembar-cetak) { display: none !important; }
-  .lembar-cetak { display: block; }
-  .lembar-cetak, .lembar-cetak * {
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
-  .lembar-cetak section { break-inside: avoid; }
-}
-`
-
 const NADA_STATUS: Record<string, string> = {
-  AKTIF: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  TUTUP_SEMENTARA: "bg-amber-50 text-amber-700 border-amber-200",
-  DISEGEL: "bg-red-50 text-red-700 border-red-200",
-  TUTUP_SPT: "bg-red-50 text-red-700 border-red-200",
+  AKTIF: "border-success/30 bg-success-muted text-success",
+  TUTUP_SEMENTARA: "border-warning/30 bg-warning-muted text-warning",
+  DISEGEL: "border-destructive/30 bg-destructive/10 text-destructive",
+  TUTUP_SPT: "border-destructive/30 bg-destructive/10 text-destructive",
 }
 
 function Chip({ label, nilai }: { label: string; nilai: string }) {
   return (
-    <span className="inline-flex items-center gap-1 rounded border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px]">
-      <span className="text-slate-500">{label}</span>
-      <span className="font-medium text-slate-900">{nilai}</span>
+    <span className="inline-flex items-center gap-1 rounded border border-border bg-muted px-2 py-0.5 text-[10px]">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="font-medium text-foreground">{nilai}</span>
     </span>
   )
 }
@@ -60,21 +48,21 @@ function Chip({ label, nilai }: { label: string; nilai: string }) {
 function RodaAngka({ label, nilai }: { label: string; nilai: number | null }) {
   const teks = nilai == null ? null : String(Math.max(0, Math.trunc(nilai))).padStart(5, "0")
   return (
-    <div className="rounded-lg border border-slate-200 p-3">
-      <p className="mb-1.5 text-[10px] text-slate-500">{label}</p>
+    <div className="rounded-lg border border-border p-3">
+      <p className="mb-1.5 text-[10px] text-muted-foreground">{label}</p>
       {teks ? (
         <div className="flex gap-[1.5px]">
           {[...teks].map((d, i) => (
             <span
               key={i}
-              className="flex h-[9mm] w-[6mm] items-center justify-center rounded-[2px] bg-slate-900 font-mono text-[15px] font-medium text-white"
+              className="flex h-[9mm] w-[6mm] items-center justify-center rounded-xs bg-primary font-mono text-[15px] font-medium text-primary-foreground"
             >
               {d}
             </span>
           ))}
         </div>
       ) : (
-        <p className="h-[9mm] text-[15px] text-slate-400">—</p>
+        <p className="h-[9mm] text-[15px] text-muted-foreground">—</p>
       )}
     </div>
   )
@@ -82,9 +70,9 @@ function RodaAngka({ label, nilai }: { label: string; nilai: number | null }) {
 
 function BarisRincian({ label, nilai }: { label: string; nilai: string }) {
   return (
-    <div className="flex justify-between gap-3 border-b border-slate-100 py-1 last:border-b-0">
-      <dt className="text-slate-500">{label}</dt>
-      <dd className="text-right font-medium text-slate-900">{nilai}</dd>
+    <div className="flex justify-between gap-3 border-b border-border-subtle py-1 last:border-b-0">
+      <dt className="text-muted-foreground">{label}</dt>
+      <dd className="text-right font-medium text-foreground">{nilai}</dd>
     </div>
   )
 }
@@ -98,14 +86,14 @@ function KotakFoto({ judul, src }: { judul: string; src: string | null }) {
           src={src}
           alt={`Foto ${judul}`}
           loading="eager"
-          className="aspect-square w-full rounded-md border border-slate-200 object-cover"
+          className="aspect-square w-full rounded-md border border-border object-cover"
         />
       ) : (
-        <div className="flex aspect-square w-full items-center justify-center rounded-md border border-dashed border-slate-300 bg-slate-50 text-[10px] text-slate-400">
+        <div className="flex aspect-square w-full items-center justify-center rounded-md border border-dashed border-border bg-muted text-[10px] text-muted-foreground">
           Foto tidak dikirim
         </div>
       )}
-      <figcaption className="mt-1 text-[10px] text-slate-500">{judul}</figcaption>
+      <figcaption className="mt-1 text-[10px] text-muted-foreground">{judul}</figcaption>
     </figure>
   )
 }
@@ -153,24 +141,19 @@ export function LembarCetak({ data }: { data: InfoPelanggan }) {
   const maks = Math.max(1, ...batang.map((b) => b.nilai ?? 0))
 
   return createPortal(
-    <div
-      className="lembar-cetak bg-white text-slate-900"
-      style={{ colorScheme: "light" }}
-    >
-      <style>{CSS_CETAK}</style>
-
+    <div className="lembar-cetak bg-card text-foreground">
       {/* Pita judul */}
-      <header className="flex items-end justify-between bg-slate-900 px-[12mm] pt-[9mm] pb-[7mm] text-white">
+      <header className="flex items-end justify-between bg-primary px-[12mm] pt-[9mm] pb-[7mm] text-primary-foreground">
         <div>
-          <p className="text-[10px] text-slate-300">
+          <p className="text-[10px] text-primary-foreground/70">
             Tirtawening · Laporan pencatatan meter
           </p>
           <h1 className="mt-1.5 text-[26px] leading-none font-semibold tracking-tight">
             Info Pelanggan
           </h1>
         </div>
-        <div className="text-right text-[10px] leading-snug text-slate-300">
-          <p className="text-[14px] font-semibold text-white">
+        <div className="text-right text-[10px] leading-snug text-primary-foreground/70">
+          <p className="text-[14px] font-semibold text-primary-foreground">
             {c ? fmtPeriode(c.periode) : "—"}
           </p>
           <p>Dicetak {waktuCetak}</p>
@@ -186,11 +169,13 @@ export function LembarCetak({ data }: { data: InfoPelanggan }) {
                 {p.nama || "Tanpa nama"}
               </h2>
               {p.alamat && (
-                <p className="mt-1 max-w-[115mm] text-[11px] text-slate-600">{p.alamat}</p>
+                <p className="mt-1 max-w-[115mm] text-[11px] text-muted-foreground">
+                  {p.alamat}
+                </p>
               )}
             </div>
             <div className="shrink-0 text-right">
-              <p className="text-[10px] text-slate-500">No. Langganan</p>
+              <p className="text-[10px] text-muted-foreground">No. Langganan</p>
               <p className="font-mono text-[15px] font-semibold tabular-nums">
                 {p.nomorLangganan}
               </p>
@@ -198,7 +183,7 @@ export function LembarCetak({ data }: { data: InfoPelanggan }) {
                 <span
                   className={cn(
                     "mt-1 inline-block rounded-full border px-2 py-px text-[10px] font-medium",
-                    NADA_STATUS[p.status ?? ""] ?? "border-slate-200 bg-slate-50 text-slate-700"
+                    NADA_STATUS[p.status ?? ""] ?? "border-border bg-muted text-foreground"
                   )}
                 >
                   {labelStatus}
@@ -220,21 +205,21 @@ export function LembarCetak({ data }: { data: InfoPelanggan }) {
             <div className="grid grid-cols-[1fr_1fr_1.15fr] gap-3">
               <RodaAngka label="Stand awal" nilai={c.standLalu} />
               <RodaAngka label="Stand akhir" nilai={c.standAkhir} />
-              <div className="rounded-lg bg-blue-600 p-3 text-white">
-                <p className="text-[10px] text-blue-100">Pemakaian</p>
+              <div className="rounded-lg bg-info p-3 text-info-foreground">
+                <p className="text-[10px] text-info-foreground/80">Pemakaian</p>
                 <p className="mt-1 flex items-baseline gap-1">
                   <span className="text-[34px] leading-none font-semibold tracking-tight tabular-nums">
                     {fmtAngka(c.pemakaianM3)}
                   </span>
-                  <span className="text-[13px] text-blue-100">m³</span>
+                  <span className="text-[13px] text-info-foreground/80">m³</span>
                 </p>
                 {banding && (
-                  <p className="mt-1.5 text-[10px] text-blue-100">{banding.teks}</p>
+                  <p className="mt-1.5 text-[10px] text-info-foreground/80">{banding.teks}</p>
                 )}
               </div>
             </div>
           ) : (
-            <p className="rounded-lg border border-dashed border-slate-300 px-4 py-6 text-center text-slate-500">
+            <p className="rounded-lg border border-dashed border-border px-4 py-6 text-center text-muted-foreground">
               Belum ada pencatatan untuk periode ini.
             </p>
           )}
@@ -243,18 +228,19 @@ export function LembarCetak({ data }: { data: InfoPelanggan }) {
         {/* Grafik + rincian */}
         {c && (
           <section className="grid grid-cols-2 gap-3">
-            <div className="rounded-lg border border-slate-200 p-3">
+            <div className="flex flex-col rounded-lg border border-border p-3">
               <p className="mb-2 text-[11px] font-semibold">
-                Pemakaian per periode <span className="font-normal text-slate-500">(m³)</span>
+                Pemakaian per periode{" "}
+                <span className="font-normal text-muted-foreground">(m³)</span>
               </p>
               <div className="flex h-[34mm] gap-2.5">
                 {batang.map((b) => (
                   <div key={b.periode} className="flex min-w-0 flex-1 flex-col gap-1">
-                    <div className="flex min-h-0 flex-1 items-end">
+                    <div className="relative min-h-0 flex-1">
                       <div
                         className={cn(
-                          "w-full rounded-t-[2px]",
-                          b.aktif ? "bg-blue-600" : "bg-slate-300"
+                          "absolute inset-x-0 bottom-0 rounded-t-xs",
+                          b.aktif ? "bg-chart-1" : "bg-muted-foreground/30"
                         )}
                         style={{
                           height: `${b.nilai == null ? 0 : Math.max(4, (b.nilai / maks) * 100)}%`,
@@ -262,17 +248,24 @@ export function LembarCetak({ data }: { data: InfoPelanggan }) {
                       />
                     </div>
                     <div className="text-center leading-tight">
-                      <p className={cn("text-[11px] tabular-nums", b.aktif ? "font-semibold" : "font-medium")}>
+                      <p
+                        className={cn(
+                          "text-[11px] tabular-nums",
+                          b.aktif ? "font-semibold" : "font-medium"
+                        )}
+                      >
                         {fmtAngka(b.nilai)}
                       </p>
-                      <p className="text-[9px] text-slate-500">{fmtPeriodeSingkat(b.periode)}</p>
+                      <p className="text-[9px] text-muted-foreground">
+                        {fmtPeriodeSingkat(b.periode)}
+                      </p>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="rounded-lg border border-slate-200 p-3">
+            <div className="rounded-lg border border-border p-3">
               <p className="mb-1 text-[11px] font-semibold">Rincian pencatatan</p>
               <dl className="text-[10.5px]">
                 <BarisRincian label="Periode" nilai={fmtPeriode(c.periode)} />
@@ -304,7 +297,7 @@ export function LembarCetak({ data }: { data: InfoPelanggan }) {
           </div>
         </section>
 
-        <footer className="flex justify-between border-t border-slate-200 pt-2 text-[9px] text-slate-400">
+        <footer className="flex justify-between border-t border-border pt-2 text-[9px] text-muted-foreground">
           <span>
             Tirtawening · Info Pelanggan {p.nomorLangganan}
             {c ? ` · ${c.periode}` : ""}

@@ -1,7 +1,7 @@
 "use client";
 
 // features/dashboard/components/pengaduan/detail-tiket/detail-tiket.tsx —
-// HALAMAN detail satu tiket (/pelanggan/pengaduan/[id]). File ini cuma
+// HALAMAN detail satu tiket (/dashboard/pengaduan/[id]). File ini cuma
 // perakit tata letak; isi tiap blok ada di berkas masing-masing:
 //
 //   use-detail-tiket.ts  data + pembungkus aksi
@@ -65,7 +65,7 @@ export function DetailTiket({ pengaduanId }: { pengaduanId: string }) {
       <div className="flex min-h-64 flex-col items-center justify-center gap-3 p-6 text-center">
         <TriangleAlert className="size-6 text-destructive" />
         <p className="text-sm text-muted-foreground">{galat ?? "Tiket tidak ditemukan."}</p>
-        <Button variant="outline" size="sm" onClick={() => router.push("/pelanggan/pengaduan")}>
+        <Button variant="outline" size="sm" onClick={() => router.push("/dashboard/pengaduan")}>
           <ArrowLeft /> Kembali ke daftar
         </Button>
       </div>

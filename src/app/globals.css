@@ -167,7 +167,8 @@
 /* ─────────────────────────────────────────────────────────────────────────────
    Tema terang — palet Geist (Vercel)
 ───────────────────────────────────────────────────────────────────────────── */
-:root {
+:root, 
+.lembar-cetak {
   /* Skala abu-abu GEIST: netral murni (tanpa hue), dari --ds-gray-* di
      vercel.com/geist. Nama lokal --gray-50..900 dipertahankan.
        gray-50   ds-background-200  kanvas halaman
@@ -465,6 +466,32 @@
   --info: oklch(0.717 0.1648 250.794);
   --info-foreground: #0b1c2b;
   --info-muted: #12212e;
+
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Kartu statistik (StatCard / StatGrid) — palet per halaman
+───────────────────────────────────────────────────────────────────────────── */
+/* TANPA atribut data-stat, StatCard memakai token global (--card, --border,
+   --muted-foreground), jadi halaman yang belum memilih tidak berubah sama
+   sekali. Palet khusus hanya hidup di dalam elemen ber-`data-stat="..."`
+   (variabel CSS menurun ke semua keturunannya), jadi mengubah nilai di sini
+   TIDAK menyentuh card, tabel, atau panel lain. Pasang lewat
+   <StatGrid varian="geist"> atau data-stat="geist" di pembungkus sendiri.
+   Mau varian baru: salin satu blok, ganti nama dan nilainya. */
+[data-stat="geist"] {
+  --stat-bg: #ffffff;
+  --stat-border: var(--gray-300);
+  --stat-label: var(--gray-800);
+  --stat-icon: var(--gray-600);
+}
+
+.dark [data-stat="geist"] {
+  /* Gelap Geist: sel menyatu dengan kanvas (#0a0a0a), dipisah garis tegas. */
+  --stat-bg: var(--gray-50);
+  --stat-border: var(--gray-300);
+  --stat-label: var(--gray-800);
+  --stat-icon: var(--gray-600);
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -743,4 +770,43 @@
 :is([data-slot="table-row"], .grid-neon tbody tr)[data-state="selected"],
 .grid-neon [role="row"][aria-selected="true"] > [role="gridcell"] {
   background-color: var(--table-accent);
+}
+
+/* ============================================================================
+   LEMBAR CETAK / PDF
+   ============================================================================
+   .lembar-cetak ikut memakai blok palet TERANG (`:root, .lembar-cetak`), jadi
+   semua token (bg-card, bg-primary, bg-info, text-muted-foreground, dst.) di
+   dalamnya selalu terang walaupun <html> sedang `.dark`. Hasil cetak sama di
+   kedua tema tanpa satu pun warna hardcode di komponen.
+   ============================================================================ */
+.lembar-cetak {
+  display: none;
+  color-scheme: light;
+}
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+  html,
+  body {
+    margin: 0 !important;
+    background: none !important;
+  }
+  body > *:not(.lembar-cetak) {
+    display: none !important;
+  }
+  .lembar-cetak {
+    display: block;
+  }
+  .lembar-cetak,
+  .lembar-cetak * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .lembar-cetak section {
+    break-inside: avoid;
+  }
 }

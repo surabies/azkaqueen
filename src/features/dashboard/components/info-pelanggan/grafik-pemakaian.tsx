@@ -1,5 +1,6 @@
 // Batang pemakaian per periode (terlama → terbaru). CSS murni, tanpa pustaka
-// grafik. Periode yang sedang dilihat berwarna biru, sama dengan PDF.
+// grafik. Periode yang sedang dilihat memakai warna seri grafik pertama.
+// Tinggi mengisi sisa kartu (flex-1) sehingga kartu grafik dan rincian sama tinggi.
 import { cn } from "@/lib/utils"
 import { fmtAngka, fmtPeriode, fmtPeriodeSingkat } from "./format"
 import type { BarisRiwayat } from "./tipe"
@@ -27,14 +28,14 @@ export function GrafikPemakaian({
     .join(", ")
 
   return (
-    <div role="img" aria-label={`Pemakaian: ${ringkas}`} className="flex h-44 gap-3">
+    <div role="img" aria-label={`Pemakaian: ${ringkas}`} className="flex min-h-44 flex-1 gap-3">
       {data.map((d) => (
         <div key={d.periode} className="flex min-w-0 flex-1 flex-col gap-1.5">
-          <div className="flex min-h-0 flex-1 items-end">
+          <div className="relative min-h-0 flex-1">
             <div
               className={cn(
-                "w-full rounded-t-[3px]",
-                d.aktif ? "bg-blue-600" : "bg-slate-300 dark:bg-slate-600"
+                "absolute inset-x-0 bottom-0 rounded-t-sm",
+                d.aktif ? "bg-chart-1" : "bg-muted-foreground/30"
               )}
               style={{
                 height: `${d.nilai == null ? 0 : Math.max(4, (d.nilai / maks) * 100)}%`,

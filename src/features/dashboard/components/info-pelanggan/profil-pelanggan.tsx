@@ -8,8 +8,8 @@ import { LABEL_STATUS_PELANGGAN } from "../../lib/label"
 import type { DataPelanggan } from "./tipe"
 
 const NADA_STATUS: Record<string, string> = {
-  AKTIF: "bg-[var(--success-muted)] text-[var(--success)]",
-  TUTUP_SEMENTARA: "bg-[var(--warning-muted)] text-[var(--warning)]",
+  AKTIF: "bg-success-muted text-success",
+  TUTUP_SEMENTARA: "bg-warning-muted text-warning",
   DISEGEL: "bg-destructive/10 text-destructive",
   TUTUP_SPT: "bg-destructive/10 text-destructive",
 }
@@ -40,7 +40,7 @@ function TombolSalin({ teks }: { teks: string }) {
     <button
       type="button"
       onClick={salin}
-      className="rounded px-1.5 py-0.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+      className="rounded px-1.5 py-0.5 text-xs text-muted-foreground transition-colors hover:bg-hover hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
     >
       {tersalin ? "Tersalin" : "Salin"}
     </button>
@@ -56,7 +56,7 @@ export function ProfilPelanggan({ pelanggan: p }: { pelanggan: DataPelanggan }) 
     <section aria-label="Identitas pelanggan" className="flex flex-col gap-4">
       <div className="flex flex-wrap items-start justify-between gap-x-8 gap-y-4">
         <div className="min-w-0">
-          <h2 className="text-3xl font-semibold tracking-tight text-balance">
+          <h2 className="text-3xl font-semibold tracking-heading-32 text-balance">
             {p.nama || "Tanpa nama"}
           </h2>
           {p.alamat && (

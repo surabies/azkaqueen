@@ -1,8 +1,9 @@
 "use client"
 
 // Bilah pencarian tunggal: No. Langganan + Periode + tombol. Periode
-// berformat YYYYMM; kosong berarti periode terbaru. `gelap` = dipasang di atas
-// pita judul gelap (hanya mengubah warna teks bantuan/galat di bawah bilah).
+// berformat YYYYMM; kosong berarti periode terbaru.
+// Dipasang di dalam pita judul berwarna (biru di tema terang), jadi teks
+// bantuan di bawah bilah memakai warna teks pita. Semua warna dari token.
 import * as React from "react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -12,21 +13,29 @@ export function FormCari({
   periode,
   memuat,
   onCari,
-  gelap = false,
 }: {
   nomor: string
   periode: string
   memuat: boolean
   onCari: (nomor: string, periode: string) => void
-  gelap?: boolean
 }) {
   const [n, setN] = React.useState(nomor)
   const [p, setP] = React.useState(periode)
   const [galat, setGalat] = React.useState<string | null>(null)
 
   // Ikuti perubahan URL (tombol back/forward, tautan dari halaman lain).
-  React.useEffect(() => setN(nomor), [nomor])
-  React.useEffect(() => setP(periode), [periode])
+  // Disesuaikan saat render (bukan di useEffect): simpan prop sebelumnya,
+  // lalu salin ke state hanya jika prop berubah.
+  const [nomorSebelum, setNomorSebelum] = React.useState(nomor)
+  if (nomor !== nomorSebelum) {
+    setNomorSebelum(nomor)
+    setN(nomor)
+  }
+  const [periodeSebelum, setPeriodeSebelum] = React.useState(periode)
+  if (periode !== periodeSebelum) {
+    setPeriodeSebelum(periode)
+    setP(periode)
+  }
 
   function kirim(e: React.FormEvent) {
     e.preventDefault()
@@ -44,7 +53,7 @@ export function FormCari({
 
   return (
     <form onSubmit={kirim} aria-label="Cari pelanggan" className="w-full max-w-2xl">
-      <div className="flex flex-col gap-1 rounded-lg border border-border bg-card p-1.5 shadow-panel focus-within:ring-2 focus-within:ring-ring/30 sm:flex-row sm:items-center">
+      <div className="flex flex-col gap-1 rounded-lg border border-border bg-card p-1.5 text-card-foreground shadow-panel focus-within:ring-2 focus-within:ring-ring/30 sm:flex-row sm:items-center">
         <div className="flex min-w-0 flex-1 items-center gap-2 px-2.5">
           <svg
             viewBox="0 0 24 24"
@@ -90,12 +99,8 @@ export function FormCari({
         className={cn(
           "mt-2 text-xs",
           galat
-            ? gelap
-              ? "text-red-300"
-              : "text-destructive"
-            : gelap
-              ? "text-slate-300"
-              : "text-muted-foreground"
+            ? "font-medium text-info-foreground dark:text-destructive"
+            : "text-info-foreground/80 dark:text-muted-foreground"
         )}
       >
         {galat ?? "Kosongkan periode untuk melihat pencatatan terbaru."}

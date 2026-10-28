@@ -6,7 +6,8 @@
 // yang paling lama menunggu (bukan yang terbaru) — aduan yang terlantar
 // justru harus paling terlihat.
 import Link from "next/link";
-import { ArrowRight, Inbox } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { ArrowRight01Icon, InboxIcon } from "@hugeicons/core-free-icons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -40,7 +41,10 @@ interface LaporanMandiri {
 function Kosong({ pesan }: { pesan: string }) {
   return (
     <div className="flex flex-col items-center gap-2 py-8 text-center">
-      <Inbox className="size-6 text-muted-foreground" />
+      <HugeiconsIcon
+        icon={InboxIcon}
+        className="size-6 text-muted-foreground"
+      />
       <p className="text-sm text-muted-foreground">{pesan}</p>
     </div>
   );
@@ -68,11 +72,11 @@ export function PerluTindakan({
             {pengaduan.map((p, i) => (
               <Link
                 key={p.id}
-                href={`/pelanggan/pengaduan?q=${p.nomorTiket}`}
+                href={`/dashboard/pengaduan?q=${p.nomorTiket}`}
                 className={
                   "flex items-start justify-between gap-3 px-3 py-2.5 transition-colors hover:bg-accent " +
                   (i < pengaduan.length - 1
-                    ? "border-b border-dashed border-border/50"
+                    ? "border-b border-border-subtle"
                     : "")
                 }
               >
@@ -105,7 +109,7 @@ export function PerluTindakan({
               className="mt-2 justify-start text-muted-foreground"
             >
               <Link href="/dashboard/pengaduan">
-                Lihat semua pengaduan <ArrowRight />
+                Lihat semua pengaduan <HugeiconsIcon icon={ArrowRight01Icon} />
               </Link>
             </Button>
           </div>
@@ -133,7 +137,7 @@ export function PerluTindakan({
                 className={
                   "flex items-start justify-between gap-3 px-3 py-2.5 transition-colors hover:bg-accent " +
                   (i < laporanMandiri.length - 1
-                    ? "border-b border-dashed border-border/50"
+                    ? "border-b border-border-subtle"
                     : "")
                 }
               >
@@ -149,9 +153,9 @@ export function PerluTindakan({
                     {formatTanggal(l.createdAt.toISOString())}
                   </p>
                 </div>
-                <span className="shrink-0 font-mono text-sm font-semibold text-foreground tabular-nums">
+                <span className="num shrink-0 text-sm font-semibold text-foreground">
                   {l.standDilaporkan}{" "}
-                  <span className="font-sans font-normal text-muted-foreground">
+                  <span className="font-normal text-muted-foreground">
                     m³
                   </span>
                 </span>
@@ -164,7 +168,7 @@ export function PerluTindakan({
               className="mt-2 justify-start text-muted-foreground"
             >
               <Link href="/dashboard/laporan-mandiri">
-                Lihat semua laporan <ArrowRight />
+                Lihat semua laporan <HugeiconsIcon icon={ArrowRight01Icon} />
               </Link>
             </Button>
           </div>

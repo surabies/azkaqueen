@@ -175,7 +175,7 @@ export const navGroups: NavGroup[] = [
       },
       {
         title: "Info Pelanggan",
-        href: "/pengolahan-data/pelanggan",
+        href: "/info-pelanggan",
         description: "Data pelanggan, sambungan, golongan.",
         keywords: ["pelanggan", "info", "data pelanggan"],
       },
@@ -687,10 +687,10 @@ export const primaryNav: NavItem[] = [
     keywords: ["analytics", "analitik", "grafik", "statistik"],
   },
   {
-    title: "Report",
-    href: "/report",
-    description: "Laporan ringkas lintas direktorat.",
-    keywords: ["report", "laporan", "rekap"],
+    title: "Pengaduan",
+    href: "/dashboard/pengaduan",
+    description: "Laporan pengaduan pelanggan.",
+    keywords: ["pengaduan", "laporan", "rekap"],
   },
 ]
 

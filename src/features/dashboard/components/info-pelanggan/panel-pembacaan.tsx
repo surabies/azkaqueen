@@ -1,5 +1,5 @@
 // Baris tiga kotak, sama dengan PDF: stand awal, stand akhir (roda angka),
-// dan kartu biru Pemakaian dengan kalimat perbandingan periode sebelumnya.
+// dan kartu Pemakaian dengan kalimat perbandingan periode sebelumnya.
 import { cn } from "@/lib/utils"
 import { fmtAngka, fmtBulan } from "./format"
 import { Odometer } from "./odometer"
@@ -50,28 +50,28 @@ export function PanelPembacaan({
       aria-label="Stand meter dan pemakaian"
       className="grid gap-3 md:grid-cols-[1fr_1fr_1.15fr]"
     >
-      <div className="rounded-lg border border-border bg-card p-4">
+      <div className="flex rounded-lg border border-border bg-card p-4 shadow-panel">
         <Odometer label="Stand awal" nilai={catat.standLalu} />
       </div>
-      <div className="rounded-lg border border-border bg-card p-4">
+      <div className="flex rounded-lg border border-border bg-card p-4 shadow-panel">
         <Odometer label="Stand akhir" nilai={catat.standAkhir} />
       </div>
 
-      <div className="rounded-lg bg-blue-600 p-4 text-white">
-        <p className="text-xs text-blue-100">Pemakaian</p>
+      <div className="flex flex-col items-center justify-center rounded-lg bg-info p-4 text-center text-info-foreground">
+        <p className="text-xs text-info-foreground/80">Pemakaian</p>
         <p className="mt-1 flex items-baseline gap-1.5">
           <span className="text-5xl leading-none font-semibold tracking-tight tabular-nums">
             {fmtAngka(catat.pemakaianM3)}
           </span>
-          <span className="text-lg text-blue-100">m³</span>
+          <span className="text-lg text-info-foreground/80">m³</span>
         </p>
         {banding && (
           <p
             className={cn(
               "mt-2 w-fit text-xs",
               banding.perhatian
-                ? "rounded bg-white/20 px-1.5 py-0.5 font-medium text-white"
-                : "text-blue-100"
+                ? "rounded bg-info-foreground/20 px-1.5 py-0.5 font-medium"
+                : "text-info-foreground/80"
             )}
           >
             {banding.teks}
