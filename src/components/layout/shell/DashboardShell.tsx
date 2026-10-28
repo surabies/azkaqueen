@@ -1,29 +1,32 @@
 // components/layout/shell/DashboardShell.tsx
-// Kerangka halaman dashboard: sidebar tetap di kiri, pita garis miring kiri/kanan,
-// konten utama, lalu footer. Navbar TIDAK dirender di sini (ada di root layout).
+// Tata letak ala Neon: navbar (fixed) dan sidebar (fixed) berbagi satu permukaan,
+// konten dibungkus card yang mengisi sisa layar dan ter-scroll di dalamnya.
+// Dokumen sendiri tidak pernah ter-scroll. Navbar TIDAK dirender di sini (ada di layout).
 import type { ReactNode } from "react"
 
 import { cn } from "@/lib/utils"
 import { SidebarNav } from "../navigation/SidebarNav"
-import { DashboardFooter, type DashboardFooterProps } from "./DashboardFooter"
-import { PatternStrip } from "./Pattern"
 
 export const MAIN_CONTENT_ID = "konten-utama"
 
 type DashboardShellProps = {
   children: ReactNode
-  footer: DashboardFooterProps
+  /** Halaman fluid (verifikasi, peta): tanpa sidebar, card selebar layar. */
+  tanpaSidebar?: boolean
 }
 
-export function DashboardShell({ children, footer }: DashboardShellProps) {
+export function DashboardShell({
+  children,
+  tanpaSidebar = false,
+}: DashboardShellProps) {
   return (
     <div
       className={cn(
-        "relative min-h-dvh bg-background pt-(--navbar-h)",
+        // Warna permukaan navbar + sidebar. Ganti di sini (dan di Navbar.tsx).
+        "h-dvh overflow-hidden bg-muted pt-(--navbar-h)",
         // Tinggi navbar. Mobile = bar utama (h-14) + NavbarMobileBar (h-14) = 7rem.
-        // Jika tinggi bar di navbar berubah, sesuaikan angka ini.
         "[--navbar-h:3.5rem] max-lg:[--navbar-h:7rem]",
-        "[--sidebar-w:17.5rem]",
+        "[--sidebar-w:15rem]",
       )}
     >
       {/* Lompat ke konten: muncul hanya saat menerima fokus keyboard */}
@@ -40,33 +43,33 @@ export function DashboardShell({ children, footer }: DashboardShellProps) {
         Lewati ke konten utama
       </a>
 
-      {/* Sidebar desktop: menempel di kiri dan di-scroll sendiri.
+      {/* Sidebar desktop: menempel di kiri, di-scroll sendiri.
           SidebarNav merender <nav aria-label="Menu utama">. */}
-      <aside
-        aria-label="Navigasi modul"
-        className="fixed top-(--navbar-h) bottom-0 left-0 hidden w-(--sidebar-w) overflow-y-auto overscroll-contain px-6 py-8 lg:block"
+      {!tanpaSidebar && (
+        <aside
+          aria-label="Navigasi modul"
+          className="fixed top-(--navbar-h) bottom-0 left-0 hidden w-(--sidebar-w) overflow-y-auto overscroll-contain px-3 py-6 lg:block"
+        >
+          <SidebarNav />
+        </aside>
+      )}
+
+      {/* Ruang di sekitar card: kanan dan bawah sedikit renggang di desktop,
+          di mobile card selebar layar. */}
+      <div
+        className={cn(
+          "flex h-full min-h-0 flex-col lg:pr-2 lg:pb-2",
+          tanpaSidebar ? "lg:pl-2" : "lg:pl-(--sidebar-w)",
+        )}
       >
-        <SidebarNav />
-      </aside>
-
-      <div className="flex min-h-[calc(100dvh-var(--navbar-h))] flex-col lg:pl-(--sidebar-w)">
-        {/* Pita garis miring | konten | pita garis miring */}
-        <div className="grid flex-1 grid-cols-[1rem_minmax(0,1fr)_1rem] sm:grid-cols-[2.5rem_minmax(0,1fr)_2.5rem]">
-          <PatternStrip aria-hidden="true" />
-
-          <div className="flex min-w-0 flex-col">
-            <main
-              id={MAIN_CONTENT_ID}
-              tabIndex={-1}
-              className="flex min-w-0 flex-1 flex-col focus:outline-none"
-            >
-              {children}
-            </main>
-            <DashboardFooter {...footer} />
-          </div>
-
-          {/* <PatternStrip aria-hidden="true" /> */}
-        </div>
+        {/* Card konten: satu-satunya area yang ter-scroll. */}
+        <main
+          id={MAIN_CONTENT_ID}
+          tabIndex={-1}
+          className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto bg-background focus:outline-none lg:rounded-xl lg:border"
+        >
+          {children}
+        </main>
       </div>
     </div>
   )

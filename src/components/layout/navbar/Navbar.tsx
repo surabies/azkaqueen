@@ -20,7 +20,9 @@ export function Navbar({
   onKeluar: () => Promise<void>
 }) {
   return (
-    <header className="fixed inset-x-0 top-0 z-10 border-b bg-background">
+    // Tanpa border-b dan satu warna dengan sidebar (bg-muted) supaya menyatu.
+    // Tingginya harus sama dengan --navbar-h di DashboardShell.
+    <header className="fixed inset-x-0 top-0 z-10 bg-muted">
       {/* ===== Bar utama (tampil di semua ukuran layar) ===== */}
       <div className="flex h-14 items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         {/* Kiri: logo + dropdown versi */}

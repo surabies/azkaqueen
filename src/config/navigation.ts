@@ -181,7 +181,7 @@ export const navGroups: NavGroup[] = [
       },
       {
         title: "Info Pelanggan",
-        href: "/pelanggan",
+        href: "/pengolahan-data/pelanggan",
         description: "Data pelanggan, sambungan, golongan.",
         keywords: ["pelanggan", "info", "data pelanggan"],
       },

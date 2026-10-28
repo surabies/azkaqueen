@@ -15,6 +15,17 @@
 // Prisma) — grid mengirim sortBy/sortDir dan AG Grid otomatis meminta ulang
 // blok saat urutan berubah. Kolom di luar whitelist biarkan tanpa sortable.
 //
+// CHECKBOX BARIS (layar lega): kolom checkbox di-PIN kiri (sticky saat scroll
+// horizontal). Aktif secara bawaan; matikan per halaman dengan
+// `checkbox={false}`. Syarat: setiap baris dari endpoint HARUS punya `id`
+// unik (dipakai getRowId supaya pilihan tidak hilang saat blok dimuat ulang).
+// Header checkbox = HeaderPilihSemua (kustom): memilih semua baris yang
+// SUDAH TERMUAT di cache, bukan seluruh 22 ribu baris di server — header
+// bawaan AG Grid tidak didukung infinite model. Pilihan di-reset otomatis
+// saat cari/filter/urutan berubah, karena baris yang belum termuat tidak
+// bisa dibaca grid.
+// Halaman yang butuh baris terpilih: pakai prop `onSelectionChanged`.
+//
 // EKSPOR EXCEL: menarik SELURUH baris (mengikuti pencarian/filter/sort yang
 // sedang aktif) per blok 1000 lewat endpoint yang sama, lalu menulis .xlsx
 // di browser — bukan mengekspor 50 baris yang kebetulan termuat.
@@ -22,7 +33,7 @@
 // PONSEL: tabel berkolom banyak ditampilkan sebagai daftar kartu berisi
 // seluruh kolom aktif. Infinite Row Model AG Grid mensyaratkan tinggi baris
 // tetap, jadi kartu mobile memakai pagination terpisah agar tinggi konten
-// dapat mengikuti teks yang membungkus.
+// dapat mengikuti teks yang membungkus. Checkbox TIDAK tampil di mode kartu.
 //
 // PETA FOLDER
 //   index.ts                   pintu masuk (DataGrid + tipe publik)
@@ -38,12 +49,13 @@
 //   daftar-kartu.tsx           kartu ponsel
 
 import * as React from "react"
-import { AgGridReact } from "ag-grid-react"
+import { AgGridReact, type CustomHeaderProps } from "ag-grid-react"
 import {
   AllCommunityModule,
   ModuleRegistry,
   type GridApi,
   type IDatasource,
+  type IRowNode,
 } from "ag-grid-community"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { FilterHorizontalIcon, RotateLeft01Icon } from "@hugeicons/core-free-icons"
@@ -73,6 +85,109 @@ import { ModalFilter, hitungFilterAktif } from "./toolbar/modal-filter"
 
 ModuleRegistry.registerModules([AllCommunityModule])
 
+/// Id kolom checkbox bawaan AG Grid (v33+). Dipakai supaya klik pada checkbox
+/// tidak ikut memicu onRowClicked milik halaman.
+const ID_KOLOM_PILIH = "ag-Grid-SelectionColumn"
+
+/// Garis sel ala spreadsheet: vertikal antar kolom + horizontal antar baris,
+/// juga di header. Ditumpuk di atas temaGrid (tema.ts) supaya semua halaman
+/// yang memakai DataGrid mendapat garis yang sama tanpa mengubah tema.ts.
+const garis = () => ({
+  style: "solid" as const,
+  width: 1,
+  color: "var(--border)",
+})
+const temaSpreadsheet = temaGrid.withParams({
+  columnBorder: garis(),
+  rowBorder: garis(),
+  headerColumnBorder: garis(),
+  headerRowBorder: garis(),
+  wrapperBorder: false,
+})
+
+/// Checkbox "pilih semua" di header. Header bawaan AG Grid tidak tersedia di
+/// Infinite Row Model, jadi dibuat sendiri: memilih/membatalkan SEMUA baris
+/// yang sedang termuat di cache (maks. maxBlocksInCache × PAGE_SIZE baris),
+/// dengan status kosong / sebagian (indeterminate) / semua.
+function HeaderPilihSemua({ api }: CustomHeaderProps) {
+  const ref = React.useRef<HTMLInputElement>(null)
+  const [status, setStatus] = React.useState<"kosong" | "sebagian" | "semua">(
+    "kosong"
+  )
+
+  React.useEffect(() => {
+    const hitung = () => {
+      if (api.isDestroyed()) return
+      let termuat = 0
+      let terpilih = 0
+      api.forEachNode((n) => {
+        if (!n.data) return // baris stub yang belum termuat
+        termuat++
+        if (n.isSelected()) terpilih++
+      })
+      setStatus(
+        terpilih === 0
+          ? "kosong"
+          : terpilih === termuat
+            ? "semua"
+            : "sebagian"
+      )
+    }
+    hitung()
+    api.addEventListener("selectionChanged", hitung)
+    api.addEventListener("modelUpdated", hitung)
+    return () => {
+      if (api.isDestroyed()) return
+      api.removeEventListener("selectionChanged", hitung)
+      api.removeEventListener("modelUpdated", hitung)
+    }
+  }, [api])
+
+  React.useEffect(() => {
+    if (ref.current) ref.current.indeterminate = status === "sebagian"
+  }, [status])
+
+  function toggle() {
+    const nodes: IRowNode[] = []
+    api.forEachNode((n) => {
+      if (n.data) nodes.push(n)
+    })
+    api.setNodesSelected({ nodes, newValue: status !== "semua" })
+  }
+
+  return (
+    <div className="flex h-full w-full items-center justify-center">
+      <input
+        ref={ref}
+        type="checkbox"
+        checked={status === "semua"}
+        onChange={toggle}
+        aria-label="Pilih semua baris yang termuat"
+        title="Pilih semua baris yang termuat"
+        className="size-4 cursor-pointer accent-blue-600"
+      />
+    </div>
+  )
+}
+
+/// Prop tambahan di luar DataGridProps (tipe.ts tidak perlu diubah).
+type PropTambahan = {
+  toolbarModal?: boolean
+  /// Tampilkan kolom checkbox sticky di kiri. Bawaan: true.
+  checkbox?: boolean
+  /// Dipanggil saat pilihan checkbox berubah (hanya baris yang termuat).
+  onSelectionChanged?: (baris: BarisData[]) => void
+  /// Toolbar (cari, filter, jumlah baris, ikon aksi) berada DI LUAR card
+  /// tabel, tanpa background/border — gaya halaman Verifikasi. Card ber-border
+  /// hanya membungkus tabel. Bawaan: false (toolbar di dalam card).
+  toolbarTerpisah?: boolean
+  /// Hanya berlaku bersama `toolbarTerpisah`. Tabel menempel ke tepi card
+  /// halaman: tanpa margin, tanpa sudut membulat, tanpa bingkai samping/bawah,
+  /// hanya garis tipis di atas (gaya Neon). Bawaan: false (tabel berbingkai card
+  /// dengan margin, seperti halaman Verifikasi).
+  tabelPenuh?: boolean
+}
+
 export function DataGrid({
   judul,
   endpoint,
@@ -91,7 +206,11 @@ export function DataGrid({
   refreshKey,
   toolbarActions,
   toolbarModal = false,
-}: DataGridProps & { toolbarModal?: boolean }) {
+  checkbox = true,
+  onSelectionChanged,
+  toolbarTerpisah = false,
+  tabelPenuh = false,
+}: DataGridProps & PropTambahan) {
   const mobil = useIsMobile()
   const idPanelFilter = React.useId()
   const apiRef = React.useRef<GridApi | null>(null)
@@ -118,6 +237,13 @@ export function DataGrid({
   const [galat, setGalat] = React.useState<string | null>(null)
   const [galatEkspor, setGalatEkspor] = React.useState<string | null>(null)
   const [mengekspor, setMengekspor] = React.useState(false)
+  const [jumlahTerpilih, setJumlahTerpilih] = React.useState(0)
+
+  // Callback halaman lewat ref supaya identitas handler grid tetap stabil.
+  const onSelectionChangedRef = React.useRef(onSelectionChanged)
+  React.useEffect(() => {
+    onSelectionChangedRef.current = onSelectionChanged
+  }, [onSelectionChanged])
 
   // --- turunan --------------------------------------------------------------
   const defsTampil = React.useMemo(
@@ -227,7 +353,12 @@ export function DataGrid({
       pertama.current = false
       return
     }
-    const t = setTimeout(() => apiRef.current?.purgeInfiniteCache(), 350)
+    const t = setTimeout(() => {
+      // Reset pilihan checkbox: setelah purge, baris yang dicentang bisa
+      // sudah tidak ada di hasil baru dan tak bisa dibaca grid lagi.
+      apiRef.current?.deselectAll()
+      apiRef.current?.purgeInfiniteCache()
+    }, 350)
     return () => clearTimeout(t)
     // extraSerial mewakili isi extraParams di deps (identitas objeknya
     // berubah tiap render parent — pakai objeknya langsung akan purge
@@ -312,13 +443,24 @@ export function DataGrid({
     // dirender. Toolbar `shrink-0`, grid wrapper `flex-1 min-h-0` mengisi sisanya.
     <section
       aria-label={judul}
-      className="flex h-full flex-col overflow-hidden rounded-lg border border-border bg-card shadow-panel"
+      className={cn(
+        "flex h-full flex-col overflow-hidden",
+        // Mode terpisah: section hanya penata tinggi; bingkai pindah ke
+        // pembungkus tabel di bawah.
+        !toolbarTerpisah &&
+          "rounded-lg border border-border bg-card shadow-panel"
+      )}
     >
       {/* Toolbar: SATU baris di layar lebar (lg+), membungkus di bawahnya. */}
       <div
         role="group"
         aria-label="Penyaring dan aksi tabel"
-        className="flex shrink-0 flex-wrap items-center gap-2 border-b border-border-subtle bg-card px-3 py-2.5 sm:px-4 lg:flex-nowrap"
+        className={cn(
+          "flex shrink-0 flex-wrap items-center gap-2 lg:flex-nowrap",
+          toolbarTerpisah
+            ? "px-3 py-3 sm:px-4"
+            : "border-b border-border-subtle bg-card px-3 py-2.5 sm:px-4"
+        )}
       >
         {searchParam && (
           <KotakCari
@@ -418,6 +560,15 @@ export function DataGrid({
           </Button>
         )}
 
+        {checkbox && !mobil && jumlahTerpilih > 0 && (
+          <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
+            <span className="font-medium text-foreground">
+              {jumlahTerpilih.toLocaleString("id-ID")}
+            </span>{" "}
+            dipilih
+          </span>
+        )}
+
         {totalTampil !== null && (
           // <output> = hasil yang berubah mengikuti masukan; role status
           // implisit, jadi pembaca layar ikut mengumumkan jumlah baru.
@@ -456,6 +607,18 @@ export function DataGrid({
         </ToggleGroup>
       </div>
 
+      {/* Pembungkus tabel: bingkai card hanya di mode terpisah. Selain itu
+          `contents` = tidak ada kotak, anak-anaknya tetap langsung di section
+          sehingga tata letak lama tidak berubah. */}
+      <div
+        className={
+          toolbarTerpisah
+            ? tabelPenuh
+              ? "flex min-h-0 flex-1 flex-col overflow-hidden border-t border-border bg-card"
+              : "mx-3 mb-3 flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-border bg-card shadow-panel sm:mx-4"
+            : "contents"
+        }
+      >
       {toolbarModal && filterBuka && (
         <ModalFilter
           onBuka={setFilterBuka}
@@ -511,7 +674,7 @@ export function DataGrid({
           )}
         >
           <AgGridReact
-            theme={temaGrid}
+            theme={temaSpreadsheet}
             columnDefs={defsTampil}
             defaultColDef={{
               sortable: false,
@@ -523,6 +686,48 @@ export function DataGrid({
             cacheBlockSize={PAGE_SIZE}
             maxBlocksInCache={10}
             datasource={datasource}
+            // --- checkbox sticky (v33+) ---------------------------------
+            // undefined = perilaku lama (tanpa seleksi) kalau dimatikan.
+            rowSelection={
+              checkbox
+                ? {
+                    mode: "multiRow",
+                    checkboxes: true,
+                    // Header bawaan tak didukung infinite model → pakai
+                    // HeaderPilihSemua (lihat selectionColumnDef di bawah).
+                    headerCheckbox: false,
+                    // Klik baris tetap hanya memicu onRowClicked.
+                    enableClickSelection: false,
+                  }
+                : undefined
+            }
+            selectionColumnDef={
+              checkbox
+                ? {
+                    pinned: "left", // sticky saat scroll horizontal
+                    width: 48,
+                    minWidth: 48,
+                    maxWidth: 48,
+                    resizable: false,
+                    suppressMovable: true,
+                    headerComponent: HeaderPilihSemua,
+                  }
+                : undefined
+            }
+            // Id stabil → pilihan bertahan saat blok dimuat ulang. Tanpa
+            // checkbox tidak dipasang, jadi perilaku halaman lama tak berubah.
+            getRowId={
+              checkbox ? (p) => String((p.data as { id: unknown }).id) : undefined
+            }
+            onSelectionChanged={
+              checkbox
+                ? (e) => {
+                    const dipilih = e.api.getSelectedRows() as BarisData[]
+                    setJumlahTerpilih(dipilih.length)
+                    onSelectionChangedRef.current?.(dipilih)
+                  }
+                : undefined
+            }
             onGridReady={(e) => {
               apiRef.current = e.api
             }}
@@ -531,7 +736,14 @@ export function DataGrid({
             }}
             onRowClicked={
               onRowClicked
-                ? (e) => e.data && onRowClicked(e.data as BarisData)
+                ? (e) => {
+                    // Klik pada checkbox bukan "buka baris".
+                    // RowClickedEvent tak punya `column`; cek elemen yang
+                    // diklik: sel checkbox membawa atribut col-id.
+                    const target = e.event?.target as HTMLElement | null
+                    if (target?.closest(`[col-id="${ID_KOLOM_PILIH}"]`)) return
+                    if (e.data) onRowClicked(e.data as BarisData)
+                  }
                 : undefined
             }
             onCellContextMenu={
@@ -565,6 +777,7 @@ export function DataGrid({
           />
         </div>
       )}
+      </div>
     </section>
   )
 }

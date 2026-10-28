@@ -31,7 +31,7 @@ export function SidebarNav({ className }: { className?: string }) {
     useSidebarDrilldown()
 
   return (
-    <div className={cn("-mt-2 flex flex-col gap-3", className)}>
+    <div className={cn("-mt-6 flex flex-col gap-3", className)}>
       <SidebarSearch />
 
       <nav aria-label="Menu utama" className="overflow-hidden">

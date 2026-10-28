@@ -75,6 +75,10 @@ export function PembacaanGrid() {
       endpoint="/pembacaan"
       columnDefs={KOLOM}
       filters={filters}
+      // Toolbar (filter, jumlah baris, ikon aksi) di luar tabel, tanpa
+      // background/border; tabel menempel ke tepi card utama (gaya Neon).
+      toolbarTerpisah
+      tabelPenuh
     />
   )
 }
